@@ -1,13 +1,17 @@
 import { Camera, Instagram } from 'lucide-react';
-import { useNavigate } from 'react-router'; // 1. useNavigate 임포트
+import { useNavigate } from 'react-router';
 
-export default function TeamCreate() {
-  const navigate = useNavigate(); // 2. 이동 함수 정의
+// default 키워드 없이 export function으로 작성
+export function TeamCreate() {
+  const navigate = useNavigate();
 
   const handleCreateTeam = () => {
-    // 여기에 나중에 Supabase에 데이터를 저장하는 로직이 들어갑니다.
+    // 알림창을 띄우고 확인을 누르면 이동합니다.
     alert('팀 생성이 완료되었습니다!'); 
-    navigate('/app/mypage'); // 3. 생성 완료 후 마이페이지로 이동
+    
+    // App.tsx에서 <Route path="mypage" ... />로 설정했으므로 
+    // 하단 탭바가 있는 메인 레이아웃 안의 마이페이지로 이동합니다.
+    navigate('/mypage'); 
   };
 
   return (
@@ -53,10 +57,9 @@ export default function TeamCreate() {
           </div>
         </div>
 
-        {/* 버튼에 onClick 이벤트 연결 */}
         <button 
           onClick={handleCreateTeam}
-          className="w-full bg-red-600 text-white py-4 rounded-xl font-bold mt-8 shadow-lg active:scale-[0.98] transition-transform"
+          className="w-full bg-red-600 text-white py-4 rounded-xl font-bold mt-8 shadow-lg active:scale-[0.98] transition-all"
         >
           팀 생성 완료
         </button>

@@ -11,8 +11,8 @@ import TeamManagement from './components/pages/TeamManagement';
 // 새로운 페이지들 import (중괄호 없이 가져오도록 통일)
 import Auth from './components/pages/Auth';
 import Onboarding from './components/pages/Onboarding';
-import TeamCreate from './components/pages/TeamCreate';
-import MyPage from './components/pages/MyPage';
+import {TeamCreate} from './components/pages/TeamCreate';
+import {MyPage} from './components/pages/MyPage';
 
 /**
  * App 컴포넌트: 전체 경로(Route) 구조 정의
