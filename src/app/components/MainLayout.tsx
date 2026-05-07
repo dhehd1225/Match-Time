@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { Home, Trophy, Users, BarChart3, Share2, Shirt } from 'lucide-react';
+import { Home, Trophy, Users } from 'lucide-react';
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -9,8 +9,6 @@ export default function MainLayout() {
     { icon: Home, label: '매치', path: '/matches' },
     { icon: Trophy, label: '라인업', path: '/lineup' },
     { icon: Users, label: '팀', path: '/team' },
-    { icon: BarChart3, label: '순위', path: '/rankings' },
-    { icon: Share2, label: 'SNS', path: '/social' },
   ];
 
   return (
@@ -21,8 +19,8 @@ export default function MainLayout() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl">
-        <div className="max-w-screen-xl mx-auto flex justify-around items-center h-16">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t border-gray-200 shadow-2xl">
+        <div className="flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)]">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
