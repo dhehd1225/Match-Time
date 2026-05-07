@@ -8,7 +8,7 @@ export default function MainLayout() {
   const navItems = [
     { icon: Home, label: '매치', path: '/matches' },
     { icon: Trophy, label: '라인업', path: '/lineup' },
-    { icon: Users, label: '팀', path: '/team' },
+    { icon: Users, label: '마이 페이지', path: '/onboarding' },
   ];
 
   return (
