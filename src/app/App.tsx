@@ -13,6 +13,8 @@ import Auth from './components/pages/Auth';
 import Onboarding from './components/pages/Onboarding';
 import {TeamCreate} from './components/pages/TeamCreate';
 import {MyPage} from './components/pages/MyPage';
+// src/App.tsx 상단에 추가
+import { TeamJoin } from './components/pages/TeamJoin';
 
 /**
  * App 컴포넌트: 전체 경로(Route) 구조 정의
@@ -42,6 +44,9 @@ export default function App() {
           {/* 팀 및 개인 관리 페이지 */}
           <Route path="team" element={<TeamManagement />} />
           <Route path="mypage" element={<MyPage />} />
+
+          {/* ⭐ 팀 가입 경로 추가 */}
+        <Route path="/team/join" element={<TeamJoin />} />
         </Route>
       </Routes>
     </BrowserRouter>
