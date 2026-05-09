@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install",
   "rewrites": [
     { "source": "/api/kauth/(.*)", "destination": "https://kauth.kakao.com/$1" },
     { "source": "/api/kapi/(.*)", "destination": "https://kapi.kakao.com/$1" },
