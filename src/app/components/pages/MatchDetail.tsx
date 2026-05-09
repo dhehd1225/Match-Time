@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ArrowLeft, MapPin, Users, Send, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { trackEvent } from '../../../hooks/useAnalytics';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Match } from '../../../lib/types';
 
@@ -56,6 +57,7 @@ export default function MatchDetail() {
 
     if (!error) {
       setApplied(true);
+      trackEvent('match_apply', { match_id: match.id });
       // 홈팀 생성자에게 알림
       const { data: homeTeam } = await supabase
         .from('teams')

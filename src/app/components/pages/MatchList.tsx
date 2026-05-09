@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Search, MapPin, Plus, X, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
+import { trackEvent } from '../../../hooks/useAnalytics';
 import type { Match } from '../../../lib/types';
 
 const LEVELS = ['초급', '중급', '고급'];
@@ -142,6 +143,7 @@ export default function MatchList() {
         }
       }
 
+      trackEvent('match_create', { stadium: form.stadium, level: form.level, format: form.format });
       setForm(emptyForm);
       setShowForm(false);
     }

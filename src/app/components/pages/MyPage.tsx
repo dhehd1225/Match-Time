@@ -3,6 +3,7 @@ import { UserCheck, ChevronDown, ChevronUp, ArrowLeft, Bell, Trophy, Check, X, C
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
+import { trackEvent } from '../../../hooks/useAnalytics';
 import type { Notification } from '../../../lib/types';
 
 function getTeamCode(teamId: string) {
@@ -126,6 +127,7 @@ export function MyPage() {
     // 처리된 알림 자동 삭제
     await supabase.from('notifications').delete().eq('id', id);
     setNotifications(prev => prev.filter(n => n.id !== id));
+    trackEvent('notification_action', { type: notif.type, action });
   };
 
   const handleCopyCode = async (code: string, id?: string) => {
@@ -175,6 +177,7 @@ export function MyPage() {
     await refreshProfile();
     setCreating(false);
     setCreatedCode(getTeamCode(teamData.id));
+    trackEvent('team_create', { name: newTeamName.trim() });
   };
 
   // 팀 삭제 (팀 생성자만)

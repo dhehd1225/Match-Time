@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Download, ChevronRight, MapPin, Plus, X, Sparkles } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { supabase } from '../../../lib/supabase';
+import { trackEvent } from '../../../hooks/useAnalytics';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Match } from '../../../lib/types';
 
@@ -92,6 +93,7 @@ export default function MatchCard() {
       link.download = `match-card.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      trackEvent('card_download', { type: cardType });
     } catch (err) {
       console.error('Card generation failed:', err);
     }

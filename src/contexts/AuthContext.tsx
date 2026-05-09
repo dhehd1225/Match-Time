@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { setAnalyticsUser, trackEvent } from '../hooks/useAnalytics';
 import type { Profile, Team, TeamMember } from '../lib/types';
 
 interface AuthState {
@@ -93,8 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
+        setAnalyticsUser(s.user.id);
+        trackEvent('login');
         loadProfile(s.user.id);
       } else {
+        setAnalyticsUser(null);
         setProfile(null);
         setTeams([]);
         setMemberships([]);

@@ -1,7 +1,11 @@
 
   import { createRoot } from "react-dom/client";
+  import { inject } from "@vercel/analytics";
   import App from "./app/App.tsx";
   import "./styles/index.css";
+
+  // Vercel Analytics (페이지뷰, 방문자 자동 추적)
+  inject();
 
   // Kakao SDK 초기화
   declare global {

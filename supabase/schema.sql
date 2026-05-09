@@ -120,6 +120,15 @@ create table public.rankings (
   unique(team_id, category)
 );
 
+-- 11. ANALYTICS_EVENTS
+create table public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete set null,
+  event text not null,
+  metadata jsonb,
+  created_at timestamptz default now()
+);
+
 -- INDEXES
 create index idx_team_members_team on public.team_members(team_id);
 create index idx_team_members_user on public.team_members(user_id);
@@ -128,6 +137,8 @@ create index idx_matches_away on public.matches(away_team_id);
 create index idx_match_attendance_match on public.match_attendance(match_id);
 create index idx_chat_messages_room on public.chat_messages(room_id);
 create index idx_notifications_user on public.notifications(user_id);
+create index idx_analytics_event on public.analytics_events(event);
+create index idx_analytics_created on public.analytics_events(created_at);
 
 -- =========================================================
 -- RLS POLICIES
@@ -194,6 +205,32 @@ create policy "cm_insert" on public.chat_messages for insert with check (auth.ui
 create policy "notif_select" on public.notifications for select using (auth.uid() = user_id);
 create policy "notif_insert" on public.notifications for insert with check (auth.uid() is not null);
 create policy "notif_update" on public.notifications for update using (auth.uid() = user_id);
+
+-- DELETE POLICIES (팀 관리, 알림 삭제 등)
+create policy "teams_delete" on public.teams for delete using (auth.uid() = created_by);
+create policy "tm_delete" on public.team_members for delete using (
+  auth.uid() = user_id or exists (
+    select 1 from public.teams where id = team_members.team_id and created_by = auth.uid()
+  )
+);
+create policy "matches_delete" on public.matches for delete using (
+  exists (select 1 from public.teams where id = matches.home_team_id and created_by = auth.uid())
+);
+create policy "att_delete" on public.match_attendance for delete using (
+  auth.uid() = user_id or exists (
+    select 1 from public.teams t join public.matches m on m.home_team_id = t.id
+    where m.id = match_attendance.match_id and t.created_by = auth.uid()
+  )
+);
+create policy "notif_delete" on public.notifications for delete using (auth.uid() = user_id);
+create policy "lineups_delete" on public.lineups for delete using (auth.uid() is not null);
+create policy "cr_delete" on public.chat_rooms for delete using (auth.uid() is not null);
+create policy "cm_delete" on public.chat_messages for delete using (auth.uid() is not null);
+
+-- ANALYTICS
+alter table public.analytics_events enable row level security;
+create policy "analytics_insert" on public.analytics_events for insert with check (auth.uid() is not null);
+create policy "analytics_select" on public.analytics_events for select using (auth.uid() is not null);
 
 -- RANKINGS
 create policy "rankings_select" on public.rankings for select using (true);
