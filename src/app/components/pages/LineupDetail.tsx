@@ -227,12 +227,14 @@ export default function LineupDetail() {
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
   const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : '#DC143C';
+  const isTeamCreator = team?.created_by === user?.id;
 
   const attendingPlayers = players.filter(p => p.status === 'attending');
   const notAttendingPlayers = players.filter(p => p.status === 'not-attending');
   const pendingPlayers = players.filter(p => p.status === null);
 
   const handleFieldTap = (i: number) => {
+    if (!isTeamCreator) return;
     if (!selectedSlot) { setSelectedSlot({ type: 'field', index: i }); return; }
     if (selectedSlot.type === 'field' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     const nl = [...currentLineup];
@@ -243,6 +245,7 @@ export default function LineupDetail() {
   };
 
   const handleBenchTap = (i: number) => {
+    if (!isTeamCreator) return;
     if (!selectedSlot) { setSelectedSlot({ type: 'bench', index: i }); return; }
     if (selectedSlot.type === 'bench' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     if (selectedSlot.type === 'field') {
@@ -295,17 +298,33 @@ export default function LineupDetail() {
         <span className="flex items-center gap-1"><Users size={11} />{match.format}</span>
       </div>
 
-      {/* My Attendance */}
+      {/* My Attendance - 상태 표시 + 변경 토글 */}
       {user && (
         <div className="px-4 pt-3">
-          <div className="flex gap-2">
-            <button onClick={() => handleAttendance('attending')}
-              className={`flex-1 py-2 rounded-xl text-sm font-bold ${myAttendance === 'attending' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
-              <Check size={14} className="inline mr-1" />참여
-            </button>
-            <button onClick={() => handleAttendance('not-attending')}
-              className={`flex-1 py-2 rounded-xl text-sm font-bold ${myAttendance === 'not-attending' ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
-              <X size={14} className="inline mr-1" />불참
+          <div className="flex items-center justify-between bg-[#111] rounded-xl border border-white/5 px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              {myAttendance === 'attending' ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-medium text-emerald-400">참여 중</span>
+                </>
+              ) : myAttendance === 'not-attending' ? (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="text-sm font-medium text-red-400">불참</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 rounded-full bg-gray-500" />
+                  <span className="text-sm font-medium text-gray-400">미응답</span>
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => handleAttendance(myAttendance === 'attending' ? 'not-attending' : 'attending')}
+              className="text-xs text-gray-500 px-3 py-1.5 rounded-lg bg-white/5 active:scale-95 transition-all"
+            >
+              {myAttendance === 'attending' ? '불참으로 변경' : '참여로 변경'}
             </button>
           </div>
         </div>
@@ -365,7 +384,7 @@ export default function LineupDetail() {
             ))}
           </div>
 
-          {activeQuarter !== '1Q' && (
+          {isTeamCreator && activeQuarter !== '1Q' && (
             <div className="flex gap-2 mb-3">
               {quarters.filter(q => q !== activeQuarter).map(q => (
                 <button key={q} onClick={() => setQuarterLineups(prev => ({ ...prev, [activeQuarter]: [...prev[q]] }))}
@@ -376,12 +395,19 @@ export default function LineupDetail() {
             </div>
           )}
 
-          <div className="flex gap-2 mb-3">
-            {Object.keys(formations).map(f => (
-              <button key={f} onClick={() => handleFormationChange(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-white/5 text-gray-500'}`}>{f}</button>
-            ))}
-          </div>
+          {isTeamCreator ? (
+            <div className="flex gap-2 mb-3">
+              {Object.keys(formations).map(f => (
+                <button key={f} onClick={() => handleFormationChange(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-white/5 text-gray-500'}`}>{f}</button>
+              ))}
+            </div>
+          ) : (
+            <div className="mb-3 bg-[#111] rounded-xl border border-white/5 px-3 py-2">
+              <span className="text-xs text-gray-500">포메이션: </span>
+              <span className="text-xs font-bold text-white">{formation}</span>
+            </div>
+          )}
 
           {selectedSlot && (
             <div className="mb-3 bg-yellow-500/10 rounded-xl px-3 py-2 flex items-center gap-2">
@@ -434,10 +460,12 @@ export default function LineupDetail() {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold text-white">교체 <span className="text-gray-500 font-normal">{benchPlayers.length}명</span></span>
-              <button onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
-                <UserPlus size={12} /> 추가
-              </button>
+              {isTeamCreator && (
+                <button onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
+                  <UserPlus size={12} /> 추가
+                </button>
+              )}
             </div>
             {benchPlayers.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-2">

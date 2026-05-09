@@ -1,4 +1,7 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { MessageCircle } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
 function MatchTimeLogo() {
   return (
@@ -20,12 +23,59 @@ function MatchTimeLogo() {
 }
 
 export default function Auth() {
+  const navigate = useNavigate();
+  const [showDevLogin, setShowDevLogin] = useState(false);
+  const [devEmail, setDevEmail] = useState('test@kickoff.local');
+  const [devPassword, setDevPassword] = useState('test1234');
+  const [devName, setDevName] = useState('테스트유저');
+  const [devLoading, setDevLoading] = useState(false);
+  const [devError, setDevError] = useState('');
+
   const handleLogin = () => {
     if (window.Kakao && window.Kakao.isInitialized()) {
       window.Kakao.Auth.authorize({
         redirectUri: `${window.location.origin}/oauth/kakao/callback`,
       });
     }
+  };
+
+  const handleDevLogin = async () => {
+    setDevLoading(true);
+    setDevError('');
+
+    // 로그인 시도
+    let { error: signInError } = await supabase.auth.signInWithPassword({
+      email: devEmail,
+      password: devPassword,
+    });
+
+    if (signInError) {
+      // 로그인 실패 → 회원가입 시도
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: devEmail,
+        password: devPassword,
+        options: { data: { name: devName } },
+      });
+
+      if (signUpError) {
+        setDevError(signUpError.message);
+        setDevLoading(false);
+        return;
+      }
+
+      // 프로필 생성
+      if (signUpData.user) {
+        await supabase.from('profiles').upsert({
+          id: signUpData.user.id,
+          kakao_id: devEmail,
+          name: devName,
+          position: 'MF',
+        });
+      }
+    }
+
+    setDevLoading(false);
+    navigate('/matches');
   };
 
   return (
@@ -54,6 +104,53 @@ export default function Auth() {
         <p className="text-xs text-gray-600 px-4 leading-relaxed">
           로그인 시 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
         </p>
+
+        {/* 개발용 테스트 로그인 */}
+        <div className="mt-10 border-t border-white/5 pt-6">
+          <button
+            onClick={() => setShowDevLogin(!showDevLogin)}
+            className="text-[10px] text-gray-600 hover:text-gray-400"
+          >
+            {showDevLogin ? '테스트 로그인 닫기' : '🔧 개발용 테스트 로그인'}
+          </button>
+
+          {showDevLogin && (
+            <div className="mt-4 space-y-3 text-left">
+              <input
+                type="text"
+                placeholder="이름"
+                value={devName}
+                onChange={e => setDevName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+              />
+              <input
+                type="email"
+                placeholder="이메일"
+                value={devEmail}
+                onChange={e => setDevEmail(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+              />
+              <input
+                type="password"
+                placeholder="비밀번호"
+                value={devPassword}
+                onChange={e => setDevPassword(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+              />
+              {devError && <p className="text-red-400 text-xs">{devError}</p>}
+              <button
+                onClick={handleDevLogin}
+                disabled={devLoading}
+                className="w-full bg-white/10 text-white py-3 rounded-xl font-semibold text-sm hover:bg-white/15 transition-colors disabled:opacity-50"
+              >
+                {devLoading ? '처리 중...' : '테스트 계정 로그인 / 생성'}
+              </button>
+              <p className="text-[10px] text-gray-600 text-center">
+                계정이 없으면 자동 생성됩니다
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

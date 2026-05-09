@@ -97,7 +97,7 @@ export default function MatchList() {
     }
     setSubmitting(true);
 
-    const { error } = await supabase.from('matches').insert({
+    const { data: matchData, error } = await supabase.from('matches').insert({
       date: form.date,
       time: form.time,
       region: form.region,
@@ -107,12 +107,41 @@ export default function MatchList() {
       home_team_id: team.id,
       created_by: user.id,
       status: 'open',
-    });
+    }).select('id').single();
 
-    if (error) {
+    if (error || !matchData) {
       console.error('매치 생성 실패:', error);
       alert('매치 생성에 실패했습니다. 다시 시도해주세요.');
     } else {
+      // 생성자 자동 참여 등록
+      await supabase.from('match_attendance').insert({
+        match_id: matchData.id,
+        user_id: user.id,
+        status: 'attending',
+      });
+
+      // 팀원들에게 참여 투표 알림 발송
+      const { data: members } = await supabase
+        .from('team_members')
+        .select('user_id')
+        .eq('team_id', team.id);
+
+      if (members) {
+        const notifs = members
+          .filter(m => m.user_id !== user.id)
+          .map(m => ({
+            user_id: m.user_id,
+            type: 'match_vote' as const,
+            title: '시합 참여 투표',
+            description: `${formatDate(form.date)} ${form.time.slice(0, 5)} ${form.stadium}에서 시합이 잡혔습니다.`,
+            related_id: matchData.id,
+          }));
+
+        if (notifs.length > 0) {
+          await supabase.from('notifications').insert(notifs);
+        }
+      }
+
       setForm(emptyForm);
       setShowForm(false);
     }
@@ -271,13 +300,17 @@ export default function MatchList() {
         )}
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => setShowForm(true)}
-        className="fixed bottom-20 right-4 z-20 bg-[#7B2D3B] text-white p-4 rounded-full shadow-lg active:scale-95 transition-transform"
-      >
-        <Plus size={20} />
-      </button>
+      {/* FAB - 팀 생성자만 시합 생성 가능 */}
+      {team?.created_by === user?.id && (
+        <div className="fixed bottom-20 left-0 right-0 max-w-[430px] mx-auto z-20 pointer-events-none">
+          <button
+            onClick={() => setShowForm(true)}
+            className="absolute right-4 bottom-0 pointer-events-auto bg-[#7B2D3B] text-white p-4 rounded-full shadow-lg active:scale-95 transition-transform"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+      )}
 
       {/* New Match Form */}
       {showForm && (

@@ -1,7 +1,7 @@
 {
-  "framework": "vite",
-  "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
-  "installCommand": "pnpm install --no-frozen-lockfile",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/kauth/(.*)", "destination": "https://kauth.kakao.com/$1" },
+    { "source": "/api/kapi/(.*)", "destination": "https://kapi.kakao.com/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

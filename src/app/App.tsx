@@ -15,6 +15,7 @@ import { MyPage } from './components/pages/MyPage';
 import { TeamJoin } from './components/pages/TeamJoin';
 import KakaoCallback from './components/pages/KakaoCallback';
 import Chat from './components/pages/Chat';
+import MatchCard from './components/pages/MatchCard';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="lineup" element={<LineupBuilder />} />
             <Route path="lineup/:id" element={<LineupDetail />} />
             <Route path="team" element={<TeamManagement />} />
+            <Route path="cards" element={<MatchCard />} />
             <Route path="chat" element={<Chat />} />
             <Route path="mypage" element={<MyPage />} />
           </Route>

@@ -62,7 +62,7 @@ export default function LineupBuilder() {
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
 
   useEffect(() => {
-    if (!team) { setLoading(false); return; }
+    if (!team || !user) { setLoading(false); return; }
 
     const fetchData = async () => {
       // Fetch my team's matches
@@ -74,11 +74,20 @@ export default function LineupBuilder() {
         .order('date', { ascending: true });
 
       if (matchesData) {
-        setMyMatches(matchesData);
+        // 내가 참여(attending)한 경기만 필터링
+        const { data: userAttendance } = await supabase
+          .from('match_attendance')
+          .select('match_id')
+          .eq('user_id', user.id)
+          .eq('status', 'attending');
+
+        const attendingMatchIds = new Set(userAttendance?.map(a => a.match_id) || []);
+        const myFilteredMatches = matchesData.filter(m => attendingMatchIds.has(m.id));
+        setMyMatches(myFilteredMatches);
 
         // Fetch attendance counts
         const counts: Record<string, { attending: number; total: number }> = {};
-        for (const m of matchesData) {
+        for (const m of myFilteredMatches) {
           const { data: att } = await supabase
             .from('match_attendance')
             .select('status')
@@ -118,7 +127,7 @@ export default function LineupBuilder() {
     };
 
     fetchData();
-  }, [team]);
+  }, [team, user]);
 
   const positions = formations[formation] || formations['4-3-3'];
   const currentLineup = quarterLineups[activeQuarter];
@@ -126,8 +135,10 @@ export default function LineupBuilder() {
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
   const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : '#DC143C';
+  const isTeamCreator = team?.created_by === user?.id;
 
   const handleFieldTap = (i: number) => {
+    if (!isTeamCreator) return;
     if (!selectedSlot) { setSelectedSlot({ type: 'field', index: i }); return; }
     if (selectedSlot.type === 'field' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     const nl = [...currentLineup];
@@ -138,6 +149,7 @@ export default function LineupBuilder() {
   };
 
   const handleBenchTap = (i: number) => {
+    if (!isTeamCreator) return;
     if (!selectedSlot) { setSelectedSlot({ type: 'bench', index: i }); return; }
     if (selectedSlot.type === 'bench' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     if (selectedSlot.type === 'field') {
@@ -249,7 +261,7 @@ export default function LineupBuilder() {
             ))}
           </div>
 
-          {activeQuarter !== '1Q' && (
+          {isTeamCreator && activeQuarter !== '1Q' && (
             <div className="flex gap-2 mb-3">
               {quartersArr.filter(q => q !== activeQuarter).map(q => (
                 <button key={q} onClick={() => setQuarterLineups(prev => ({ ...prev, [activeQuarter]: [...prev[q]] }))}
@@ -260,14 +272,21 @@ export default function LineupBuilder() {
             </div>
           )}
 
-          <div className="flex gap-2 mb-3">
-            {Object.keys(formations).map(f => (
-              <button key={f} onClick={() => handleFormationChange(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-white/5 text-gray-500'}`}>
-                {f}
-              </button>
-            ))}
-          </div>
+          {isTeamCreator ? (
+            <div className="flex gap-2 mb-3">
+              {Object.keys(formations).map(f => (
+                <button key={f} onClick={() => handleFormationChange(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-white/5 text-gray-500'}`}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="mb-3 bg-[#111] rounded-xl border border-white/5 px-3 py-2">
+              <span className="text-xs text-gray-500">포메이션: </span>
+              <span className="text-xs font-bold text-white">{formation}</span>
+            </div>
+          )}
 
           {selectedSlot && (
             <div className="mb-3 bg-yellow-500/10 rounded-xl px-3 py-2 flex items-center gap-2">
@@ -327,10 +346,12 @@ export default function LineupBuilder() {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold text-white">교체 <span className="text-gray-500 font-normal">{benchPlayers.length}명</span></span>
-              <button onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
-                <UserPlus size={12} /> 추가
-              </button>
+              {isTeamCreator && (
+                <button onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
+                  <UserPlus size={12} /> 추가
+                </button>
+              )}
             </div>
             {benchPlayers.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-2">

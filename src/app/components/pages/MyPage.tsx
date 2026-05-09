@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserCheck, ChevronDown, ChevronUp, ArrowLeft, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy, Instagram, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { UserCheck, ChevronDown, ChevronUp, ArrowLeft, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy, Instagram, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
@@ -55,10 +55,18 @@ export function MyPage() {
     if (!user) return;
 
     const fetchNotifications = async () => {
+      // 처리된 알림 자동 삭제
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id)
+        .neq('status', 'pending');
+
       const { data } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
       if (data) setNotifications(data);
     };
@@ -93,24 +101,31 @@ export function MyPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const pendingCount = notifications.filter(n => n.status === 'pending').length;
+  const pendingCount = notifications.length;
 
   const handleAction = async (id: string, action: 'accepted' | 'rejected') => {
     const notif = notifications.find(n => n.id === id);
     if (!notif) return;
 
-    await supabase.from('notifications').update({ status: action }).eq('id', id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: action } : n));
-
-    if (action === 'accepted') {
-      if (notif.type === 'match_request' && notif.related_id) {
+    // 알림 유형별 처리
+    if (notif.type === 'match_request' && notif.related_id) {
+      if (action === 'accepted') {
         await supabase.from('matches').update({ status: 'confirmed' }).eq('id', notif.related_id);
-      }
-    } else if (action === 'rejected') {
-      if (notif.type === 'match_request' && notif.related_id) {
+      } else {
         await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
       }
+    } else if (notif.type === 'match_vote' && notif.related_id && user) {
+      // 시합 참여/불참 처리
+      await supabase.from('match_attendance').upsert({
+        match_id: notif.related_id,
+        user_id: user.id,
+        status: action === 'accepted' ? 'attending' : 'not-attending',
+      }, { onConflict: 'match_id,user_id' });
     }
+
+    // 처리된 알림 자동 삭제
+    await supabase.from('notifications').delete().eq('id', id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const handleCopyCode = async (code: string, id?: string) => {
@@ -154,12 +169,56 @@ export function MyPage() {
     await supabase.from('team_members').insert({
       team_id: teamData.id,
       user_id: user.id,
-      role: 'member',
+      role: 'president',
     });
 
     await refreshProfile();
     setCreating(false);
     setCreatedCode(getTeamCode(teamData.id));
+  };
+
+  // 팀 삭제 (팀 생성자만)
+  const handleDeleteTeam = async (teamId: string) => {
+    if (!confirm('정말 이 팀을 삭제하시겠습니까?\n모든 팀원, 경기, 기록이 삭제됩니다.')) return;
+
+    try {
+      // 관련 매치 정리
+      const { data: homeMatches } = await supabase
+        .from('matches')
+        .select('id')
+        .eq('home_team_id', teamId);
+
+      if (homeMatches?.length) {
+        const matchIds = homeMatches.map(m => m.id);
+        await supabase.from('match_attendance').delete().in('match_id', matchIds);
+        await supabase.from('lineups').delete().in('match_id', matchIds);
+        await supabase.from('notifications').delete().in('related_id', matchIds);
+        await supabase.from('matches').delete().eq('home_team_id', teamId);
+      }
+
+      // 어웨이로 등록된 매치 해제
+      await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('away_team_id', teamId);
+
+      // 채팅방 정리
+      const { data: rooms } = await supabase.from('chat_rooms').select('id').eq('team_id', teamId);
+      if (rooms?.length) {
+        for (const r of rooms) {
+          await supabase.from('chat_messages').delete().eq('room_id', r.id);
+        }
+        await supabase.from('chat_rooms').delete().eq('team_id', teamId);
+      }
+
+      // 팀 멤버 삭제
+      await supabase.from('team_members').delete().eq('team_id', teamId);
+
+      // 팀 삭제
+      const { error } = await supabase.from('teams').delete().eq('id', teamId);
+      if (error) throw error;
+
+      await refreshProfile();
+    } catch {
+      alert('팀 삭제에 실패했습니다.');
+    }
   };
 
   const resetCreateForm = () => {
@@ -360,6 +419,15 @@ export function MyPage() {
                     >
                       {copiedTeamId === t.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                     </button>
+                    {t.created_by === user?.id && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteTeam(t.id); }}
+                        className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+                        title="팀 삭제"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                     {t.id === team?.id && (
                       <span className="text-[9px] bg-[#7B2D3B] text-white px-1.5 py-0.5 rounded-full">선택됨</span>
                     )}
@@ -533,9 +601,7 @@ export function MyPage() {
         ) : (
           <div className="space-y-2">
             {notifications.map(notif => (
-              <div key={notif.id} className={`bg-[#111] rounded-2xl border p-4 transition-all ${
-                notif.status === 'pending' ? 'border-white/10' : 'border-white/5 opacity-50'
-              }`}>
+              <div key={notif.id} className="bg-[#111] rounded-2xl border border-white/10 p-4 transition-all">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{getIcon(notif.type)}</div>
                   <div className="flex-1 min-w-0">
@@ -545,39 +611,31 @@ export function MyPage() {
                     </div>
                     <p className="text-xs text-gray-400 mb-2.5">{notif.description}</p>
 
-                    {notif.status === 'pending' ? (
-                      <div className="flex gap-2">
-                        {notif.type === 'match_vote' ? (
-                          <>
-                            <button onClick={() => handleAction(notif.id, 'accepted')}
-                              className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
-                              <Check size={13} /> 참여
-                            </button>
-                            <button onClick={() => handleAction(notif.id, 'rejected')}
-                              className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">
-                              <X size={13} /> 불참
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button onClick={() => handleAction(notif.id, 'accepted')}
-                              className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
-                              <Check size={13} /> 수락
-                            </button>
-                            <button onClick={() => handleAction(notif.id, 'rejected')}
-                              className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">
-                              <X size={13} /> 거절
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <span className={`text-[11px] font-medium ${
-                        notif.status === 'accepted' ? 'text-emerald-400' : 'text-red-400'
-                      }`}>
-                        {notif.status === 'accepted' ? '수락됨' : '거절됨'}
-                      </span>
-                    )}
+                    <div className="flex gap-2">
+                      {notif.type === 'match_vote' ? (
+                        <>
+                          <button onClick={() => handleAction(notif.id, 'accepted')}
+                            className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
+                            <Check size={13} /> 참여
+                          </button>
+                          <button onClick={() => handleAction(notif.id, 'rejected')}
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">
+                            <X size={13} /> 불참
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => handleAction(notif.id, 'accepted')}
+                            className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
+                            <Check size={13} /> 수락
+                          </button>
+                          <button onClick={() => handleAction(notif.id, 'rejected')}
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">
+                            <X size={13} /> 거절
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

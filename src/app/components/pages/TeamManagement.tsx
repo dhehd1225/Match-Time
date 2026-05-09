@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowLeft } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, ArrowLeft, UserMinus } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -14,12 +14,19 @@ const positionColors: Record<string, string> = {
 
 export default function TeamManagement() {
   const navigate = useNavigate();
-  const { team } = useAuth();
+  const { team, user } = useAuth();
+  const isTeamCreator = team?.created_by === user?.id;
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<string>('전체');
   const positions = ['전체', 'GK', 'DF', 'MF', 'FW'];
+
+  const handleRemoveMember = async (memberId: string, memberUserId: string) => {
+    if (memberUserId === user?.id) return;
+    if (!confirm('이 팀원을 팀에서 제거하시겠습니까?')) return;
+    await supabase.from('team_members').delete().eq('id', memberId);
+  };
 
   const fetchMembers = async () => {
     if (!team) { setLoading(false); return; }
@@ -148,8 +155,17 @@ export default function TeamManagement() {
                   <span className="text-[11px] text-emerald-400">{member.assists}도움</span>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="flex items-center gap-2">
                 <p className="text-sm font-bold text-white">{member.rating}</p>
+                {isTeamCreator && member.user_id !== user?.id && (
+                  <button
+                    onClick={() => handleRemoveMember(member.id, member.user_id)}
+                    className="p-1.5 text-gray-600 hover:text-red-400 transition-colors"
+                    title="팀원 제거"
+                  >
+                    <UserMinus size={14} />
+                  </button>
+                )}
               </div>
             </div>
           );

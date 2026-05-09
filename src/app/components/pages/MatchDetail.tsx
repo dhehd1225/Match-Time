@@ -17,6 +17,9 @@ export default function MatchDetail() {
   useEffect(() => {
     if (!id) return;
 
+    setApplied(false);
+    setLoading(true);
+
     const fetchMatch = async () => {
       const { data } = await supabase
         .from('matches')
@@ -53,23 +56,21 @@ export default function MatchDetail() {
 
     if (!error) {
       setApplied(true);
-      // 홈팀 회장에게 알림
-      const { data: homePresidents } = await supabase
-        .from('team_members')
-        .select('user_id')
-        .eq('team_id', match.home_team_id)
-        .eq('role', 'president');
+      // 홈팀 생성자에게 알림
+      const { data: homeTeam } = await supabase
+        .from('teams')
+        .select('created_by')
+        .eq('id', match.home_team_id)
+        .single();
 
-      if (homePresidents) {
-        for (const p of homePresidents) {
-          await supabase.from('notifications').insert({
-            user_id: p.user_id,
-            type: 'match_request',
-            title: '시합 신청',
-            description: `${team.name}이(가) 시합을 신청했습니다.`,
-            related_id: match.id,
-          });
-        }
+      if (homeTeam) {
+        await supabase.from('notifications').insert({
+          user_id: homeTeam.created_by,
+          type: 'match_request',
+          title: '시합 신청',
+          description: `${team.name}이(가) 시합을 신청했습니다.`,
+          related_id: match.id,
+        });
       }
     }
     setApplying(false);
@@ -98,7 +99,8 @@ export default function MatchDetail() {
 
   const isMyTeamHome = team?.id === match.home_team_id;
   const isMyTeamAway = team?.id === match.away_team_id;
-  const canApply = team && !isMyTeamHome && !match.away_team_id && !applied;
+  const isTeamCreator = team?.created_by === user?.id;
+  const canApply = team && isTeamCreator && !isMyTeamHome && !match.away_team_id && !applied;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-8">

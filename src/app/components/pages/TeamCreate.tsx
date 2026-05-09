@@ -47,7 +47,7 @@ export function TeamCreate() {
       .insert({
         team_id: teamData.id,
         user_id: user.id,
-        role: 'member',
+        role: 'president',
       });
 
     if (memberError) {

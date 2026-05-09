@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { Home, Trophy, MessageCircle, Users } from 'lucide-react';
+import { Home, Trophy, Image, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -37,18 +37,20 @@ export default function MainLayout() {
   const navItems = [
     { icon: Home, label: '매치', path: '/matches' },
     { icon: Trophy, label: '라인업', path: '/lineup' },
-    { icon: MessageCircle, label: '채팅', path: '/chat' },
+    { icon: Image, label: '카드', path: '/cards' },
     { icon: Users, label: '마이', path: '/mypage' },
   ];
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
-      <main className="flex-1 overflow-auto pb-20">
-        <Outlet />
+      <main className="flex-1 overflow-auto hide-scrollbar">
+        <div className="pb-20">
+          <Outlet />
+        </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#111] border-t border-white/5">
-        <div className="flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#111]/95 backdrop-blur-md border-t border-white/10">
+        <div className="flex justify-around items-center h-16 pb-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
