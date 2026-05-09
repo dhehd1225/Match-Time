@@ -1,115 +1,125 @@
-import { useState } from 'react';
-import { Search, TrendingUp, TrendingDown, Award, Target, UserPlus } from 'lucide-react';
-
-interface Player {
-  id: number;
-  name: string;
-  number: number;
-  position: string;
-  appearances: number;
-  goals: number;
-  assists: number;
-  rating: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
-const players: Player[] = [
-  { id: 1, name: '김민수', number: 1, position: 'GK', appearances: 15, goals: 0, assists: 0, rating: 7.8, trend: 'up' },
-  { id: 2, name: '이준호', number: 2, position: 'DF', appearances: 14, goals: 2, assists: 3, rating: 7.5, trend: 'stable' },
-  { id: 3, name: '박성훈', number: 3, position: 'DF', appearances: 15, goals: 1, assists: 2, rating: 7.6, trend: 'up' },
-  { id: 4, name: '최지훈', number: 4, position: 'DF', appearances: 12, goals: 0, assists: 1, rating: 7.2, trend: 'down' },
-  { id: 5, name: '정대현', number: 5, position: 'DF', appearances: 13, goals: 3, assists: 1, rating: 7.4, trend: 'stable' },
-  { id: 6, name: '강태양', number: 6, position: 'MF', appearances: 15, goals: 5, assists: 7, rating: 8.2, trend: 'up' },
-  { id: 7, name: '윤재민', number: 7, position: 'MF', appearances: 14, goals: 4, assists: 6, rating: 7.9, trend: 'up' },
-  { id: 8, name: '한동수', number: 8, position: 'MF', appearances: 11, goals: 2, assists: 4, rating: 7.3, trend: 'stable' },
-  { id: 9, name: '서준영', number: 9, position: 'FW', appearances: 15, goals: 12, assists: 3, rating: 8.5, trend: 'up' },
-  { id: 10, name: '오현우', number: 10, position: 'FW', appearances: 14, goals: 10, assists: 5, rating: 8.3, trend: 'stable' },
-  { id: 11, name: '임태규', number: 11, position: 'FW', appearances: 13, goals: 8, assists: 4, rating: 7.8, trend: 'down' },
-];
+import { useState, useEffect } from 'react';
+import { Search, TrendingUp, TrendingDown, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import type { TeamMember } from '../../../lib/types';
 
 const positionColors: Record<string, string> = {
-  GK: 'bg-yellow-500',
-  DF: 'bg-blue-500',
-  MF: 'bg-green-500',
-  FW: 'bg-red-500',
+  GK: 'text-yellow-500',
+  DF: 'text-blue-400',
+  MF: 'text-emerald-400',
+  FW: 'text-red-400',
 };
 
 export default function TeamManagement() {
+  const navigate = useNavigate();
+  const { team } = useAuth();
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<string>('전체');
-
   const positions = ['전체', 'GK', 'DF', 'MF', 'FW'];
 
-  const filteredPlayers = players.filter(player => {
-    const matchesSearch = player.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPosition = selectedPosition === '전체' || player.position === selectedPosition;
+  const fetchMembers = async () => {
+    if (!team) { setLoading(false); return; }
+    const { data } = await supabase
+      .from('team_members')
+      .select('*, profile:profiles(*)')
+      .eq('team_id', team.id)
+      .order('joined_at', { ascending: true });
+
+    if (data) setMembers(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchMembers();
+
+    if (!team) return;
+    const channel = supabase
+      .channel('team-members-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `team_id=eq.${team.id}` }, () => {
+        fetchMembers();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [team]);
+
+  const filteredMembers = members.filter(m => {
+    const name = m.profile?.name || '';
+    const pos = m.profile?.position || '';
+    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPosition = selectedPosition === '전체' || pos === selectedPosition;
     return matchesSearch && matchesPosition;
   });
 
-  const topScorer = players.reduce((prev, current) =>
-    (prev.goals > current.goals) ? prev : current
-  );
+  const topScorer = members.length > 0 ? members.reduce((prev, c) => (prev.goals > c.goals) ? prev : c) : null;
+  const topAssist = members.length > 0 ? members.reduce((prev, c) => (prev.assists > c.assists) ? prev : c) : null;
+  const mvp = members.length > 0 ? members.reduce((prev, c) => (prev.rating > c.rating) ? prev : c) : null;
 
-  const topAssist = players.reduce((prev, current) =>
-    (prev.assists > current.assists) ? prev : current
-  );
-
-  const mvp = players.reduce((prev, current) =>
-    (prev.rating > current.rating) ? prev : current
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-gray-500 text-sm">로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-8">
+    <div className="min-h-screen bg-[#0a0a0a] pb-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-700 to-red-600 text-white p-4 shadow-lg">
-        <h1 className="text-2xl font-bold mb-2">경축</h1>
-        <p className="text-sm text-red-100">팀 선수 명단 및 통계</p>
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
+        <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
+          <ArrowLeft size={22} />
+        </button>
+        <div>
+          <h1 className="text-lg font-bold text-white">{team?.name || '팀'}</h1>
+          <p className="text-xs text-gray-500">선수 {members.length}명</p>
+        </div>
       </div>
 
-      {/* Team Stats Cards */}
+      {/* Top Stats */}
       <div className="grid grid-cols-3 gap-3 p-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm text-center">
-          <Award className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-          <p className="text-xs text-gray-600 mb-1">MVP</p>
-          <p className="font-bold text-sm">{mvp.name}</p>
-          <p className="text-xs text-gray-500">{mvp.rating}</p>
+        <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
+          <p className="text-[10px] text-gray-600 mb-1">MVP</p>
+          <p className="font-bold text-sm text-white">{mvp?.profile?.name || '-'}</p>
+          <p className="text-xs text-yellow-500">{mvp?.rating || '-'}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm text-center">
-          <Target className="w-6 h-6 text-red-500 mx-auto mb-2" />
-          <p className="text-xs text-gray-600 mb-1">득점왕</p>
-          <p className="font-bold text-sm">{topScorer.name}</p>
-          <p className="text-xs text-gray-500">{topScorer.goals}골</p>
+        <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
+          <p className="text-[10px] text-gray-600 mb-1">득점왕</p>
+          <p className="font-bold text-sm text-white">{topScorer?.profile?.name || '-'}</p>
+          <p className="text-xs text-red-400">{topScorer ? `${topScorer.goals}골` : '-'}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm text-center">
-          <UserPlus className="w-6 h-6 text-green-500 mx-auto mb-2" />
-          <p className="text-xs text-gray-600 mb-1">도움왕</p>
-          <p className="font-bold text-sm">{topAssist.name}</p>
-          <p className="text-xs text-gray-500">{topAssist.assists}개</p>
+        <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
+          <p className="text-[10px] text-gray-600 mb-1">도움왕</p>
+          <p className="font-bold text-sm text-white">{topAssist?.profile?.name || '-'}</p>
+          <p className="text-xs text-emerald-400">{topAssist ? `${topAssist.assists}개` : '-'}</p>
         </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search + Filter */}
       <div className="px-4 mb-4">
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
           <input
             type="text"
-            placeholder="선수 이름 검색"
+            placeholder="선수 검색"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 bg-[#111] border border-white/10 rounded-xl text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#7B2D3B]/50"
           />
         </div>
-
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2">
           {positions.map(pos => (
             <button
               key={pos}
               onClick={() => setSelectedPosition(pos)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 selectedPosition === pos
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-[#7B2D3B] text-white'
+                  : 'bg-white/5 text-gray-500'
               }`}
             >
               {pos}
@@ -118,89 +128,41 @@ export default function TeamManagement() {
         </div>
       </div>
 
-      {/* Players Table */}
-      <div className="px-4">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {/* Table Header */}
-          <div className="bg-gray-50 px-4 py-3 grid grid-cols-12 gap-2 text-xs font-semibold text-gray-700 border-b border-gray-200">
-            <div className="col-span-1 text-center">#</div>
-            <div className="col-span-3">선수명</div>
-            <div className="col-span-1 text-center">POS</div>
-            <div className="col-span-2 text-center">출전</div>
-            <div className="col-span-2 text-center">득점</div>
-            <div className="col-span-2 text-center">도움</div>
-            <div className="col-span-1 text-center"></div>
-          </div>
-
-          {/* Table Body */}
-          <div className="divide-y divide-gray-100">
-            {filteredPlayers.length > 0 ? (
-              filteredPlayers.map(player => (
-                <div
-                  key={player.id}
-                  className="px-4 py-3 grid grid-cols-12 gap-2 items-center hover:bg-gray-50 transition-colors"
-                >
-                  {/* Number */}
-                  <div className="col-span-1 pr-2">
-                    <div className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                      {player.number}
-                    </div>
-                  </div>
-
-                  {/* Name */}
-                  <div className="col-span-3 pl-1">
-                    <p className="font-semibold text-sm text-gray-900">{player.name}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-xs text-gray-500">평점 {player.rating}</span>
-                      {player.trend === 'up' && <TrendingUp size={12} className="text-green-500" />}
-                      {player.trend === 'down' && <TrendingDown size={12} className="text-red-500" />}
-                    </div>
-                  </div>
-
-                  {/* Position Badge */}
-                  <div className="col-span-1 flex justify-center">
-                    <span className={`${positionColors[player.position]} text-white text-xs px-2 py-1 rounded font-semibold`}>
-                      {player.position}
-                    </span>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="col-span-2 text-center">
-                    <span className="text-sm font-semibold text-gray-900">{player.appearances}</span>
-                    <span className="text-xs text-gray-500 ml-1">경기</span>
-                  </div>
-                  <div className="col-span-2 text-center">
-                    <span className="text-sm font-bold text-red-600">{player.goals}</span>
-                    <span className="text-xs text-gray-500 ml-1">골</span>
-                  </div>
-                  <div className="col-span-2 text-center">
-                    <span className="text-sm font-bold text-green-600">{player.assists}</span>
-                    <span className="text-xs text-gray-500 ml-1">도움</span>
-                  </div>
-
-                  {/* Action */}
-                  <div className="col-span-1 text-center">
-                    <button className="text-blue-600 hover:text-blue-700">
-                      <span className="text-xl">›</span>
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="px-4 py-8 text-center text-gray-500">
-                검색 결과가 없습니다.
+      {/* Player List */}
+      <div className="px-4 space-y-2">
+        {filteredMembers.map(member => {
+          const profile = member.profile;
+          return (
+            <div key={member.id} className="bg-[#111] rounded-2xl border border-white/5 p-3 flex items-center gap-3">
+              <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {profile?.back_number || '-'}
               </div>
-            )}
-          </div>
-        </div>
-      </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm text-white">{profile?.name || '이름 없음'}</p>
+                  <span className={`text-[10px] font-bold ${positionColors[profile?.position || 'MF']}`}>{profile?.position || 'MF'}</span>
+                  {member.role === 'president' && (
+                    <span className="text-[9px] bg-[#7B2D3B] text-white px-1.5 py-0.5 rounded-full">회장</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="text-[11px] text-gray-500">{member.appearances}경기</span>
+                  <span className="text-[11px] text-red-400">{member.goals}골</span>
+                  <span className="text-[11px] text-emerald-400">{member.assists}도움</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-white">{member.rating}</p>
+              </div>
+            </div>
+          );
+        })}
 
-      {/* Add Player Button */}
-      <div className="px-4 mt-4">
-        <button className="w-full bg-gradient-to-r from-red-700 to-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all">
-          <UserPlus size={20} />
-          새 선수 추가
-        </button>
+        {filteredMembers.length === 0 && (
+          <p className="text-center text-gray-600 py-8 text-sm">
+            {members.length === 0 ? '팀원이 없습니다' : '검색 결과가 없습니다'}
+          </p>
+        )}
       </div>
     </div>
   );

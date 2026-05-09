@@ -33,4 +33,19 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  server: {
+    proxy: {
+      '/api/kauth': {
+        target: 'https://kauth.kakao.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/kauth/, ''),
+      },
+      '/api/kapi': {
+        target: 'https://kapi.kakao.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/kapi/, ''),
+      },
+    },
+  },
 })
