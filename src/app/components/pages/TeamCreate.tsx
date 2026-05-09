@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Instagram, ArrowLeft, Copy, Check } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Instagram, ArrowLeft, Copy, Check, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -15,19 +15,51 @@ export function TeamCreate() {
   const [description, setDescription] = useState('');
   const [instagram, setInstagram] = useState('');
   const [logo, setLogo] = useState('\u26bd');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [createdTeamCode, setCreatedTeamCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogo('');
+    const reader = new FileReader();
+    reader.onload = () => setLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const handleCreateTeam = async () => {
     if (!name.trim() || !user) return;
     setSubmitting(true);
 
+    let logoValue = logo || '\u26bd';
+
+    if (logoFile) {
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('team-logos')
+        .upload(fileName, logoFile);
+      if (uploadError) {
+        alert('로고 업로드에 실패했습니다.');
+        setSubmitting(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage
+        .from('team-logos')
+        .getPublicUrl(fileName);
+      logoValue = urlData.publicUrl;
+    }
+
     const { data: teamData, error: teamError } = await supabase
       .from('teams')
       .insert({
         name: name.trim(),
-        logo,
+        logo: logoValue,
         description: description.trim() || null,
         instagram: instagram.trim() || null,
         created_by: user.id,
@@ -84,7 +116,13 @@ export function TeamCreate() {
   if (createdTeamCode) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
-        <div className="text-6xl mb-4">{logo}</div>
+        <div className="text-6xl mb-4">
+          {logoPreview ? (
+            <img src={logoPreview} alt="" className="w-24 h-24 rounded-full object-cover" />
+          ) : (
+            logo
+          )}
+        </div>
         <h2 className="text-2xl font-bold text-white mb-2">{name}</h2>
         <p className="text-gray-400 text-sm mb-8">\ud300\uc774 \uc0dd\uc131\ub418\uc5c8\uc2b5\ub2c8\ub2e4!</p>
 
@@ -124,19 +162,35 @@ export function TeamCreate() {
       </div>
 
       <div className="p-6">
-        {/* \ub85c\uace0 \uc120\ud0dd */}
-        <div className="flex justify-center mb-4">
-          <div className="w-24 h-24 bg-[#111] rounded-full flex items-center justify-center border-2 border-white/10 text-4xl">
-            {logo}
-          </div>
-        </div>
-        <div className="flex justify-center gap-2 mb-8 flex-wrap">
-          {emojis.map(e => (
-            <button key={e} onClick={() => setLogo(e)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${logo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#111] border border-white/10'}`}>
-              {e}
+        {/* 로고 선택 */}
+        <div className="flex flex-col items-center mb-4">
+          <div className="relative mb-3">
+            <div className="w-24 h-24 bg-[#111] rounded-full flex items-center justify-center border-2 border-white/10 overflow-hidden">
+              {logoPreview ? (
+                <img src={logoPreview} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-4xl">{logo}</span>
+              )}
+            </div>
+            <button onClick={() => logoInputRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#7B2D3B] rounded-full flex items-center justify-center">
+              <Camera size={14} className="text-white" />
             </button>
-          ))}
+            <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoFileChange} className="hidden" />
+          </div>
+          {logoPreview ? (
+            <button onClick={() => { setLogoFile(null); setLogoPreview(null); setLogo('\u26bd'); }}
+              className="text-xs text-gray-500 underline mb-4">이모지로 변경</button>
+          ) : (
+            <div className="flex justify-center gap-2 mb-8 flex-wrap">
+              {emojis.map(e => (
+                <button key={e} onClick={() => { setLogo(e); setLogoFile(null); setLogoPreview(null); }}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${logo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#111] border border-white/10'}`}>
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

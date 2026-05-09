@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { UserCheck, ChevronDown, ChevronUp, ArrowLeft, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy, Instagram, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { UserCheck, ChevronDown, ChevronUp, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy, Instagram, AlertCircle, CheckCircle2, Trash2, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
@@ -31,8 +31,11 @@ export function MyPage() {
   const [newTeamDesc, setNewTeamDesc] = useState('');
   const [newTeamInsta, setNewTeamInsta] = useState('');
   const [newTeamLogo, setNewTeamLogo] = useState('\u26bd');
+  const [newTeamLogoFile, setNewTeamLogoFile] = useState<File | null>(null);
+  const [newTeamLogoPreview, setNewTeamLogoPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // 팀 가입 폼
   const [showJoinForm, setShowJoinForm] = useState(false);
@@ -56,13 +59,6 @@ export function MyPage() {
     if (!user) return;
 
     const fetchNotifications = async () => {
-      // 처리된 알림 자동 삭제
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user.id)
-        .neq('status', 'pending');
-
       const { data } = await supabase
         .from('notifications')
         .select('*')
@@ -76,8 +72,8 @@ export function MyPage() {
 
     const channel = supabase
       .channel('my-notifications')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
-        fetchNotifications();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
+        setNotifications(prev => [payload.new as Notification, ...prev]);
       })
       .subscribe();
 
@@ -108,6 +104,9 @@ export function MyPage() {
     const notif = notifications.find(n => n.id === id);
     if (!notif) return;
 
+    // 즉시 UI에서 제거 (optimistic)
+    setNotifications(prev => prev.filter(n => n.id !== id));
+
     // 알림 유형별 처리
     if (notif.type === 'match_request' && notif.related_id) {
       if (action === 'accepted') {
@@ -116,7 +115,6 @@ export function MyPage() {
         await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
       }
     } else if (notif.type === 'match_vote' && notif.related_id && user) {
-      // 시합 참여/불참 처리
       await supabase.from('match_attendance').upsert({
         match_id: notif.related_id,
         user_id: user.id,
@@ -124,9 +122,9 @@ export function MyPage() {
       }, { onConflict: 'match_id,user_id' });
     }
 
-    // 처리된 알림 자동 삭제
+    // DB에서 삭제
+    await supabase.from('notifications').update({ status: action }).eq('id', id);
     await supabase.from('notifications').delete().eq('id', id);
-    setNotifications(prev => prev.filter(n => n.id !== id));
     trackEvent('notification_action', { type: notif.type, action });
   };
 
@@ -145,16 +143,45 @@ export function MyPage() {
     setTimeout(() => setCopiedTeamId(null), 2000);
   };
 
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewTeamLogoFile(file);
+    setNewTeamLogo('');
+    const reader = new FileReader();
+    reader.onload = () => setNewTeamLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
   // 팀 생성 처리
   const handleCreateTeam = async () => {
     if (!newTeamName.trim() || !user) return;
     setCreating(true);
 
+    let logoValue = newTeamLogo || '\u26bd';
+
+    if (newTeamLogoFile) {
+      const fileExt = newTeamLogoFile.name.split('.').pop();
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('team-logos')
+        .upload(fileName, newTeamLogoFile);
+      if (uploadError) {
+        alert('로고 업로드에 실패했습니다. Supabase에 team-logos 버킷을 생성해주세요.');
+        setCreating(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage
+        .from('team-logos')
+        .getPublicUrl(fileName);
+      logoValue = urlData.publicUrl;
+    }
+
     const { data: teamData, error: teamError } = await supabase
       .from('teams')
       .insert({
         name: newTeamName.trim(),
-        logo: newTeamLogo,
+        logo: logoValue,
         description: newTeamDesc.trim() || null,
         instagram: newTeamInsta.trim() || null,
         created_by: user.id,
@@ -185,7 +212,7 @@ export function MyPage() {
     if (!confirm('정말 이 팀을 삭제하시겠습니까?\n모든 팀원, 경기, 기록이 삭제됩니다.')) return;
 
     try {
-      // 관련 매치 정리
+      // 홈 매치 관련 데이터 정리
       const { data: homeMatches } = await supabase
         .from('matches')
         .select('id')
@@ -202,13 +229,15 @@ export function MyPage() {
       // 어웨이로 등록된 매치 해제
       await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('away_team_id', teamId);
 
-      // 채팅방 정리
-      const { data: rooms } = await supabase.from('chat_rooms').select('id').eq('team_id', teamId);
+      // 채팅방 정리 (team_id, team_a_id, team_b_id 모두 확인)
+      const { data: rooms } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .or(`team_id.eq.${teamId},team_a_id.eq.${teamId},team_b_id.eq.${teamId}`);
       if (rooms?.length) {
-        for (const r of rooms) {
-          await supabase.from('chat_messages').delete().eq('room_id', r.id);
-        }
-        await supabase.from('chat_rooms').delete().eq('team_id', teamId);
+        const roomIds = rooms.map(r => r.id);
+        await supabase.from('chat_messages').delete().in('room_id', roomIds);
+        await supabase.from('chat_rooms').delete().in('id', roomIds);
       }
 
       // 팀 멤버 삭제
@@ -220,7 +249,7 @@ export function MyPage() {
 
       await refreshProfile();
     } catch {
-      alert('팀 삭제에 실패했습니다.');
+      alert('팀 삭제에 실패했습니다. 다른 팀과 진행 중인 시합이 있다면 먼저 취소해주세요.');
     }
   };
 
@@ -230,6 +259,8 @@ export function MyPage() {
     setNewTeamDesc('');
     setNewTeamInsta('');
     setNewTeamLogo('\u26bd');
+    setNewTeamLogoFile(null);
+    setNewTeamLogoPreview(null);
     setCreatedCode(null);
   };
 
@@ -314,10 +345,7 @@ export function MyPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-20">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
-        <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
-          <ArrowLeft size={22} />
-        </button>
+      <div className="px-4 py-3 border-b border-white/5">
         <h1 className="text-lg font-bold text-white">마이 페이지</h1>
       </div>
 
@@ -406,7 +434,11 @@ export function MyPage() {
                     }}
                     className="flex items-center gap-2 flex-1 min-w-0"
                   >
-                    <span className="text-xl">{t.logo}</span>
+                    {t.logo?.startsWith('http') ? (
+                      <img src={t.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <span className="text-xl">{t.logo}</span>
+                    )}
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-bold text-white text-sm truncate">{t.name}</p>
                       <p className="text-[10px] text-gray-600 flex items-center gap-1">
@@ -480,18 +512,34 @@ export function MyPage() {
                 // 생성 폼
                 <div className="space-y-3">
                   {/* 로고 선택 */}
-                  <div className="flex justify-center">
-                    <div className="w-16 h-16 bg-[#0a0a0a] rounded-full flex items-center justify-center border border-white/10 text-3xl">
-                      {newTeamLogo}
-                    </div>
-                  </div>
-                  <div className="flex justify-center gap-1.5 flex-wrap">
-                    {emojis.map(e => (
-                      <button key={e} onClick={() => setNewTeamLogo(e)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${newTeamLogo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#0a0a0a] border border-white/10'}`}>
-                        {e}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-[#0a0a0a] rounded-full flex items-center justify-center border border-white/10 overflow-hidden">
+                        {newTeamLogoPreview ? (
+                          <img src={newTeamLogoPreview} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-3xl">{newTeamLogo}</span>
+                        )}
+                      </div>
+                      <button onClick={() => logoInputRef.current?.click()}
+                        className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#7B2D3B] rounded-full flex items-center justify-center">
+                        <Camera size={12} className="text-white" />
                       </button>
-                    ))}
+                      <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoFileChange} className="hidden" />
+                    </div>
+                    {newTeamLogoPreview ? (
+                      <button onClick={() => { setNewTeamLogoFile(null); setNewTeamLogoPreview(null); setNewTeamLogo('\u26bd'); }}
+                        className="text-xs text-gray-500 underline">이모지로 변경</button>
+                    ) : (
+                      <div className="flex justify-center gap-1.5 flex-wrap">
+                        {emojis.map(e => (
+                          <button key={e} onClick={() => { setNewTeamLogo(e); setNewTeamLogoFile(null); setNewTeamLogoPreview(null); }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${newTeamLogo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#0a0a0a] border border-white/10'}`}>
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div>

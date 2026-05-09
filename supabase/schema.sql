@@ -184,6 +184,9 @@ create policy "matches_insert" on public.matches for insert with check (auth.uid
 create policy "matches_update" on public.matches for update using (
   exists (select 1 from public.team_members where team_id = matches.home_team_id and user_id = auth.uid() and role = 'president')
 );
+create policy "matches_update_away" on public.matches for update using (
+  exists (select 1 from public.team_members where team_id = matches.away_team_id and user_id = auth.uid() and role = 'president')
+);
 
 -- MATCH_ATTENDANCE
 create policy "att_select" on public.match_attendance for select using (true);
