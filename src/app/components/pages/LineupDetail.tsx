@@ -31,7 +31,7 @@ const posColors: Record<string, string> = { GK: 'text-yellow-500', DF: 'text-blu
 export default function LineupDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user, team, isPresident, profile } = useAuth();
+  const { user, team, profile } = useAuth();
 
   const [match, setMatch] = useState<Match | null>(null);
   const [players, setPlayers] = useState<PlayerInfo[]>([]);

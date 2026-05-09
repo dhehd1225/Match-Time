@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
-import { UserCheck, ChevronRight, ArrowLeft, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Search } from 'lucide-react';
+import { UserCheck, ChevronRight, ArrowLeft, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
 import type { Notification } from '../../../lib/types';
 
+function getTeamCode(teamId: string) {
+  return teamId.replace(/-/g, '').substring(0, 6).toUpperCase();
+}
+
 export function MyPage() {
   const navigate = useNavigate();
-  const { profile, user, isPresident, membership, team, signOut, refreshProfile } = useAuth();
+  const { profile, user, membership, teams, team, setCurrentTeamId, signOut, refreshProfile } = useAuth();
   const [name, setName] = useState('');
   const [position, setPosition] = useState('MF');
   const [backNumber, setBackNumber] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [copiedTeamId, setCopiedTeamId] = useState<string | null>(null);
 
   const [originalName, setOriginalName] = useState('');
   const [originalPosition, setOriginalPosition] = useState('');
@@ -30,7 +35,6 @@ export function MyPage() {
     }
   }, [profile]);
 
-  // 알림 불러오기
   useEffect(() => {
     if (!user) return;
 
@@ -45,7 +49,6 @@ export function MyPage() {
 
     fetchNotifications();
 
-    // 실시간 구독
     const channel = supabase
       .channel('my-notifications')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
@@ -80,28 +83,34 @@ export function MyPage() {
     const notif = notifications.find(n => n.id === id);
     if (!notif) return;
 
-    // 알림 상태 업데이트
     await supabase.from('notifications').update({ status: action }).eq('id', id);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: action } : n));
 
     if (action === 'accepted') {
       if (notif.type === 'match_request' && notif.related_id) {
-        // 시합 신청 수락 → 매치 상태를 confirmed로
         await supabase.from('matches').update({ status: 'confirmed' }).eq('id', notif.related_id);
-      } else if (notif.type === 'team_join' && notif.related_id && team) {
-        // 팀 가입 수락 → 신청자(related_id = user_id)를 팀 멤버로 추가
-        await supabase.from('team_members').upsert({
-          team_id: team.id,
-          user_id: notif.related_id,
-          role: 'member',
-        }, { onConflict: 'team_id,user_id' });
       }
     } else if (action === 'rejected') {
       if (notif.type === 'match_request' && notif.related_id) {
-        // 시합 신청 거절 → away_team 제거, 상태를 open으로
         await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
       }
     }
+  };
+
+  const handleCopyCode = async (teamId: string) => {
+    const code = getTeamCode(teamId);
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setCopiedTeamId(teamId);
+    setTimeout(() => setCopiedTeamId(null), 2000);
   };
 
   const formatTime = (dateStr: string) => {
@@ -143,12 +152,7 @@ export function MyPage() {
             </div>
           )}
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white">{name || '이름 없음'}</h2>
-              {isPresident && (
-                <span className="text-[10px] font-bold bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">회장</span>
-              )}
-            </div>
+            <h2 className="text-lg font-bold text-white">{name || '이름 없음'}</h2>
             <p className="text-sm text-gray-500">{position} {backNumber ? `· #${backNumber}` : ''}</p>
           </div>
         </div>
@@ -204,37 +208,71 @@ export function MyPage() {
           </div>
         </div>
 
-        {/* Team Section */}
-        {team ? (
-          <button onClick={() => navigate('/team')}
-            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-2xl border border-white/5 group mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{team.logo}</span>
-              <span className="font-bold text-white text-sm">{team.name}</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-600 group-hover:text-[#7B2D3B] transition-colors" />
-          </button>
-        ) : (
-          <div className="space-y-2 mb-3">
-            <p className="text-xs text-gray-500 mb-2">아직 소속 팀이 없습니다</p>
-            <button onClick={() => navigate('/team/create')}
-              className="w-full flex items-center gap-3 p-4 bg-[#111] rounded-2xl border border-white/5 active:scale-[0.98] transition-transform">
-              <PlusCircle size={20} className="text-[#7B2D3B]" />
-              <div className="text-left">
-                <p className="font-bold text-white text-sm">새로운 팀 생성하기</p>
-                <p className="text-[11px] text-gray-500">팀을 만들고 팀원을 모집하세요</p>
+        {/* My Teams */}
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-white mb-3">내 팀</h3>
+          <div className="space-y-2">
+            {teams.map(t => (
+              <div key={t.id}
+                className={`flex items-center justify-between p-3 bg-[#111] rounded-2xl border transition-all ${
+                  t.id === team?.id ? 'border-[#7B2D3B]/50' : 'border-white/5'
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    setCurrentTeamId(t.id);
+                    navigate('/team');
+                  }}
+                  className="flex items-center gap-2 flex-1 min-w-0"
+                >
+                  <span className="text-xl">{t.logo}</span>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="font-bold text-white text-sm truncate">{t.name}</p>
+                    <p className="text-[10px] text-gray-600 flex items-center gap-1">
+                      <Hash size={10} /> {getTeamCode(t.id)}
+                    </p>
+                  </div>
+                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleCopyCode(t.id)}
+                    className="p-2 text-gray-500 hover:text-white transition-colors"
+                    title="팀 코드 복사"
+                  >
+                    {copiedTeamId === t.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  </button>
+                  {t.id === team?.id && (
+                    <span className="text-[9px] bg-[#7B2D3B] text-white px-1.5 py-0.5 rounded-full">선택됨</span>
+                  )}
+                </div>
               </div>
-            </button>
-            <button onClick={() => navigate('/team/join')}
-              className="w-full flex items-center gap-3 p-4 bg-[#111] rounded-2xl border border-white/5 active:scale-[0.98] transition-transform">
-              <Search size={20} className="text-[#7B2D3B]" />
-              <div className="text-left">
-                <p className="font-bold text-white text-sm">팀 가입하기</p>
-                <p className="text-[11px] text-gray-500">기존 팀을 찾아 가입 신청하세요</p>
-              </div>
-            </button>
+            ))}
+
+            {teams.length === 0 && (
+              <p className="text-xs text-gray-500 py-2">아직 소속 팀이 없습니다</p>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Team Create / Join Buttons - Always visible */}
+        <div className="space-y-2 mb-4">
+          <button onClick={() => navigate('/team/create')}
+            className="w-full flex items-center gap-3 p-4 bg-[#111] rounded-2xl border border-white/5 active:scale-[0.98] transition-transform">
+            <PlusCircle size={20} className="text-[#7B2D3B]" />
+            <div className="text-left">
+              <p className="font-bold text-white text-sm">새로운 팀 생성하기</p>
+              <p className="text-[11px] text-gray-500">팀을 만들고 코드를 공유하세요</p>
+            </div>
+          </button>
+          <button onClick={() => navigate('/team/join')}
+            className="w-full flex items-center gap-3 p-4 bg-[#111] rounded-2xl border border-white/5 active:scale-[0.98] transition-transform">
+            <Hash size={20} className="text-[#7B2D3B]" />
+            <div className="text-left">
+              <p className="font-bold text-white text-sm">팀 코드로 가입하기</p>
+              <p className="text-[11px] text-gray-500">코드를 입력해 팀에 참여하세요</p>
+            </div>
+          </button>
+        </div>
 
         {/* Logout */}
         <button onClick={async () => { await signOut(); navigate('/auth'); }}

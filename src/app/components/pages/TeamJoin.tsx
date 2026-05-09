@@ -1,119 +1,93 @@
-import { useState, useEffect } from 'react';
-import { Search, Users, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Team } from '../../../lib/types';
 
-interface TeamWithCount extends Team {
-  memberCount: number;
-  presidentName: string;
-}
-
 export function TeamJoin() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [appliedTeamIds, setAppliedTeamIds] = useState<Set<string>>(new Set());
-  const [sendingId, setSendingId] = useState<string | null>(null);
-  const [teams, setTeams] = useState<TeamWithCount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, refreshProfile } = useAuth();
+  const [code, setCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [joinedTeam, setJoinedTeam] = useState<Team | null>(null);
 
-  useEffect(() => {
-    const fetchTeams = async () => {
-      const { data: teamsData } = await supabase
-        .from('teams')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (teamsData) {
-        const enriched: TeamWithCount[] = [];
-        for (const team of teamsData) {
-          const { count } = await supabase
-            .from('team_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('team_id', team.id);
-
-          const { data: president } = await supabase
-            .from('team_members')
-            .select('profile:profiles(name)')
-            .eq('team_id', team.id)
-            .eq('role', 'president')
-            .limit(1)
-            .maybeSingle();
-
-          enriched.push({
-            ...team,
-            memberCount: count || 0,
-            presidentName: (president?.profile as any)?.name || '미정',
-          });
-        }
-        setTeams(enriched);
-      }
-      setLoading(false);
-    };
-
-    fetchTeams();
-  }, []);
-
-  const filteredTeams = teams.filter(team =>
-    team.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleJoinRequest = async (teamId: string) => {
-    if (!user || appliedTeamIds.has(teamId) || sendingId) return;
-    setSendingId(teamId);
-
-    // 신청자 프로필 가져오기
-    const { data: myProfile } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('id', user.id)
-      .single();
-
-    const myName = myProfile?.name || '알 수 없는 유저';
-
-    // 해당 팀 회장에게 알림 보내기
-    const { data: presidents } = await supabase
-      .from('team_members')
-      .select('user_id')
-      .eq('team_id', teamId)
-      .eq('role', 'president');
-
-    const targetTeam = teams.find(t => t.id === teamId);
-
-    if (presidents) {
-      for (const p of presidents) {
-        // 중복 알림 체크
-        const { data: existing } = await supabase
-          .from('notifications')
-          .select('id')
-          .eq('user_id', p.user_id)
-          .eq('type', 'team_join')
-          .eq('related_id', user.id)
-          .eq('status', 'pending')
-          .maybeSingle();
-
-        if (!existing) {
-          await supabase.from('notifications').insert({
-            user_id: p.user_id,
-            type: 'team_join',
-            title: '팀 가입 신청',
-            description: `${myName}님이 ${targetTeam?.name || '팀'}에 가입을 신청했습니다.`,
-            related_id: user.id,
-          });
-        }
-      }
+  const handleJoin = async () => {
+    if (!user || !code.trim()) return;
+    const normalizedCode = code.trim().toUpperCase();
+    if (normalizedCode.length < 6) {
+      setError('6자리 팀 코드를 입력해주세요.');
+      return;
     }
 
-    setAppliedTeamIds(prev => new Set(prev).add(teamId));
-    setSendingId(null);
+    setSubmitting(true);
+    setError('');
+
+    // 모든 팀을 가져와서 코드 매칭
+    const { data: allTeams } = await supabase.from('teams').select('*');
+    const matched = allTeams?.find(t =>
+      t.id.replace(/-/g, '').substring(0, 6).toUpperCase() === normalizedCode
+    );
+
+    if (!matched) {
+      setError('해당 코드의 팀을 찾을 수 없습니다.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 이미 가입되어 있는지 확인
+    const { data: existing } = await supabase
+      .from('team_members')
+      .select('id')
+      .eq('team_id', matched.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      setError('이미 가입된 팀입니다.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 팀 멤버로 추가
+    const { error: insertError } = await supabase
+      .from('team_members')
+      .insert({
+        team_id: matched.id,
+        user_id: user.id,
+        role: 'member',
+      });
+
+    if (insertError) {
+      console.error('팀 가입 실패:', insertError);
+      setError('팀 가입에 실패했습니다.');
+      setSubmitting(false);
+      return;
+    }
+
+    await refreshProfile();
+    setJoinedTeam(matched);
+    setSubmitting(false);
   };
 
-  if (loading) {
+  // 가입 완료 화면
+  if (joinedTeam) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">로딩 중...</div>
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
+        <CheckCircle2 size={64} className="text-emerald-400 mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">가입 완료!</h2>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-3xl">{joinedTeam.logo}</span>
+          <span className="text-xl font-bold text-white">{joinedTeam.name}</span>
+        </div>
+        <p className="text-gray-400 text-sm mb-8">팀에 성공적으로 가입했습니다.</p>
+        <button
+          onClick={() => navigate('/mypage')}
+          className="w-full max-w-xs bg-[#7B2D3B] text-white py-4 rounded-xl font-bold shadow-lg active:scale-[0.98] transition-all"
+        >
+          확인
+        </button>
       </div>
     );
   }
@@ -121,77 +95,51 @@ export function TeamJoin() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* 헤더 */}
-      <div className="bg-[#7B2D3B] p-4 text-white shadow-md">
-        <h1 className="text-xl font-bold text-center">팀 가입하기</h1>
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
+        <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
+          <ArrowLeft size={22} />
+        </button>
+        <h1 className="text-lg font-bold text-white">팀 가입하기</h1>
       </div>
 
-      <div className="p-4">
-        {/* 검색창 */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={20} />
+      <div className="p-6 flex flex-col items-center">
+        <div className="w-16 h-16 bg-[#111] rounded-full flex items-center justify-center border-2 border-white/10 mb-6">
+          <Search size={28} className="text-[#7B2D3B]" />
+        </div>
+
+        <h2 className="text-lg font-bold text-white mb-2">팀 코드 입력</h2>
+        <p className="text-sm text-gray-500 text-center mb-8">
+          팀 생성자에게 받은 6자리 코드를 입력하세요.
+        </p>
+
+        <div className="w-full max-w-xs mb-4">
           <input
             type="text"
-            placeholder="가입할 팀 이름을 검색하세요"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-white/10 rounded-xl bg-[#111] text-white focus:outline-none focus:ring-2 focus:ring-[#7B2D3B] placeholder:text-gray-600"
+            placeholder="예: A3B5C7"
+            value={code}
+            onChange={e => {
+              setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
+              setError('');
+            }}
+            maxLength={6}
+            className="w-full text-center text-2xl font-black tracking-[0.3em] p-4 border border-white/10 rounded-xl bg-[#111] text-white placeholder:text-gray-600 placeholder:text-base placeholder:tracking-normal placeholder:font-normal focus:ring-2 focus:ring-[#7B2D3B] outline-none"
           />
         </div>
 
-        {/* 팀 리스트 */}
-        <div className="space-y-3">
-          {filteredTeams.map((team) => {
-            const isApplied = appliedTeamIds.has(team.id);
-            const isSending = sendingId === team.id;
-            return (
-              <div
-                key={team.id}
-                className={`bg-[#111] p-4 rounded-2xl border transition-all ${
-                  isApplied ? 'border-emerald-500/50' : 'border-white/5'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{team.logo}</span>
-                      <h3 className="font-bold text-lg text-white">{team.name}</h3>
-                    </div>
-                    {team.description && (
-                      <p className="text-sm text-gray-500 mb-2">{team.description}</p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Users size={14} /> {team.memberCount}명
-                      </span>
-                      <span>회장: {team.presidentName}</span>
-                    </div>
-                  </div>
+        {error && (
+          <div className="flex items-center gap-2 text-red-400 text-sm mb-4">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
-                  {isApplied ? (
-                    <div className="flex flex-col items-end gap-1 text-emerald-400">
-                      <CheckCircle2 size={24} />
-                      <span className="text-[10px] font-bold">신청 완료</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleJoinRequest(team.id)}
-                      disabled={isSending}
-                      className="bg-[#7B2D3B] text-white px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
-                    >
-                      {isSending ? '신청 중...' : '신청하기'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {filteredTeams.length === 0 && (
-            <div className="text-center py-12 text-gray-600">
-              {teams.length === 0 ? '등록된 팀이 없습니다' : '검색 결과와 일치하는 팀이 없습니다.'}
-            </div>
-          )}
-        </div>
+        <button
+          onClick={handleJoin}
+          disabled={code.length < 6 || submitting}
+          className="w-full max-w-xs bg-[#7B2D3B] text-white py-4 rounded-xl font-bold shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {submitting ? '가입 중...' : '팀 가입'}
+        </button>
       </div>
     </div>
   );

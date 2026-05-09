@@ -8,7 +8,7 @@ import type { Match } from '../../../lib/types';
 export default function MatchDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user, team, isPresident } = useAuth();
+  const { user, team } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -98,7 +98,7 @@ export default function MatchDetail() {
 
   const isMyTeamHome = team?.id === match.home_team_id;
   const isMyTeamAway = team?.id === match.away_team_id;
-  const canApply = isPresident && team && !isMyTeamHome && !match.away_team_id && !applied;
+  const canApply = team && !isMyTeamHome && !match.away_team_id && !applied;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-8">

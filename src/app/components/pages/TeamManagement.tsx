@@ -141,9 +141,6 @@ export default function TeamManagement() {
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm text-white">{profile?.name || '이름 없음'}</p>
                   <span className={`text-[10px] font-bold ${positionColors[profile?.position || 'MF']}`}>{profile?.position || 'MF'}</span>
-                  {member.role === 'president' && (
-                    <span className="text-[9px] bg-[#7B2D3B] text-white px-1.5 py-0.5 rounded-full">회장</span>
-                  )}
                 </div>
                 <div className="flex items-center gap-3 mt-0.5">
                   <span className="text-[11px] text-gray-500">{member.appearances}경기</span>
