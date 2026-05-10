@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Search, MapPin, Plus, X, SlidersHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import { trackEvent } from '../../../hooks/useAnalytics';
@@ -93,7 +94,7 @@ export default function MatchList() {
   const handleSubmit = async () => {
     if (!form.date || !form.time || !form.region || !form.stadium || !form.level || !user) return;
     if (!team) {
-      alert('팀에 먼저 가입해주세요.');
+      toast.error('팀에 먼저 가입해주세요.');
       return;
     }
     setSubmitting(true);
@@ -112,7 +113,7 @@ export default function MatchList() {
 
     if (error || !matchData) {
       console.error('매치 생성 실패:', error);
-      alert('매치 생성에 실패했습니다. 다시 시도해주세요.');
+      toast.error('매치 생성에 실패했습니다.');
     } else {
       // 생성자 자동 참여 등록
       await supabase.from('match_attendance').insert({
@@ -260,7 +261,11 @@ export default function MatchList() {
             <div className="flex items-center py-2 mb-3">
               {/* Home team */}
               <div className="flex-1 flex items-center gap-2">
-                <div className="text-2xl">{match.home_team?.logo || '⚽'}</div>
+                {match.home_team?.logo?.startsWith('http') ? (
+                  <img src={match.home_team.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="text-2xl">{match.home_team?.logo || '⚽'}</div>
+                )}
                 <p className="font-bold text-white text-sm truncate">{match.home_team?.name || '팀'}</p>
               </div>
 
@@ -273,7 +278,11 @@ export default function MatchList() {
                 {match.away_team ? (
                   <>
                     <p className="font-bold text-white text-sm truncate">{match.away_team.name}</p>
-                    <div className="text-2xl">{match.away_team.logo || '⚽'}</div>
+                    {match.away_team.logo?.startsWith('http') ? (
+                      <img src={match.away_team.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="text-2xl">{match.away_team.logo || '⚽'}</div>
+                    )}
                   </>
                 ) : (
                   <>

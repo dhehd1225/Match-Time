@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { Home, Trophy, Image, Users } from 'lucide-react';
+import { Home, Trophy, MessageCircle, Image, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -37,6 +37,7 @@ export default function MainLayout() {
   const navItems = [
     { icon: Home, label: '매치', path: '/matches' },
     { icon: Trophy, label: '라인업', path: '/lineup' },
+    { icon: MessageCircle, label: '채팅', path: '/chat' },
     { icon: Image, label: '카드', path: '/cards' },
     { icon: Users, label: '마이', path: '/mypage' },
   ];
@@ -58,7 +59,7 @@ export default function MainLayout() {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`relative flex flex-col items-center justify-center gap-1 px-6 py-2 transition-colors ${
+                className={`relative flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
                   isActive ? 'text-[#7B2D3B]' : 'text-gray-600'
                 }`}
               >

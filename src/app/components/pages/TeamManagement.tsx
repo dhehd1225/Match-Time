@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowLeft, UserMinus } from 'lucide-react';
+import { Search, ArrowLeft, UserMinus, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { TeamMember } from '../../../lib/types';
@@ -22,10 +23,20 @@ export default function TeamManagement() {
   const [selectedPosition, setSelectedPosition] = useState<string>('전체');
   const positions = ['전체', 'GK', 'DF', 'MF', 'FW'];
 
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
   const handleRemoveMember = async (memberId: string, memberUserId: string) => {
     if (memberUserId === user?.id) return;
-    if (!confirm('이 팀원을 팀에서 제거하시겠습니까?')) return;
-    await supabase.from('team_members').delete().eq('id', memberId);
+    if (removingId === memberId) {
+      // 두 번째 클릭 → 실제 삭제
+      await supabase.from('team_members').delete().eq('id', memberId);
+      setRemovingId(null);
+      toast.success('팀원을 제거했습니다.');
+    } else {
+      // 첫 번째 클릭 → 확인 상태
+      setRemovingId(memberId);
+      setTimeout(() => setRemovingId(null), 3000);
+    }
   };
 
   const fetchMembers = async () => {
@@ -81,10 +92,13 @@ export default function TeamManagement() {
         <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
           <ArrowLeft size={22} />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold text-white">{team?.name || '팀'}</h1>
           <p className="text-xs text-gray-500">선수 {members.length}명</p>
         </div>
+        <button onClick={() => navigate('/rankings')} className="p-2 text-gray-400 hover:text-white transition-colors">
+          <BarChart3 size={20} />
+        </button>
       </div>
 
       {/* Top Stats */}
@@ -160,10 +174,10 @@ export default function TeamManagement() {
                 {isTeamCreator && member.user_id !== user?.id && (
                   <button
                     onClick={() => handleRemoveMember(member.id, member.user_id)}
-                    className="p-1.5 text-gray-600 hover:text-red-400 transition-colors"
+                    className={`p-1.5 transition-colors text-xs font-bold ${removingId === member.id ? 'text-red-400' : 'text-gray-600 hover:text-red-400'}`}
                     title="팀원 제거"
                   >
-                    <UserMinus size={14} />
+                    {removingId === member.id ? '제거?' : <UserMinus size={14} />}
                   </button>
                 )}
               </div>

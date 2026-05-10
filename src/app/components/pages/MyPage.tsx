@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
 import { trackEvent } from '../../../hooks/useAnalytics';
+import { toast } from 'sonner';
 import type { Notification } from '../../../lib/types';
 
 function getTeamCode(teamId: string) {
@@ -167,7 +168,7 @@ export function MyPage() {
         .from('team-logos')
         .upload(fileName, newTeamLogoFile);
       if (uploadError) {
-        alert('로고 업로드에 실패했습니다. Supabase에 team-logos 버킷을 생성해주세요.');
+        toast.error('로고 업로드에 실패했습니다.');
         setCreating(false);
         return;
       }
@@ -190,7 +191,7 @@ export function MyPage() {
       .single();
 
     if (teamError || !teamData) {
-      alert('팀 생성에 실패했습니다.');
+      toast.error('팀 생성에 실패했습니다.');
       setCreating(false);
       return;
     }
@@ -249,7 +250,7 @@ export function MyPage() {
 
       await refreshProfile();
     } catch {
-      alert('팀 삭제에 실패했습니다. 다른 팀과 진행 중인 시합이 있다면 먼저 취소해주세요.');
+      toast.error('팀 삭제에 실패했습니다. 진행 중인 시합이 있다면 먼저 취소해주세요.');
     }
   };
 

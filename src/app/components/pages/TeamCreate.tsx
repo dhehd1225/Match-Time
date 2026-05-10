@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Instagram, ArrowLeft, Copy, Check, Camera } from 'lucide-react';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -45,7 +46,7 @@ export function TeamCreate() {
         .from('team-logos')
         .upload(fileName, logoFile);
       if (uploadError) {
-        alert('로고 업로드에 실패했습니다.');
+        toast.error('로고 업로드에 실패했습니다.');
         setSubmitting(false);
         return;
       }
@@ -69,7 +70,7 @@ export function TeamCreate() {
 
     if (teamError || !teamData) {
       console.error('\ud300 \uc0dd\uc131 \uc2e4\ud328:', teamError);
-      alert('\ud300 \uc0dd\uc131\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.');
+      toast.error('팀 생성에 실패했습니다.');
       setSubmitting(false);
       return;
     }

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { AuthProvider } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { Toaster } from 'sonner';
 
 import MainLayout from './components/MainLayout';
 import MatchList from './components/pages/MatchList';
@@ -8,6 +9,7 @@ import MatchDetail from './components/pages/MatchDetail';
 import LineupBuilder from './components/pages/LineupBuilder';
 import LineupDetail from './components/pages/LineupDetail';
 import TeamManagement from './components/pages/TeamManagement';
+import Rankings from './components/pages/Rankings';
 import Auth from './components/pages/Auth';
 import Onboarding from './components/pages/Onboarding';
 import { TeamCreate } from './components/pages/TeamCreate';
@@ -20,6 +22,9 @@ import MatchCard from './components/pages/MatchCard';
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-center" theme="dark" toastOptions={{
+        style: { background: '#111', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' },
+      }} />
       <BrowserRouter>
         <Routes>
           {/* 공개 라우트 */}
@@ -39,6 +44,7 @@ export default function App() {
             <Route path="lineup" element={<LineupBuilder />} />
             <Route path="lineup/:id" element={<LineupDetail />} />
             <Route path="team" element={<TeamManagement />} />
+            <Route path="rankings" element={<Rankings />} />
             <Route path="cards" element={<MatchCard />} />
             <Route path="chat" element={<Chat />} />
             <Route path="mypage" element={<MyPage />} />

@@ -120,8 +120,12 @@ export default function MatchDetail() {
           <div className="flex items-center justify-between">
             {/* Home */}
             <div className="flex-1 text-center">
-              <div className="w-16 h-16 mx-auto mb-2 bg-[#7B2D3B]/20 rounded-2xl flex items-center justify-center text-3xl">
-                {match.home_team?.logo || '⚽'}
+              <div className="w-16 h-16 mx-auto mb-2 bg-[#7B2D3B]/20 rounded-2xl flex items-center justify-center overflow-hidden">
+                {match.home_team?.logo?.startsWith('http') ? (
+                  <img src={match.home_team.logo} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl">{match.home_team?.logo || '⚽'}</span>
+                )}
               </div>
               <p className="font-bold text-white text-sm">{match.home_team?.name || '홈팀'}</p>
             </div>
@@ -134,8 +138,12 @@ export default function MatchDetail() {
             <div className="flex-1 text-center">
               {match.away_team ? (
                 <>
-                  <div className="w-16 h-16 mx-auto mb-2 bg-blue-500/20 rounded-2xl flex items-center justify-center text-3xl">
-                    {match.away_team.logo || '⚽'}
+                  <div className="w-16 h-16 mx-auto mb-2 bg-blue-500/20 rounded-2xl flex items-center justify-center overflow-hidden">
+                    {match.away_team.logo?.startsWith('http') ? (
+                      <img src={match.away_team.logo} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl">{match.away_team.logo || '⚽'}</span>
+                    )}
                   </div>
                   <p className="font-bold text-white text-sm">{match.away_team.name}</p>
                 </>
@@ -174,9 +182,17 @@ export default function MatchDetail() {
         )}
 
         {match.status === 'confirmed' && (
-          <div className="mt-3 bg-emerald-500/10 rounded-xl px-4 py-3 flex items-center justify-center gap-2">
-            <Check size={16} className="text-emerald-400" />
-            <span className="text-sm text-emerald-400 font-medium">매치 확정</span>
+          <div className="mt-3 space-y-2">
+            <div className="bg-emerald-500/10 rounded-xl px-4 py-3 flex items-center justify-center gap-2">
+              <Check size={16} className="text-emerald-400" />
+              <span className="text-sm text-emerald-400 font-medium">매치 확정</span>
+            </div>
+            {(isMyTeamHome || isMyTeamAway) && (
+              <button onClick={() => navigate(`/lineup/${match.id}`)}
+                className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <Users size={16} /> 라인업 관리
+              </button>
+            )}
           </div>
         )}
       </div>
