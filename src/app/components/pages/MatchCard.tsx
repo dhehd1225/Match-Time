@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Download, ChevronRight, MapPin, Plus, X, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { supabase } from '../../../lib/supabase';
 import { trackEvent } from '../../../hooks/useAnalytics';
@@ -88,27 +89,24 @@ export default function MatchCard() {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#0a0a0a', useCORS: true });
-      // 모바일/데스크탑 모두 지원하는 다운로드
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `match-card-${Date.now()}.png`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 'image/png');
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2,
+        backgroundColor: '#0a0a0a',
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `match-card-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('카드가 저장되었습니다.');
       trackEvent('card_download', { type: cardType });
-    } catch (err) {
-      console.error('Card generation failed:', err);
-      // 실패 시 새 탭에서 열기
-      try {
-        const canvas = await html2canvas(cardRef.current!, { scale: 2, backgroundColor: '#0a0a0a' });
-        window.open(canvas.toDataURL('image/png'), '_blank');
-      } catch { /* ignore */ }
+    } catch (err: any) {
+      toast.error(`카드 생성 실패: ${err?.message || '알 수 없는 오류'}`);
     }
     setDownloading(false);
   };
