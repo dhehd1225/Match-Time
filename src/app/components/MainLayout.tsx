@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router';
 import { Home, Trophy, Image, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { trackEvent } from '../../hooks/useAnalytics';
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -57,7 +58,7 @@ export default function MainLayout() {
             return (
               <button
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => { trackEvent('tab_click', { tab: item.label, path: item.path }); navigate(item.path); }}
                 className={`relative flex flex-col items-center justify-center gap-1 px-6 py-2 transition-colors ${
                   isActive ? 'text-[#7B2D3B]' : 'text-gray-600'
                 }`}
