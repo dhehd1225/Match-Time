@@ -90,7 +90,7 @@ export default function MatchCard() {
     setDownloading(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
+        scale: 3,
         backgroundColor: '#0a0a0a',
         useCORS: true,
         logging: false,
@@ -199,7 +199,7 @@ export default function MatchCard() {
 
         {/* 카드 프리뷰 - 인라인 스타일 (html2canvas oklch 호환) */}
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
-          <div ref={cardRef} style={{ aspectRatio: '4/5', width: '100%', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#0a0a0a' }}>
+          <div ref={cardRef} style={{ aspectRatio: '4/5', width: '100%', maxWidth: 375, margin: '0 auto', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#0a0a0a' }}>
             {/* 배경 */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0a0a0a, #150a0e, #1a0f14)' }} />
 
