@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { Search, MapPin, Plus, X, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, Plus, X, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -156,6 +156,17 @@ export default function MatchList() {
     setSubmitting(false);
   };
 
+  const handleDeleteMatch = async (e: React.MouseEvent, matchId: string) => {
+    e.stopPropagation();
+    if (!confirm('이 매치를 삭제하시겠습니까?')) return;
+    await supabase.from('match_attendance').delete().eq('match_id', matchId);
+    await supabase.from('lineups').delete().eq('match_id', matchId);
+    await supabase.from('notifications').delete().eq('related_id', matchId);
+    await supabase.from('matches').delete().eq('id', matchId);
+    setMatches(prev => prev.filter(m => m.id !== matchId));
+    toast.success('매치가 삭제되었습니다.');
+  };
+
   const isFormValid = form.date && form.time && form.region && form.stadium && form.level;
 
   if (loading) {
@@ -306,7 +317,15 @@ export default function MatchList() {
                 <MapPin size={12} />
                 <span className="text-[11px]">{match.stadium}</span>
               </div>
-              <span className="text-[10px] text-gray-600">{match.format}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-600">{match.format}</span>
+                {match.created_by === user?.id && (
+                  <button onClick={(e) => handleDeleteMatch(e, match.id)}
+                    className="p-1 text-gray-600 hover:text-red-400 transition-colors">
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

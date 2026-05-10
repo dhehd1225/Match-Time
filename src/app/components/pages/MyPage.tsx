@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { UserCheck, ChevronDown, ChevronUp, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy, Instagram, AlertCircle, CheckCircle2, Trash2, Camera } from 'lucide-react';
+import { UserCheck, ChevronDown, ChevronUp, Bell, Trophy, Check, X, Clock, Save, PlusCircle, Hash, Copy, Instagram, AlertCircle, CheckCircle2, Trash2, Camera, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
@@ -265,6 +265,15 @@ export function MyPage() {
     }
   };
 
+  // 팀 탈퇴 (일반 멤버)
+  const handleLeaveTeam = async (teamId: string, teamName: string) => {
+    if (!confirm(`${teamName} 팀에서 탈퇴하시겠습니까?`)) return;
+    if (!user) return;
+    await supabase.from('team_members').delete().eq('team_id', teamId).eq('user_id', user.id);
+    await refreshProfile();
+    toast.success(`${teamName} 팀에서 탈퇴했습니다.`);
+  };
+
   const resetCreateForm = () => {
     setShowCreateForm(false);
     setNewTeamName('');
@@ -494,13 +503,21 @@ export function MyPage() {
                     >
                       {copiedTeamId === t.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                     </button>
-                    {t.created_by === user?.id && (
+                    {t.created_by === user?.id ? (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteTeam(t.id); }}
                         className="p-2 text-gray-500 hover:text-red-400 transition-colors"
                         title="팀 삭제"
                       >
                         <Trash2 size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleLeaveTeam(t.id, t.name); }}
+                        className="p-2 text-gray-500 hover:text-yellow-400 transition-colors"
+                        title="팀 탈퇴"
+                      >
+                        <LogOut size={14} />
                       </button>
                     )}
                     {t.id === team?.id && (
