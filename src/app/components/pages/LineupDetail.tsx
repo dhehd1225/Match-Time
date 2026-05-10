@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, MapPin, Users, Check, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Check, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import JerseyIcon from '../JerseyIcon';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -100,12 +101,37 @@ export default function LineupDetail() {
         const attending = playersList.filter(p => p.status === 'attending');
         setAllPlayers(attending);
 
-        // Initialize formation
-        const f = matchData?.format?.includes('8') ? '3-3-1' : '4-3-3';
-        setFormation(f);
-        const pos = formations[f];
-        const init = pos.map((_, i) => attending[i]?.id ?? null);
-        setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+        // DB에서 저장된 라인업 불러오기
+        const { data: savedLineups } = await supabase
+          .from('lineups')
+          .select('*')
+          .eq('match_id', id);
+
+        if (savedLineups && savedLineups.length > 0) {
+          // 저장된 라인업이 있으면 그것 사용
+          const savedFormation = savedLineups[0].formation || '4-3-3';
+          setFormation(savedFormation);
+          const newQuarterLineups: Record<Quarter, (string | null)[]> = { '1Q': [], '2Q': [], '3Q': [], '4Q': [] };
+          for (const sl of savedLineups) {
+            const q = sl.quarter as Quarter;
+            newQuarterLineups[q] = sl.positions as (string | null)[];
+          }
+          // 저장 안 된 쿼터는 기본값
+          const pos = formations[savedFormation];
+          for (const q of quarters) {
+            if (newQuarterLineups[q].length === 0) {
+              newQuarterLineups[q] = pos.map((_, i) => attending[i]?.id ?? null);
+            }
+          }
+          setQuarterLineups(newQuarterLineups);
+        } else {
+          // 저장된 라인업 없으면 기본 초기화
+          const f = matchData?.format?.includes('8') ? '3-3-1' : '4-3-3';
+          setFormation(f);
+          const pos = formations[f];
+          const init = pos.map((_, i) => attending[i]?.id ?? null);
+          setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+        }
 
         // My attendance
         if (user) {
@@ -264,6 +290,24 @@ export default function LineupDetail() {
       return u;
     });
     setSelectedSlot(null);
+  };
+
+  const handleSaveLineup = async () => {
+    if (!id || !user) return;
+    const upserts = quarters.map(q => ({
+      match_id: id,
+      quarter: q,
+      formation,
+      positions: quarterLineups[q],
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase.from('lineups').upsert(upserts, { onConflict: 'match_id,quarter' });
+    if (error) {
+      toast.error('저장 실패: ' + error.message);
+    } else {
+      toast.success('라인업이 저장되었습니다!');
+    }
   };
 
   const handleAddPlayer = () => {
@@ -490,6 +534,13 @@ export default function LineupDetail() {
             <span className="text-xs text-gray-500">{activeQuarter} 배치</span>
             <span className="text-xs font-bold text-white">{currentLineup.filter(p => p !== null).length}/{positions_arr.length}명</span>
           </div>
+
+          {isTeamCreator && (
+            <button onClick={handleSaveLineup}
+              className="mt-3 w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              <Save size={16} /> 라인업 저장
+            </button>
+          )}
         </div>
       )}
 
