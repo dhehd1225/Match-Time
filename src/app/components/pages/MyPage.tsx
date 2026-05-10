@@ -115,6 +115,17 @@ export function MyPage() {
       } else {
         await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
       }
+    } else if (notif.type === 'team_join' && notif.related_id) {
+      if (action === 'accepted') {
+        const requesterId = notif.description?.split('::')[0];
+        if (requesterId && notif.related_id) {
+          await supabase.from('team_members').insert({
+            team_id: notif.related_id,
+            user_id: requesterId,
+            role: 'member',
+          });
+        }
+      }
     } else if (notif.type === 'match_vote' && notif.related_id && user) {
       await supabase.from('match_attendance').upsert({
         match_id: notif.related_id,
@@ -265,7 +276,7 @@ export function MyPage() {
     setCreatedCode(null);
   };
 
-  // 팀 가입 처리
+  // 팀 가입 요청 (팀장 수락 필요)
   const handleJoinTeam = async () => {
     if (!user || !joinCode.trim()) return;
     const normalizedCode = joinCode.trim().toUpperCase();
@@ -288,6 +299,7 @@ export function MyPage() {
       return;
     }
 
+    // 이미 가입된 팀인지 확인
     const { data: existing } = await supabase
       .from('team_members')
       .select('id')
@@ -301,17 +313,39 @@ export function MyPage() {
       return;
     }
 
-    const { error: insertError } = await supabase
-      .from('team_members')
-      .insert({ team_id: matched.id, user_id: user.id, role: 'member' });
+    // 이미 가입 요청을 보냈는지 확인
+    const { data: pendingNotifs } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('type', 'team_join')
+      .eq('related_id', matched.id)
+      .eq('status', 'pending');
 
-    if (insertError) {
-      setJoinError('팀 가입에 실패했습니다.');
-      setJoining(false);
-      return;
+    const alreadyRequested = pendingNotifs?.some(n => true) && pendingNotifs?.length;
+    // 더 정확한 체크: description에 user.id가 포함되어 있는지 (이 사용자의 요청인지)
+    if (alreadyRequested) {
+      const { data: myPending } = await supabase
+        .from('notifications')
+        .select('id, description')
+        .eq('type', 'team_join')
+        .eq('related_id', matched.id)
+        .eq('status', 'pending');
+      if (myPending?.some(n => n.description?.startsWith(user.id))) {
+        setJoinError('이미 가입 요청을 보냈습니다. 팀장의 수락을 기다려주세요.');
+        setJoining(false);
+        return;
+      }
     }
 
-    await refreshProfile();
+    // 팀장에게 가입 요청 알림 발송
+    await supabase.from('notifications').insert({
+      user_id: matched.created_by,
+      type: 'team_join',
+      title: '팀 가입 요청',
+      description: `${user.id}::${profile?.name || '유저'}님이 ${matched.name} 팀에 가입을 요청했습니다.`,
+      related_id: matched.id,
+    });
+
     setJoining(false);
     setJoinedTeamName(matched.name);
   };
@@ -441,7 +475,12 @@ export function MyPage() {
                       <span className="text-xl">{t.logo}</span>
                     )}
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="font-bold text-white text-sm truncate">{t.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-bold text-white text-sm truncate">{t.name}</p>
+                        {t.created_by === user?.id && (
+                          <span className="text-[8px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full font-bold shrink-0">팀장</span>
+                        )}
+                      </div>
                       <p className="text-[10px] text-gray-600 flex items-center gap-1">
                         <Hash size={10} /> {getTeamCode(t.id)}
                       </p>
@@ -591,11 +630,11 @@ export function MyPage() {
           {showJoinForm && (
             <div className="mt-2 bg-[#111] rounded-2xl border border-white/5 p-4">
               {joinedTeamName ? (
-                // 가입 완료
+                // 가입 요청 완료
                 <div className="text-center py-2">
-                  <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
-                  <p className="text-white font-bold mb-1">가입 완료!</p>
-                  <p className="text-sm text-gray-400">{joinedTeamName}에 가입했습니다.</p>
+                  <Clock size={40} className="text-yellow-400 mx-auto mb-3" />
+                  <p className="text-white font-bold mb-1">가입 요청 완료!</p>
+                  <p className="text-sm text-gray-400">{joinedTeamName} 팀장의 수락을 기다려주세요.</p>
                   <button onClick={resetJoinForm} className="text-xs text-gray-500 underline mt-3">닫기</button>
                 </div>
               ) : (
@@ -661,7 +700,11 @@ export function MyPage() {
                       <span className="text-xs font-bold text-white">{notif.title}</span>
                       <span className="text-[10px] text-gray-600">{formatTime(notif.created_at)}</span>
                     </div>
-                    <p className="text-xs text-gray-400 mb-2.5">{notif.description}</p>
+                    <p className="text-xs text-gray-400 mb-2.5">
+                      {notif.type === 'team_join' && notif.description?.includes('::')
+                        ? notif.description.split('::')[1]
+                        : notif.description}
+                    </p>
 
                     <div className="flex gap-2">
                       {notif.type === 'match_vote' ? (

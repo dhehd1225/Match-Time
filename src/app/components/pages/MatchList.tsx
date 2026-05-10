@@ -147,6 +147,7 @@ export default function MatchList() {
       trackEvent('match_create', { stadium: form.stadium, level: form.level, format: form.format });
       setForm(emptyForm);
       setShowForm(false);
+      fetchMatches();
     }
     setSubmitting(false);
   };
