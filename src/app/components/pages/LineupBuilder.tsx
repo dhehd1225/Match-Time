@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy } from 'lucide-react';
 import JerseyIcon from '../JerseyIcon';
@@ -62,6 +62,7 @@ export default function LineupBuilder() {
   const [newNumber, setNewNumber] = useState('');
   const [newPos, setNewPos] = useState('MF');
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
+  const initialized = useRef(false);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -69,7 +70,6 @@ export default function LineupBuilder() {
     // 팀 없으면 자체전만 사용 가능
     if (!team) {
       setMainTab('scrimmage');
-      // localStorage에서 저장된 자체전 데이터 불러오기
       const saved = localStorage.getItem('scrimmage_data');
       if (saved) {
         try {
@@ -85,19 +85,8 @@ export default function LineupBuilder() {
         setQuarterLineups({ '1Q': [...emptyLineup], '2Q': [...emptyLineup], '3Q': [...emptyLineup], '4Q': [...emptyLineup] });
       }
       setLoading(false);
+      setTimeout(() => { initialized.current = true; }, 100);
       return;
-    }
-
-    // localStorage에서 자체전 데이터 불러오기 (팀 있어도)
-    const saved = localStorage.getItem('scrimmage_data');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.formation) setFormation(data.formation);
-        if (data.quarterLineups) setQuarterLineups(data.quarterLineups);
-        if (data.allPlayers) setAllPlayers(data.allPlayers);
-        if (data.jerseyPrimary) setJerseyPrimary(data.jerseyPrimary);
-      } catch { /* ignore */ }
     }
 
     const fetchData = async () => {
@@ -152,15 +141,15 @@ export default function LineupBuilder() {
         }));
         setTeamMembers(players);
 
-        // localStorage에 저장된 자체전 데이터가 있으면 그것 유지, 없으면 초기화
+        // localStorage에서 저장된 데이터 불러오기
         const savedData = localStorage.getItem('scrimmage_data');
         if (savedData) {
           try {
             const data = JSON.parse(savedData);
-            // 저장된 선수 + DB 선수 합치기 (중복 제거)
             const savedPlayers: PlayerInfo[] = data.allPlayers || [];
+            // DB 선수 + 저장된 임시선수(용병/신입) 합치기
             const merged = [...players];
-            savedPlayers.forEach(sp => {
+            savedPlayers.filter(sp => sp.type !== 'regular').forEach(sp => {
               if (!merged.find(p => p.id === sp.id)) merged.push(sp);
             });
             setAllPlayers(merged);
@@ -179,6 +168,7 @@ export default function LineupBuilder() {
           const init = pos.map((_, i) => players[i]?.id ?? null);
           setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
         }
+        setTimeout(() => { initialized.current = true; }, 100);
       }
 
       setLoading(false);
@@ -232,13 +222,12 @@ export default function LineupBuilder() {
     setSelectedSlot(null);
   };
 
-  // 자동 저장 - 변경될 때마다 localStorage에 저장
+  // 자동 저장 - 초기 로딩 완료 후에만 저장
   useEffect(() => {
-    if (allPlayers.length > 0 || quarterLineups['1Q'].length > 0) {
-      localStorage.setItem('scrimmage_data', JSON.stringify({
-        formation, quarterLineups, allPlayers, jerseyPrimary,
-      }));
-    }
+    if (!initialized.current) return;
+    localStorage.setItem('scrimmage_data', JSON.stringify({
+      formation, quarterLineups, allPlayers, jerseyPrimary,
+    }));
   }, [formation, quarterLineups, allPlayers, jerseyPrimary]);
 
   const handleAddPlayer = () => {
