@@ -193,93 +193,86 @@ export default function MatchCard() {
           </div>
         )}
 
-        {/* 카드 프리뷰 */}
-        <div className="px-4 mb-4">
-          <div ref={cardRef} style={{ aspectRatio: '4/5' }}
-            className="w-full rounded-2xl overflow-hidden relative">
+        {/* 카드 프리뷰 - 인라인 스타일 (html2canvas oklch 호환) */}
+        <div style={{ padding: '0 16px', marginBottom: 16 }}>
+          <div ref={cardRef} style={{ aspectRatio: '4/5', width: '100%', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#0a0a0a' }}>
             {/* 배경 */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#150a0e] to-[#1a0f14]" />
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[#7B2D3B]/8 rounded-full blur-[80px]" />
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#7B2D3B]/5 rounded-full blur-[60px]" />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0a0a0a, #150a0e, #1a0f14)' }} />
 
             {/* 카드 콘텐츠 */}
-            <div className="relative z-10 h-full flex flex-col p-5">
+            <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', padding: 20 }}>
               {/* 헤더 */}
-              <p className="text-center font-bold tracking-[0.4em] text-[#C4697A] mb-4" style={{ fontSize: 10 }}>
+              <p style={{ textAlign: 'center', fontWeight: 700, letterSpacing: '0.4em', color: '#C4697A', marginBottom: 16, fontSize: 10 }}>
                 {cardType === 'pre' ? 'M A T C H   D A Y' : 'F U L L   T I M E'}
               </p>
 
               {/* 팀 + 스코어 */}
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="text-center flex-1">
-                  <div style={{ fontSize: 36 }} className="mb-1">{myTeam?.logo || '⚽'}</div>
-                  <p style={{ fontSize: 12 }} className="font-bold text-white truncate">{myTeam?.name}</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ fontSize: 36, marginBottom: 4 }}>{myTeam?.logo || '⚽'}</div>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{myTeam?.name}</p>
                 </div>
-                <div className="text-center px-2">
+                <div style={{ textAlign: 'center', padding: '0 8px' }}>
                   {cardType === 'post' ? (
-                    <p style={{ fontSize: 28 }} className="font-black text-white">{homeScore} : {awayScore}</p>
+                    <p style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{homeScore} : {awayScore}</p>
                   ) : (
-                    <p style={{ fontSize: 20 }} className="font-black text-gray-600">VS</p>
+                    <p style={{ fontSize: 20, fontWeight: 900, color: '#666' }}>VS</p>
                   )}
                 </div>
-                <div className="text-center flex-1">
-                  <div style={{ fontSize: 36 }} className="mb-1">{opponentTeam?.logo || '❓'}</div>
-                  <p style={{ fontSize: 12 }} className="font-bold text-white truncate">{opponentTeam?.name || '상대 미정'}</p>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ fontSize: 36, marginBottom: 4 }}>{opponentTeam?.logo || '❓'}</div>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opponentTeam?.name || '상대 미정'}</p>
                 </div>
               </div>
 
               {/* 시합 정보 */}
-              <div className="text-center mb-3">
-                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-2" />
-                <p style={{ fontSize: 11 }} className="text-gray-400">
+              <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)', marginBottom: 8 }} />
+                <p style={{ fontSize: 11, color: '#999' }}>
                   {formatDate(selectedMatch.date)} · {selectedMatch.time?.slice(0, 5)}
                 </p>
-                <p style={{ fontSize: 11 }} className="text-gray-500">{selectedMatch.stadium}</p>
-                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mt-2" />
+                <p style={{ fontSize: 11, color: '#777' }}>{selectedMatch.stadium}</p>
+                <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)', marginTop: 8 }} />
               </div>
 
               {/* 골 기록 (시합 후) */}
               {cardType === 'post' && goals.length > 0 && (
-                <div className="mb-3">
-                  <p className="font-bold tracking-[0.3em] text-gray-500 text-center mb-2" style={{ fontSize: 9 }}>G O A L S</p>
-                  <div className="space-y-0.5">
-                    {goals.map((g, i) => (
-                      <p key={i} className="text-center text-amber-400" style={{ fontSize: 12 }}>
-                        ⚽ {g.name} {g.minute && <span className="text-gray-500">{g.minute}'</span>}
-                      </p>
-                    ))}
-                  </div>
+                <div style={{ marginBottom: 12 }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.3em', color: '#777', textAlign: 'center', marginBottom: 8 }}>G O A L S</p>
+                  {goals.map((g, i) => (
+                    <p key={i} style={{ textAlign: 'center', color: '#FBBF24', fontSize: 12 }}>
+                      ⚽ {g.name} {g.minute && <span style={{ color: '#777' }}>{g.minute}'</span>}
+                    </p>
+                  ))}
                 </div>
               )}
 
               {/* 라인업 */}
-              <div className="flex-1 min-h-0">
-                <p className="font-bold tracking-[0.3em] text-gray-500 text-center mb-2" style={{ fontSize: 9 }}>L I N E U P</p>
-                <div className="space-y-1.5">
-                  {groupedPlayers.map(group => (
-                    <div key={group.position} className="flex items-start gap-2">
-                      <span className="font-bold w-6 text-right flex-shrink-0" style={{ fontSize: 10, color: posColor[group.position] }}>
-                        {posLabel[group.position]}
-                      </span>
-                      <div className="flex-1 flex flex-wrap gap-x-2 gap-y-0.5">
-                        {group.players.map((p, i) => (
-                          <span key={i} className="text-gray-300" style={{ fontSize: 11 }}>
-                            {p.name}<span className="text-gray-600" style={{ fontSize: 9 }}>({p.number})</span>
-                          </span>
-                        ))}
-                      </div>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.3em', color: '#777', textAlign: 'center', marginBottom: 8 }}>L I N E U P</p>
+                {groupedPlayers.map(group => (
+                  <div key={group.position} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, width: 24, textAlign: 'right', flexShrink: 0, color: posColor[group.position] }}>
+                      {posLabel[group.position]}
+                    </span>
+                    <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '2px 8px' }}>
+                      {group.players.map((p, i) => (
+                        <span key={i} style={{ fontSize: 11, color: '#ccc' }}>
+                          {p.name}<span style={{ fontSize: 9, color: '#666' }}>({p.number})</span>
+                        </span>
+                      ))}
                     </div>
-                  ))}
-                  {players.length === 0 && (
-                    <p className="text-center text-gray-600" style={{ fontSize: 11 }}>라인업 미정</p>
-                  )}
-                </div>
+                  </div>
+                ))}
+                {players.length === 0 && (
+                  <p style={{ textAlign: 'center', color: '#666', fontSize: 11 }}>라인업 미정</p>
+                )}
               </div>
 
               {/* 하단 브랜딩 */}
-              <div className="text-center pt-2">
-                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-2" />
-                <p className="text-gray-600 tracking-[0.2em]" style={{ fontSize: 9 }}>
+              <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)', marginBottom: 8 }} />
+                <p style={{ color: '#555', letterSpacing: '0.2em', fontSize: 9 }}>
                   {cardType === 'pre' ? '⚽ KICK OFF' : '⚽ GG'} · Match Time
                 </p>
               </div>
