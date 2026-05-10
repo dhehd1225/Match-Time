@@ -88,14 +88,27 @@ export default function MatchCard() {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(cardRef.current, { scale: 3, backgroundColor: null, useCORS: true });
-      const link = document.createElement('a');
-      link.download = `match-card.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const canvas = await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#0a0a0a', useCORS: true });
+      // 모바일/데스크탑 모두 지원하는 다운로드
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `match-card-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
       trackEvent('card_download', { type: cardType });
     } catch (err) {
       console.error('Card generation failed:', err);
+      // 실패 시 새 탭에서 열기
+      try {
+        const canvas = await html2canvas(cardRef.current!, { scale: 2, backgroundColor: '#0a0a0a' });
+        window.open(canvas.toDataURL('image/png'), '_blank');
+      } catch { /* ignore */ }
     }
     setDownloading(false);
   };

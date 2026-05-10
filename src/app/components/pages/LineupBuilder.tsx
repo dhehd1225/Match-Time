@@ -48,6 +48,8 @@ export default function LineupBuilder() {
   const [attendanceCounts, setAttendanceCounts] = useState<Record<string, { attending: number; total: number }>>({});
 
   // Scrimmage state
+  const [jerseyPrimary, setJerseyPrimary] = useState('#DC143C');
+  const [jerseySecondary, setJerseySecondary] = useState('#000000');
   const [formation, setFormation] = useState('4-3-3');
   const [activeQuarter, setActiveQuarter] = useState<Quarter>('1Q');
   const [allPlayers, setAllPlayers] = useState<PlayerInfo[]>([]);
@@ -144,7 +146,7 @@ export default function LineupBuilder() {
   const fieldIds = new Set(currentLineup.filter((pid): pid is string => pid !== null));
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
-  const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : '#DC143C';
+  const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : jerseyPrimary;
   const isTeamCreator = team?.created_by === user?.id;
   const canEdit = mainTab === 'scrimmage' || isTeamCreator;
 
@@ -283,7 +285,19 @@ export default function LineupBuilder() {
             </div>
           )}
 
-          {isTeamCreator ? (
+          {/* 유니폼 색상 */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
+            <div className="flex gap-1.5">
+              {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
+                <button key={c} onClick={() => setJerseyPrimary(c)}
+                  className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-white scale-110' : 'border-white/20'}`}
+                  style={{ backgroundColor: c }} />
+              ))}
+            </div>
+          </div>
+
+          {canEdit ? (
             <div className="flex gap-2 mb-3">
               {Object.keys(formations).map(f => (
                 <button key={f} onClick={() => handleFormationChange(f)}
@@ -330,7 +344,7 @@ export default function LineupBuilder() {
                   {player ? (
                     <div className="flex flex-col items-center">
                       <div className={`${isSel ? 'ring-2 ring-yellow-400 rounded-xl' : ''}`}>
-                        <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor="#000" size="md" />
+                        <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor={jerseySecondary} size="md" />
                       </div>
                       <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-gray-900'}`}>
                         {player.name}
@@ -357,7 +371,7 @@ export default function LineupBuilder() {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold text-white">교체 <span className="text-gray-500 font-normal">{benchPlayers.length}명</span></span>
-              {isTeamCreator && (
+              {canEdit && (
                 <button onClick={() => setShowAddModal(true)}
                   className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
                   <UserPlus size={12} /> 추가
@@ -371,7 +385,7 @@ export default function LineupBuilder() {
                   return (
                     <div key={p.id} onClick={() => handleBenchTap(i)}
                       className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-white/5 bg-[#111]'}`}>
-                      <JerseyIcon number={p.number} primaryColor={jerseyColor(p)} secondaryColor="#000" size="sm" />
+                      <JerseyIcon number={p.number} primaryColor={jerseyColor(p)} secondaryColor={jerseySecondary} size="sm" />
                       <span className="text-[10px] font-medium mt-1 text-gray-300 truncate w-full text-center">{p.name}</span>
                       <span className={`text-[9px] font-bold ${posColors[p.position]}`}>{p.position}</span>
                     </div>
