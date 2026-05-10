@@ -162,6 +162,12 @@ export default function MatchList() {
     await supabase.from('match_attendance').delete().eq('match_id', matchId);
     await supabase.from('lineups').delete().eq('match_id', matchId);
     await supabase.from('notifications').delete().eq('related_id', matchId);
+    const { data: rooms } = await supabase.from('chat_rooms').select('id').eq('match_id', matchId);
+    if (rooms?.length) {
+      const roomIds = rooms.map(r => r.id);
+      await supabase.from('chat_messages').delete().in('room_id', roomIds);
+      await supabase.from('chat_rooms').delete().eq('match_id', matchId);
+    }
     await supabase.from('matches').delete().eq('id', matchId);
     setMatches(prev => prev.filter(m => m.id !== matchId));
     toast.success('매치가 삭제되었습니다.');

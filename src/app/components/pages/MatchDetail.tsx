@@ -246,6 +246,12 @@ export default function MatchDetail() {
               await supabase.from('match_attendance').delete().eq('match_id', match.id);
               await supabase.from('lineups').delete().eq('match_id', match.id);
               await supabase.from('notifications').delete().eq('related_id', match.id);
+              const { data: rooms } = await supabase.from('chat_rooms').select('id').eq('match_id', match.id);
+              if (rooms?.length) {
+                const roomIds = rooms.map(r => r.id);
+                await supabase.from('chat_messages').delete().in('room_id', roomIds);
+                await supabase.from('chat_rooms').delete().eq('match_id', match.id);
+              }
               const { error } = await supabase.from('matches').delete().eq('id', match.id);
               if (error) {
                 toast.error(`삭제 실패: ${error.message}`);
