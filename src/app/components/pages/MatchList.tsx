@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { Search, MapPin, Plus, X, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
@@ -36,6 +36,7 @@ function formatTime(timeStr: string): string {
 
 export default function MatchList() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, team } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,9 +62,12 @@ export default function MatchList() {
     setLoading(false);
   };
 
+  // 페이지 진입할 때마다 새로고침
   useEffect(() => {
     fetchMatches();
+  }, [location.pathname]);
 
+  useEffect(() => {
     const channel = supabase
       .channel('matches-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
