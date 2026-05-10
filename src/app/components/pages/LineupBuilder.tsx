@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy } from 'lucide-react';
+import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import JerseyIcon from '../JerseyIcon';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -69,9 +70,21 @@ export default function LineupBuilder() {
     // 팀 없으면 자체전만 사용 가능
     if (!team) {
       setMainTab('scrimmage');
-      const pos = formations['4-3-3'];
-      const emptyLineup = pos.map(() => null);
-      setQuarterLineups({ '1Q': [...emptyLineup], '2Q': [...emptyLineup], '3Q': [...emptyLineup], '4Q': [...emptyLineup] });
+      // localStorage에서 저장된 자체전 데이터 불러오기
+      const saved = localStorage.getItem('scrimmage_data');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.formation) setFormation(data.formation);
+          if (data.quarterLineups) setQuarterLineups(data.quarterLineups);
+          if (data.allPlayers) setAllPlayers(data.allPlayers);
+          if (data.jerseyPrimary) setJerseyPrimary(data.jerseyPrimary);
+        } catch { /* ignore */ }
+      } else {
+        const pos = formations['4-3-3'];
+        const emptyLineup = pos.map(() => null);
+        setQuarterLineups({ '1Q': [...emptyLineup], '2Q': [...emptyLineup], '3Q': [...emptyLineup], '4Q': [...emptyLineup] });
+      }
       setLoading(false);
       return;
     }
@@ -184,6 +197,13 @@ export default function LineupBuilder() {
       return u;
     });
     setSelectedSlot(null);
+  };
+
+  const handleSaveScrimmage = () => {
+    localStorage.setItem('scrimmage_data', JSON.stringify({
+      formation, quarterLineups, allPlayers, jerseyPrimary,
+    }));
+    toast.success('포메이션이 저장되었습니다.');
   };
 
   const handleAddPlayer = () => {
@@ -401,6 +421,13 @@ export default function LineupBuilder() {
             <span className="text-xs text-gray-500">{activeQuarter} 배치</span>
             <span className="text-xs font-bold text-white">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
           </div>
+
+          {mainTab === 'scrimmage' && (
+            <button onClick={handleSaveScrimmage}
+              className="mt-3 w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              <Save size={16} /> 포메이션 저장
+            </button>
+          )}
         </div>
       )}
 

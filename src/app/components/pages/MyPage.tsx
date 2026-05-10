@@ -116,15 +116,31 @@ export function MyPage() {
         await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
       }
     } else if (notif.type === 'team_join' && notif.related_id) {
-      if (action === 'accepted') {
-        const requesterId = notif.description?.split('::')[0];
-        if (requesterId && notif.related_id) {
-          await supabase.from('team_members').insert({
-            team_id: notif.related_id,
-            user_id: requesterId,
-            role: 'member',
-          });
-        }
+      const requesterId = notif.description?.split('::')[0];
+      if (action === 'accepted' && requesterId) {
+        await supabase.from('team_members').insert({
+          team_id: notif.related_id,
+          user_id: requesterId,
+          role: 'member',
+        });
+        // 요청자에게 승인 알림 발송
+        const { data: teamInfo } = await supabase.from('teams').select('name').eq('id', notif.related_id).single();
+        await supabase.from('notifications').insert({
+          user_id: requesterId,
+          type: 'team_join',
+          title: '팀 가입 승인',
+          description: `${teamInfo?.name || '팀'} 가입이 승인되었습니다!`,
+          related_id: notif.related_id,
+        });
+      } else if (action === 'rejected' && requesterId) {
+        const { data: teamInfo } = await supabase.from('teams').select('name').eq('id', notif.related_id).single();
+        await supabase.from('notifications').insert({
+          user_id: requesterId,
+          type: 'team_join',
+          title: '팀 가입 거절',
+          description: `${teamInfo?.name || '팀'} 가입이 거절되었습니다.`,
+          related_id: notif.related_id,
+        });
       }
     } else if (notif.type === 'match_vote' && notif.related_id && user) {
       await supabase.from('match_attendance').upsert({
