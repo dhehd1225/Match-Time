@@ -62,7 +62,14 @@ export default function LineupBuilder() {
   const [newNumber, setNewNumber] = useState('');
   const [newPos, setNewPos] = useState('MF');
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
-  const initialized = useRef(false);
+  const saveToLocal = (overrides?: { formation?: string; quarterLineups?: Record<Quarter, (string | null)[]>; allPlayers?: PlayerInfo[]; jerseyPrimary?: string }) => {
+    localStorage.setItem('scrimmage_data', JSON.stringify({
+      formation: overrides?.formation ?? formation,
+      quarterLineups: overrides?.quarterLineups ?? quarterLineups,
+      allPlayers: overrides?.allPlayers ?? allPlayers,
+      jerseyPrimary: overrides?.jerseyPrimary ?? jerseyPrimary,
+    }));
+  };
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -85,7 +92,6 @@ export default function LineupBuilder() {
         setQuarterLineups({ '1Q': [...emptyLineup], '2Q': [...emptyLineup], '3Q': [...emptyLineup], '4Q': [...emptyLineup] });
       }
       setLoading(false);
-      setTimeout(() => { initialized.current = true; }, 100);
       return;
     }
 
@@ -168,7 +174,6 @@ export default function LineupBuilder() {
           const init = pos.map((_, i) => players[i]?.id ?? null);
           setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
         }
-        setTimeout(() => { initialized.current = true; }, 100);
       }
 
       setLoading(false);
@@ -193,8 +198,10 @@ export default function LineupBuilder() {
     const nl = [...currentLineup];
     if (selectedSlot.type === 'field') { [nl[selectedSlot.index], nl[i]] = [nl[i], nl[selectedSlot.index]]; }
     else { const bp = benchPlayers[selectedSlot.index]; if (bp) nl[i] = bp.id; }
-    setQuarterLineups(prev => ({ ...prev, [activeQuarter]: nl }));
+    const newLineups = { ...quarterLineups, [activeQuarter]: nl };
+    setQuarterLineups(newLineups);
     setSelectedSlot(null);
+    saveToLocal({ quarterLineups: newLineups });
   };
 
   const handleBenchTap = (i: number) => {
@@ -203,7 +210,9 @@ export default function LineupBuilder() {
     if (selectedSlot.type === 'bench' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     if (selectedSlot.type === 'field') {
       const nl = [...currentLineup]; const bp = benchPlayers[i]; if (bp) nl[selectedSlot.index] = bp.id;
-      setQuarterLineups(prev => ({ ...prev, [activeQuarter]: nl }));
+      const newLineups = { ...quarterLineups, [activeQuarter]: nl };
+      setQuarterLineups(newLineups);
+      saveToLocal({ quarterLineups: newLineups });
     }
     setSelectedSlot(null);
   };
@@ -211,30 +220,23 @@ export default function LineupBuilder() {
   const handleFormationChange = (f: string) => {
     setFormation(f);
     const np = formations[f] || formations['4-3-3'];
-    setQuarterLineups(prev => {
-      const u = { ...prev };
-      for (const q of quartersArr) {
-        const o = prev[q];
-        u[q] = np.length > o.length ? [...o, ...Array(np.length - o.length).fill(null)] : o.slice(0, np.length);
-      }
-      return u;
-    });
+    const newLineups = { ...quarterLineups };
+    for (const q of quartersArr) {
+      const o = quarterLineups[q];
+      newLineups[q] = np.length > o.length ? [...o, ...Array(np.length - o.length).fill(null)] : o.slice(0, np.length);
+    }
+    setQuarterLineups(newLineups);
     setSelectedSlot(null);
+    saveToLocal({ formation: f, quarterLineups: newLineups });
   };
-
-  // 자동 저장 - 초기 로딩 완료 후에만 저장
-  useEffect(() => {
-    if (!initialized.current) return;
-    localStorage.setItem('scrimmage_data', JSON.stringify({
-      formation, quarterLineups, allPlayers, jerseyPrimary,
-    }));
-  }, [formation, quarterLineups, allPlayers, jerseyPrimary]);
 
   const handleAddPlayer = () => {
     if (!newName.trim() || !newNumber.trim()) return;
     const newPlayer: PlayerInfo = { id: `temp-${Date.now()}`, name: newName.trim(), number: parseInt(newNumber), position: newPos, type: newType };
-    setAllPlayers(prev => [...prev, newPlayer]);
+    const newPlayers = [...allPlayers, newPlayer];
+    setAllPlayers(newPlayers);
     setNewName(''); setNewNumber(''); setNewPos('MF'); setNewType('mercenary'); setShowAddModal(false);
+    saveToLocal({ allPlayers: newPlayers });
   };
 
   const formatDate = (dateStr: string) => {
@@ -334,7 +336,7 @@ export default function LineupBuilder() {
             <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
             <div className="flex gap-1.5">
               {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
-                <button key={c} onClick={() => setJerseyPrimary(c)}
+                <button key={c} onClick={() => { setJerseyPrimary(c); saveToLocal({ jerseyPrimary: c }); }}
                   className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-white scale-110' : 'border-white/20'}`}
                   style={{ backgroundColor: c }} />
               ))}
