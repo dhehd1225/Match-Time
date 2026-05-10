@@ -83,10 +83,10 @@ export default function KakaoCallback() {
 
         // 4. 로그인 후 바로 메인 서비스로
         navigate('/matches');
-      } catch (err) {
+      } catch (err: any) {
         console.error('로그인 오류:', err);
-        setStatus('로그인 실패. 다시 시도해주세요.');
-        setTimeout(() => navigate('/auth'), 2000);
+        setStatus(`로그인 실패: ${err?.message || String(err)}`);
+        setTimeout(() => navigate('/auth'), 5000);
       }
     };
 
