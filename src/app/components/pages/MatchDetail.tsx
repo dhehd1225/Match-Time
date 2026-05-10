@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, MapPin, Users, Send, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Send, Check, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { trackEvent } from '../../../hooks/useAnalytics';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -235,6 +236,26 @@ export default function MatchDetail() {
           </div>
         </div>
       </div>
+
+      {/* 매치 삭제 */}
+      {match.created_by === user?.id && (
+        <div className="px-4 mb-4">
+          <button
+            onClick={async () => {
+              if (!confirm('이 매치를 삭제하시겠습니까?')) return;
+              await supabase.from('match_attendance').delete().eq('match_id', match.id);
+              await supabase.from('lineups').delete().eq('match_id', match.id);
+              await supabase.from('notifications').delete().eq('related_id', match.id);
+              await supabase.from('matches').delete().eq('id', match.id);
+              toast.success('매치가 삭제되었습니다.');
+              navigate('/matches');
+            }}
+            className="w-full py-3 rounded-xl border border-red-500/20 text-red-400 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          >
+            <Trash2 size={16} /> 매치 삭제
+          </button>
+        </div>
+      )}
     </div>
   );
 }
