@@ -62,7 +62,17 @@ export default function LineupBuilder() {
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
 
   useEffect(() => {
-    if (!team || !user) { setLoading(false); return; }
+    if (!user) { setLoading(false); return; }
+
+    // 팀 없으면 자체전만 사용 가능
+    if (!team) {
+      setMainTab('scrimmage');
+      const pos = formations['4-3-3'];
+      const emptyLineup = pos.map(() => null);
+      setQuarterLineups({ '1Q': [...emptyLineup], '2Q': [...emptyLineup], '3Q': [...emptyLineup], '4Q': [...emptyLineup] });
+      setLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
       // Fetch my team's matches
@@ -136,9 +146,10 @@ export default function LineupBuilder() {
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
   const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : '#DC143C';
   const isTeamCreator = team?.created_by === user?.id;
+  const canEdit = mainTab === 'scrimmage' || isTeamCreator;
 
   const handleFieldTap = (i: number) => {
-    if (!isTeamCreator) return;
+    if (!canEdit) return;
     if (!selectedSlot) { setSelectedSlot({ type: 'field', index: i }); return; }
     if (selectedSlot.type === 'field' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     const nl = [...currentLineup];
@@ -149,7 +160,7 @@ export default function LineupBuilder() {
   };
 
   const handleBenchTap = (i: number) => {
-    if (!isTeamCreator) return;
+    if (!canEdit) return;
     if (!selectedSlot) { setSelectedSlot({ type: 'bench', index: i }); return; }
     if (selectedSlot.type === 'bench' && selectedSlot.index === i) { setSelectedSlot(null); return; }
     if (selectedSlot.type === 'field') {
@@ -199,10 +210,12 @@ export default function LineupBuilder() {
       <div className="px-4 pt-5 pb-0 sticky top-0 z-10 bg-[#0a0a0a]">
         <h1 className="text-2xl font-black text-white mb-3">라인업</h1>
         <div className="flex gap-1 bg-[#111] p-1 rounded-xl mb-3">
-          <button onClick={() => setMainTab('mymatches')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'mymatches' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
-            내 경기
-          </button>
+          {team && (
+            <button onClick={() => setMainTab('mymatches')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'mymatches' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+              내 경기
+            </button>
+          )}
           <button onClick={() => setMainTab('scrimmage')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'scrimmage' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
             자체전
