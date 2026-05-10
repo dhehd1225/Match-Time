@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy, Save } from 'lucide-react';
-import { toast } from 'sonner';
+import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy } from 'lucide-react';
 import JerseyIcon from '../JerseyIcon';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -233,12 +232,14 @@ export default function LineupBuilder() {
     setSelectedSlot(null);
   };
 
-  const handleSaveScrimmage = () => {
-    localStorage.setItem('scrimmage_data', JSON.stringify({
-      formation, quarterLineups, allPlayers, jerseyPrimary,
-    }));
-    toast.success('포메이션이 저장되었습니다.');
-  };
+  // 자동 저장 - 변경될 때마다 localStorage에 저장
+  useEffect(() => {
+    if (allPlayers.length > 0 || quarterLineups['1Q'].length > 0) {
+      localStorage.setItem('scrimmage_data', JSON.stringify({
+        formation, quarterLineups, allPlayers, jerseyPrimary,
+      }));
+    }
+  }, [formation, quarterLineups, allPlayers, jerseyPrimary]);
 
   const handleAddPlayer = () => {
     if (!newName.trim() || !newNumber.trim()) return;
@@ -456,12 +457,6 @@ export default function LineupBuilder() {
             <span className="text-xs font-bold text-white">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
           </div>
 
-          {mainTab === 'scrimmage' && (
-            <button onClick={handleSaveScrimmage}
-              className="mt-3 w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-              <Save size={16} /> 포메이션 저장
-            </button>
-          )}
         </div>
       )}
 
