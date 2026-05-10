@@ -152,12 +152,34 @@ export default function LineupBuilder() {
           type: 'regular' as const,
         }));
         setTeamMembers(players);
-        setAllPlayers(players);
 
-        // Initialize scrimmage lineup
-        const pos = formations['4-3-3'];
-        const init = pos.map((_, i) => players[i]?.id ?? null);
-        setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+        // localStorage에 저장된 자체전 데이터가 있으면 그것 유지, 없으면 초기화
+        const savedData = localStorage.getItem('scrimmage_data');
+        if (savedData) {
+          try {
+            const data = JSON.parse(savedData);
+            // 저장된 선수 + DB 선수 합치기 (중복 제거)
+            const savedPlayers: PlayerInfo[] = data.allPlayers || [];
+            const merged = [...players];
+            savedPlayers.forEach(sp => {
+              if (!merged.find(p => p.id === sp.id)) merged.push(sp);
+            });
+            setAllPlayers(merged);
+            if (data.quarterLineups) setQuarterLineups(data.quarterLineups);
+            if (data.formation) setFormation(data.formation);
+            if (data.jerseyPrimary) setJerseyPrimary(data.jerseyPrimary);
+          } catch {
+            setAllPlayers(players);
+            const pos = formations['4-3-3'];
+            const init = pos.map((_, i) => players[i]?.id ?? null);
+            setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+          }
+        } else {
+          setAllPlayers(players);
+          const pos = formations['4-3-3'];
+          const init = pos.map((_, i) => players[i]?.id ?? null);
+          setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+        }
       }
 
       setLoading(false);
