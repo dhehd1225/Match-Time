@@ -95,6 +95,10 @@ export default function MatchCard() {
         useCORS: true,
         logging: false,
         allowTaint: true,
+        onclone: (clonedDoc) => {
+          // Tailwind의 oklch 색상이 html2canvas에서 에러나므로 스타일시트 제거
+          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
+        },
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
