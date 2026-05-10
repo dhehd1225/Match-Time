@@ -89,6 +89,18 @@ export default function LineupBuilder() {
       return;
     }
 
+    // localStorage에서 자체전 데이터 불러오기 (팀 있어도)
+    const saved = localStorage.getItem('scrimmage_data');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.formation) setFormation(data.formation);
+        if (data.quarterLineups) setQuarterLineups(data.quarterLineups);
+        if (data.allPlayers) setAllPlayers(data.allPlayers);
+        if (data.jerseyPrimary) setJerseyPrimary(data.jerseyPrimary);
+      } catch { /* ignore */ }
+    }
+
     const fetchData = async () => {
       // Fetch my team's matches
       const { data: matchesData } = await supabase

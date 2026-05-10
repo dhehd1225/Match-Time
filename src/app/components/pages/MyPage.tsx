@@ -740,7 +740,16 @@ export function MyPage() {
                     </p>
 
                     <div className="flex gap-2">
-                      {notif.type === 'match_vote' ? (
+                      {notif.title === '팀 가입 승인' || notif.title === '팀 가입 거절' ? (
+                        <button onClick={async () => {
+                          setNotifications(prev => prev.filter(n => n.id !== notif.id));
+                          await supabase.from('notifications').delete().eq('id', notif.id);
+                          if (notif.title === '팀 가입 승인') await refreshProfile();
+                        }}
+                          className="flex-1 flex items-center justify-center gap-1 bg-white/10 text-white py-2 rounded-lg text-xs font-bold">
+                          <Check size={13} /> 확인
+                        </button>
+                      ) : notif.type === 'match_vote' ? (
                         <>
                           <button onClick={() => handleAction(notif.id, 'accepted')}
                             className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
