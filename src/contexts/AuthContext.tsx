@@ -12,6 +12,7 @@ interface AuthState {
   memberships: TeamMember[];
   team: Team | null; // 현재 선택된 팀
   membership: TeamMember | null; // 현재 선택된 팀의 멤버십
+  isTeamCreator: boolean; // 현재 팀의 팀장(president)인지 — 권한 단일 소스
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthState>({
   memberships: [],
   team: null,
   membership: null,
+  isTeamCreator: false,
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -130,12 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 현재 선택된 팀과 멤버십
   const team = teams.find(t => t.id === currentTeamId) || null;
   const membership = memberships.find(m => m.team_id === currentTeamId) || null;
+  // 권한 단일 소스: membership.role='president' 우선, 레거시 호환으로 created_by 폴백
+  const isTeamCreator =
+    membership?.role === 'president' ||
+    (!!team && !!user && team.created_by === user.id);
 
   return (
     <AuthContext.Provider value={{
       user, session, profile,
       teams, memberships,
-      team, membership,
+      team, membership, isTeamCreator,
       loading, signOut, refreshProfile, setCurrentTeamId,
     }}>
       {children}

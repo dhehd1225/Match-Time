@@ -10,7 +10,7 @@ import type { Match } from '../../../lib/types';
 export default function MatchDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user, team } = useAuth();
+  const { user, team, isTeamCreator } = useAuth();
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -49,32 +49,38 @@ export default function MatchDetail() {
     if (!match || !team || !user) return;
     setApplying(true);
 
-    // 상대팀으로 등록 (away_team)
-    const { error } = await supabase
+    // 상대팀으로 등록 (away_team). race 방어: 결과 row가 실제로 업데이트되었는지 확인
+    const { data: updated, error } = await supabase
       .from('matches')
       .update({ away_team_id: team.id, status: 'pending' })
       .eq('id', match.id)
-      .is('away_team_id', null);
+      .is('away_team_id', null)
+      .select('id')
+      .maybeSingle();
 
-    if (!error) {
-      setApplied(true);
-      trackEvent('match_apply', { match_id: match.id });
-      // 홈팀 생성자에게 알림
-      const { data: homeTeam } = await supabase
-        .from('teams')
-        .select('created_by')
-        .eq('id', match.home_team_id)
-        .single();
+    if (error || !updated) {
+      alert('이미 다른 팀이 신청했거나 신청에 실패했습니다.');
+      setApplying(false);
+      return;
+    }
 
-      if (homeTeam) {
-        await supabase.from('notifications').insert({
-          user_id: homeTeam.created_by,
-          type: 'match_request',
-          title: '시합 신청',
-          description: `${team.name}이(가) 시합을 신청했습니다.`,
-          related_id: match.id,
-        });
-      }
+    setApplied(true);
+    trackEvent('match_apply', { match_id: match.id });
+    // 홈팀 생성자에게 알림
+    const { data: homeTeam } = await supabase
+      .from('teams')
+      .select('created_by')
+      .eq('id', match.home_team_id)
+      .single();
+
+    if (homeTeam) {
+      await supabase.from('notifications').insert({
+        user_id: homeTeam.created_by,
+        type: 'match_request',
+        title: '시합 신청',
+        description: `${team.name}이(가) 시합을 신청했습니다.`,
+        related_id: match.id,
+      });
     }
     setApplying(false);
   };
@@ -102,7 +108,6 @@ export default function MatchDetail() {
 
   const isMyTeamHome = team?.id === match.home_team_id;
   const isMyTeamAway = team?.id === match.away_team_id;
-  const isTeamCreator = team?.created_by === user?.id;
   const canApply = team && isTeamCreator && !isMyTeamHome && !match.away_team_id && !applied;
 
   return (

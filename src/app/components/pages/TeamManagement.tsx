@@ -15,8 +15,7 @@ const positionColors: Record<string, string> = {
 
 export default function TeamManagement() {
   const navigate = useNavigate();
-  const { team, user } = useAuth();
-  const isTeamCreator = team?.created_by === user?.id;
+  const { team, user, isTeamCreator } = useAuth();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

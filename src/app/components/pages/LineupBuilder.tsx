@@ -41,7 +41,7 @@ const posColors: Record<string, string> = { GK: 'text-yellow-500', DF: 'text-blu
 
 export default function LineupBuilder() {
   const navigate = useNavigate();
-  const { team, user } = useAuth();
+  const { team, user, isTeamCreator } = useAuth();
   const [mainTab, setMainTab] = useState<'mymatches' | 'scrimmage'>('mymatches');
   const [myMatches, setMyMatches] = useState<Match[]>([]);
   const [teamMembers, setTeamMembers] = useState<PlayerInfo[]>([]);
@@ -187,7 +187,6 @@ export default function LineupBuilder() {
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
   const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : jerseyPrimary;
-  const isTeamCreator = team?.created_by === user?.id;
   const canEdit = mainTab === 'scrimmage' || isTeamCreator;
 
   const handleFieldTap = (i: number) => {

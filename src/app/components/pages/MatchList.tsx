@@ -37,7 +37,7 @@ function formatTime(timeStr: string): string {
 export default function MatchList() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, team } = useAuth();
+  const { user, team, isTeamCreator } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -341,8 +341,8 @@ export default function MatchList() {
         )}
       </div>
 
-      {/* FAB - 팀 생성자만 시합 생성 가능 */}
-      {team?.created_by === user?.id && (
+      {/* FAB - 팀장만 시합 생성 가능 */}
+      {isTeamCreator && (
         <div className="fixed bottom-20 left-0 right-0 max-w-[430px] mx-auto z-20 pointer-events-none">
           <button
             onClick={() => setShowForm(true)}

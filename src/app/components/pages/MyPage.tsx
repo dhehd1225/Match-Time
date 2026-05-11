@@ -13,7 +13,14 @@ function getTeamCode(teamId: string) {
 
 export function MyPage() {
   const navigate = useNavigate();
-  const { profile, user, membership, teams, team, setCurrentTeamId, signOut, refreshProfile } = useAuth();
+  const { profile, user, membership, memberships, teams, team, setCurrentTeamId, signOut, refreshProfile } = useAuth();
+  // 권한 단일 소스: 각 팀별 'president' 여부 (created_by 폴백 포함)
+  const isPresidentOf = (teamId: string) => {
+    const m = memberships.find(mm => mm.team_id === teamId);
+    if (m?.role === 'president') return true;
+    const t = teams.find(tt => tt.id === teamId);
+    return !!t && !!user && t.created_by === user.id;
+  };
   const [name, setName] = useState('');
   const [position, setPosition] = useState('MF');
   const [backNumber, setBackNumber] = useState('');
@@ -113,7 +120,29 @@ export function MyPage() {
       if (action === 'accepted') {
         await supabase.from('matches').update({ status: 'confirmed' }).eq('id', notif.related_id);
       } else {
+        // 거절: away팀 정보 먼저 조회 → 매치 되돌리기 → away팀 팀장에게 거절 통보
+        const { data: m } = await supabase
+          .from('matches')
+          .select('away_team_id')
+          .eq('id', notif.related_id)
+          .single();
         await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
+        if (m?.away_team_id) {
+          const { data: awayTeam } = await supabase
+            .from('teams')
+            .select('created_by')
+            .eq('id', m.away_team_id)
+            .single();
+          if (awayTeam?.created_by) {
+            await supabase.from('notifications').insert({
+              user_id: awayTeam.created_by,
+              type: 'match_request',
+              title: '시합 신청 거절',
+              description: '상대 팀이 시합 신청을 거절했습니다.',
+              related_id: notif.related_id,
+            });
+          }
+        }
       }
     } else if (notif.type === 'team_join' && notif.related_id) {
       const requesterId = notif.description?.split('::')[0];
@@ -502,7 +531,7 @@ export function MyPage() {
                     <div className="flex-1 min-w-0 text-left">
                       <div className="flex items-center gap-1.5">
                         <p className="font-bold text-white text-sm truncate">{t.name}</p>
-                        {t.created_by === user?.id && (
+                        {isPresidentOf(t.id) && (
                           <span className="text-[8px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full font-bold shrink-0">팀장</span>
                         )}
                       </div>
@@ -519,7 +548,7 @@ export function MyPage() {
                     >
                       {copiedTeamId === t.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                     </button>
-                    {t.created_by === user?.id ? (
+                    {isPresidentOf(t.id) ? (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteTeam(t.id); }}
                         className="p-2 text-gray-500 hover:text-red-400 transition-colors"

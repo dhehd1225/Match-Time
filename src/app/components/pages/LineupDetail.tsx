@@ -32,7 +32,7 @@ const posColors: Record<string, string> = { GK: 'text-yellow-500', DF: 'text-blu
 export default function LineupDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user, team, profile } = useAuth();
+  const { user, team, profile, isTeamCreator } = useAuth();
 
   const [match, setMatch] = useState<Match | null>(null);
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
@@ -253,7 +253,6 @@ export default function LineupDetail() {
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
   const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : '#DC143C';
-  const isTeamCreator = team?.created_by === user?.id;
 
   const attendingPlayers = players.filter(p => p.status === 'attending');
   const notAttendingPlayers = players.filter(p => p.status === 'not-attending');
