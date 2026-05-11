@@ -12,13 +12,15 @@ export default function JerseyIcon({ number, primaryColor, secondaryColor, size 
     lg: 'w-16 h-20',
   };
 
+  const patternId = `stripes-${number}-${primaryColor.replace('#', '')}-${secondaryColor.replace('#', '')}`;
+
   return (
     <div className={`relative ${sizeClasses[size]}`}>
       {/* Jersey SVG */}
       <svg viewBox="0 0 100 120" className="w-full h-full">
         {/* Vertical stripes pattern */}
         <defs>
-          <pattern id={`stripes-${number}`} patternUnits="userSpaceOnUse" width="20" height="120">
+          <pattern id={patternId} patternUnits="userSpaceOnUse" width="20" height="120">
             <rect width="10" height="120" fill={primaryColor} />
             <rect x="10" width="10" height="120" fill={secondaryColor} />
           </pattern>
@@ -27,7 +29,7 @@ export default function JerseyIcon({ number, primaryColor, secondaryColor, size 
         {/* Jersey body */}
         <path
           d="M 25 20 L 15 30 L 15 50 L 20 50 L 20 100 C 20 105 25 110 30 110 L 70 110 C 75 110 80 105 80 100 L 80 50 L 85 50 L 85 30 L 75 20 L 65 25 L 50 20 L 35 25 Z"
-          fill={`url(#stripes-${number})`}
+          fill={`url(#${patternId})`}
           stroke="#000"
           strokeWidth="1.5"
         />
@@ -35,13 +37,13 @@ export default function JerseyIcon({ number, primaryColor, secondaryColor, size 
         {/* Sleeves */}
         <path
           d="M 15 30 L 5 40 L 10 50 L 15 50 Z"
-          fill={`url(#stripes-${number})`}
+          fill={`url(#${patternId})`}
           stroke="#000"
           strokeWidth="1.5"
         />
         <path
           d="M 85 30 L 95 40 L 90 50 L 85 50 Z"
-          fill={`url(#stripes-${number})`}
+          fill={`url(#${patternId})`}
           stroke="#000"
           strokeWidth="1.5"
         />

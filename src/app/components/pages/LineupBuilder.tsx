@@ -186,7 +186,8 @@ export default function LineupBuilder() {
   const fieldIds = new Set(currentLineup.filter((pid): pid is string => pid !== null));
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
-  const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : jerseyPrimary;
+  // 모든 플레이어 타입(팀원, 용병, 신입)에 관계없이 동일한 색상을 반환합니다.
+  const jerseyColor = (p: PlayerInfo) => jerseyPrimary;
   const canEdit = mainTab === 'scrimmage' || isTeamCreator;
 
   const handleFieldTap = (i: number) => {

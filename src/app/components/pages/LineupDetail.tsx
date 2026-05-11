@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, MapPin, Users, Check, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle, Save } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import JerseyIcon from '../JerseyIcon';
 import { supabase } from '../../../lib/supabase';
@@ -47,6 +47,8 @@ export default function LineupDetail() {
     '1Q': [], '2Q': [], '3Q': [], '4Q': [],
   });
   const [selectedSlot, setSelectedSlot] = useState<{ type: 'field' | 'bench'; index: number } | null>(null);
+  const [jerseyPrimary, setJerseyPrimary] = useState('#DC143C');
+  const [jerseySecondary] = useState('#000000');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
@@ -252,7 +254,8 @@ export default function LineupDetail() {
   const fieldIds = new Set(currentLineup.filter((pid): pid is string => pid !== null));
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
   const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
-  const jerseyColor = (p: PlayerInfo) => p.type === 'mercenary' ? '#F59E0B' : p.type === 'rookie' ? '#3B82F6' : '#DC143C';
+  // 모든 플레이어 타입(팀원, 용병, 신입)에 관계없이 동일한 색상을 반환합니다.
+  const jerseyColor = (p: PlayerInfo) => jerseyPrimary;
 
   const attendingPlayers = players.filter(p => p.status === 'attending');
   const notAttendingPlayers = players.filter(p => p.status === 'not-attending');
@@ -438,6 +441,18 @@ export default function LineupDetail() {
             </div>
           )}
 
+          {/* 유니폼 색상 */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
+            <div className="flex gap-1.5">
+              {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
+                <button key={c} onClick={() => setJerseyPrimary(c)}
+                  className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-white scale-110' : 'border-white/20'}`}
+                  style={{ backgroundColor: c }} />
+              ))}
+            </div>
+          </div>
+
           {isTeamCreator ? (
             <div className="flex gap-2 mb-3">
               {Object.keys(formations).map(f => (
@@ -480,7 +495,7 @@ export default function LineupDetail() {
                   {player ? (
                     <div className="flex flex-col items-center">
                       <div className={`${isSel ? 'ring-2 ring-yellow-400 rounded-xl' : ''}`}>
-                        <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor="#000" size="md" />
+                        <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor={jerseySecondary} size="md" />
                       </div>
                       <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-gray-900'}`}>{player.name}</div>
                       {player.type !== 'regular' && (
@@ -517,7 +532,7 @@ export default function LineupDetail() {
                   return (
                     <div key={p.id} onClick={() => handleBenchTap(i)}
                       className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-white/5 bg-[#111]'}`}>
-                      <JerseyIcon number={p.number} primaryColor={jerseyColor(p)} secondaryColor="#000" size="sm" />
+                      <JerseyIcon number={p.number} primaryColor={jerseyColor(p)} secondaryColor={jerseySecondary} size="sm" />
                       <span className="text-[10px] font-medium mt-1 text-gray-300 truncate w-full text-center">{p.name}</span>
                       <span className={`text-[9px] font-bold ${posColors[p.position]}`}>{p.position}</span>
                     </div>
