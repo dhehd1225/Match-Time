@@ -402,24 +402,55 @@ export default function LineupDetail() {
         setFormation(newFormation);
       }
 
-      // 추천 라인업 적용 - 이름 매칭
+      // 추천 라인업 적용 - 포지션 기반 매칭
       const posArr = formations[newFormation] || formations[formation];
       const newLineup: (string | null)[] = posArr.map(() => null);
       const used = new Set<string>();
 
-      result.lineup.forEach((rawName, idx) => {
-        if (idx >= posArr.length) return;
-        // AI가 "이름 (포지션)" 형태로 응답할 수 있으므로 이름만 추출
+      // 포메이션 슬롯별 포지션 매핑 (GK → DF → MF → FW 순서)
+      const getSlotPosition = (idx: number, total: number): string => {
+        if (idx === 0) return 'GK';
+        const f = newFormation || formation;
+        const parts = f.split('-').map(Number); // e.g. [4,3,3]
+        let count = 1; // GK
+        if (idx < count + parts[0]) return 'DF';
+        count += parts[0];
+        if (idx < count + parts[1]) return 'MF';
+        return 'FW';
+      };
+
+      // AI 결과에서 선수 이름과 희망 포지션 추출
+      result.lineup.forEach((rawName) => {
         const name = rawName.replace(/\s*\(.*\)\s*$/, '').trim();
         const player = allPlayers.find(p => p.name === name && !used.has(p.id))
           || allPlayers.find(p => rawName.includes(p.name) && !used.has(p.id));
-        if (player) {
-          newLineup[idx] = player.id;
-          used.add(player.id);
+        if (!player) return;
+
+        // 선수의 희망 포지션 또는 기본 포지션에 맞는 슬롯 찾기
+        const targetPos = player.preferredPositions?.[0] || player.position;
+        let placed = false;
+        for (let i = 0; i < posArr.length; i++) {
+          if (newLineup[i] !== null) continue;
+          if (getSlotPosition(i, posArr.length) === targetPos) {
+            newLineup[i] = player.id;
+            used.add(player.id);
+            placed = true;
+            break;
+          }
+        }
+        // 맞는 슬롯이 없으면 빈 자리에 배치
+        if (!placed) {
+          for (let i = 0; i < posArr.length; i++) {
+            if (newLineup[i] === null) {
+              newLineup[i] = player.id;
+              used.add(player.id);
+              break;
+            }
+          }
         }
       });
 
-      // 매칭 안 된 슬롯에 남은 선수 채우기
+      // 매칭 안 된 선수는 남은 슬롯에 채우기
       const remaining = allPlayers.filter(p => !used.has(p.id));
       let ri = 0;
       for (let i = 0; i < newLineup.length; i++) {
