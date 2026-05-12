@@ -407,9 +407,12 @@ export default function LineupDetail() {
       const newLineup: (string | null)[] = posArr.map(() => null);
       const used = new Set<string>();
 
-      result.lineup.forEach((name, idx) => {
+      result.lineup.forEach((rawName, idx) => {
         if (idx >= posArr.length) return;
-        const player = allPlayers.find(p => p.name === name && !used.has(p.id));
+        // AI가 "이름 (포지션)" 형태로 응답할 수 있으므로 이름만 추출
+        const name = rawName.replace(/\s*\(.*\)\s*$/, '').trim();
+        const player = allPlayers.find(p => p.name === name && !used.has(p.id))
+          || allPlayers.find(p => rawName.includes(p.name) && !used.has(p.id));
         if (player) {
           newLineup[idx] = player.id;
           used.add(player.id);

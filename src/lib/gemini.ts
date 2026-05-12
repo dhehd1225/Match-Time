@@ -64,7 +64,7 @@ lineup 배열 순서: GK → DF(왼→오) → MF(왼→오) → FW(왼→오)`;
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+      generationConfig: { temperature: 0.7, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } },
     }),
   });
 
