@@ -762,9 +762,13 @@ export function MyPage() {
                         </button>
                       ) : notif.type === 'match_vote' ? (
                         <>
-                          <button onClick={() => handleAction(notif.id, 'accepted')}
+                          <button onClick={async () => {
+                            setNotifications(prev => prev.filter(n => n.id !== notif.id));
+                            await supabase.from('notifications').delete().eq('id', notif.id);
+                            if (notif.related_id) navigate(`/lineup/${notif.related_id}`);
+                          }}
                             className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
-                            <Check size={13} /> 참여
+                            <Check size={13} /> 참여 등록
                           </button>
                           <button onClick={() => handleAction(notif.id, 'rejected')}
                             className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">

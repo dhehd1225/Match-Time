@@ -20,13 +20,7 @@ interface PlayerInfo {
   desiredQuarters?: string[];
 }
 
-const DETAIL_POSITIONS: Record<string, string[]> = {
-  GK: ['GK'],
-  DF: ['CB', 'LB', 'RB'],
-  MF: ['CM', 'CAM', 'CDM', 'LM', 'RM'],
-  FW: ['ST', 'LW', 'RW'],
-};
-const ALL_DETAIL_POS = ['GK', 'CB', 'LB', 'RB', 'CM', 'CAM', 'CDM', 'LM', 'RM', 'ST', 'LW', 'RW'];
+const ALL_POSITIONS = ['FW', 'MF', 'DF', 'GK'];
 
 type Quarter = '1Q' | '2Q' | '3Q' | '4Q';
 const quarters: Quarter[] = ['1Q', '2Q', '3Q', '4Q'];
@@ -542,11 +536,14 @@ export default function LineupDetail() {
                     </div>
                     {player.status === 'attending' && player.preferredPositions && player.preferredPositions.length > 0 && (
                       <div className="flex items-center gap-1.5 mt-1.5 ml-7">
-                        {player.preferredPositions.map((pos, i) => (
-                          <span key={pos} className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-medium">
-                            {i + 1}순위 {pos}
-                          </span>
-                        ))}
+                        {player.preferredPositions.map((pos, i) => {
+                          const labels: Record<string, string> = { FW: '공격', MF: '미드', DF: '수비', GK: '골키퍼' };
+                          return (
+                            <span key={pos} className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-medium">
+                              {i + 1}순위 {labels[pos] || pos}
+                            </span>
+                          );
+                        })}
                         {player.desiredQuarters && player.desiredQuarters.length < 4 && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
                             {player.desiredQuarters.join('·')}
@@ -765,17 +762,18 @@ export default function LineupDetail() {
             </div>
 
             <div className="mb-4">
-              <p className="text-xs text-gray-400 mb-2">희망 포지션 <span className="text-violet-400">(최대 3개, 순서대로 우선순위)</span></p>
-              <div className="flex flex-wrap gap-1.5">
-                {ALL_DETAIL_POS.map(pos => {
+              <p className="text-xs text-gray-400 mb-2">희망 포지션 <span className="text-violet-400">(순서대로 우선순위, 최대 3개)</span></p>
+              <div className="flex gap-2">
+                {ALL_POSITIONS.map(pos => {
                   const idx = prefPositions.indexOf(pos);
                   const selected = idx !== -1;
+                  const labels: Record<string, string> = { FW: '공격', MF: '미드', DF: '수비', GK: '골키퍼' };
                   return (
                     <button key={pos} onClick={() => togglePrefPosition(pos)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold relative ${
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold relative ${
                         selected ? 'bg-violet-500 text-white' : 'bg-white/5 text-gray-500'
                       }`}>
-                      {pos}
+                      {labels[pos]}
                       {selected && (
                         <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-white text-violet-600 rounded-full text-[9px] font-black flex items-center justify-center">
                           {idx + 1}
@@ -787,9 +785,10 @@ export default function LineupDetail() {
               </div>
               {prefPositions.length > 0 && (
                 <div className="flex items-center gap-1 mt-2">
-                  {prefPositions.map((pos, i) => (
-                    <span key={pos} className="text-[10px] text-violet-400">{i > 0 && '→'} {pos}</span>
-                  ))}
+                  {prefPositions.map((pos, i) => {
+                    const labels: Record<string, string> = { FW: '공격', MF: '미드', DF: '수비', GK: '골키퍼' };
+                    return <span key={pos} className="text-[10px] text-violet-400">{i > 0 && ' → '}{i + 1}순위 {labels[pos] || pos}</span>;
+                  })}
                 </div>
               )}
             </div>
