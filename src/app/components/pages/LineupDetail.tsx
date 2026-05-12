@@ -537,7 +537,7 @@ export default function LineupDetail() {
                     {player.status === 'attending' && player.preferredPositions && player.preferredPositions.length > 0 && (
                       <div className="flex items-center gap-1.5 mt-1.5 ml-7">
                         {player.preferredPositions.map((pos, i) => {
-                          const labels: Record<string, string> = { FW: '공격', MF: '미드', DF: '수비', GK: '골키퍼' };
+                          const labels: Record<string, string> = { FW: 'FW', MF: 'MF', DF: 'DF', GK: 'GK' };
                           return (
                             <span key={pos} className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-medium">
                               {i + 1}순위 {labels[pos] || pos}
@@ -767,7 +767,7 @@ export default function LineupDetail() {
                 {ALL_POSITIONS.map(pos => {
                   const idx = prefPositions.indexOf(pos);
                   const selected = idx !== -1;
-                  const labels: Record<string, string> = { FW: '공격', MF: '미드', DF: '수비', GK: '골키퍼' };
+                  const labels: Record<string, string> = { FW: 'FW', MF: 'MF', DF: 'DF', GK: 'GK' };
                   return (
                     <button key={pos} onClick={() => togglePrefPosition(pos)}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-bold relative ${
@@ -786,7 +786,7 @@ export default function LineupDetail() {
               {prefPositions.length > 0 && (
                 <div className="flex items-center gap-1 mt-2">
                   {prefPositions.map((pos, i) => {
-                    const labels: Record<string, string> = { FW: '공격', MF: '미드', DF: '수비', GK: '골키퍼' };
+                    const labels: Record<string, string> = { FW: 'FW', MF: 'MF', DF: 'DF', GK: 'GK' };
                     return <span key={pos} className="text-[10px] text-violet-400">{i > 0 && ' → '}{i + 1}순위 {labels[pos] || pos}</span>;
                   })}
                 </div>
