@@ -95,10 +95,21 @@ export interface ChatMessage {
   sender?: Profile;
 }
 
+export interface MatchApplication {
+  id: string;
+  match_id: string;
+  team_id: string;
+  applied_by: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  created_at: string;
+  // joined
+  team?: Team;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'match_request' | 'team_join' | 'match_vote';
+  type: 'match_request' | 'team_join' | 'match_vote' | 'info';
   title: string;
   description: string | null;
   related_id: string | null;

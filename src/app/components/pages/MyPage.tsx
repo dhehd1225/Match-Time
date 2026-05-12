@@ -117,33 +117,8 @@ export function MyPage() {
 
     // 알림 유형별 처리
     if (notif.type === 'match_request' && notif.related_id) {
-      if (action === 'accepted') {
-        await supabase.from('matches').update({ status: 'confirmed' }).eq('id', notif.related_id);
-      } else {
-        // 거절: away팀 정보 먼저 조회 → 매치 되돌리기 → away팀 팀장에게 거절 통보
-        const { data: m } = await supabase
-          .from('matches')
-          .select('away_team_id')
-          .eq('id', notif.related_id)
-          .single();
-        await supabase.from('matches').update({ away_team_id: null, status: 'open' }).eq('id', notif.related_id);
-        if (m?.away_team_id) {
-          const { data: awayTeam } = await supabase
-            .from('teams')
-            .select('created_by')
-            .eq('id', m.away_team_id)
-            .single();
-          if (awayTeam?.created_by) {
-            await supabase.from('notifications').insert({
-              user_id: awayTeam.created_by,
-              type: 'match_request',
-              title: '시합 신청 거절',
-              description: '상대 팀이 시합 신청을 거절했습니다.',
-              related_id: notif.related_id,
-            });
-          }
-        }
-      }
+      // match_request 알림은 이제 정보성 (수락/거절은 매치 상세에서)
+      // 그냥 확인 처리만 함
     } else if (notif.type === 'team_join' && notif.related_id) {
       const requesterId = notif.description?.split('::')[0];
       if (action === 'accepted' && requesterId) {
@@ -769,14 +744,18 @@ export function MyPage() {
                     </p>
 
                     <div className="flex gap-2">
-                      {notif.title === '팀 가입 승인' || notif.title === '팀 가입 거절' ? (
+                      {notif.title === '팀 가입 승인' || notif.title === '팀 가입 거절' || notif.type === 'match_request' ? (
                         <button onClick={async () => {
                           setNotifications(prev => prev.filter(n => n.id !== notif.id));
                           await supabase.from('notifications').delete().eq('id', notif.id);
                           if (notif.title === '팀 가입 승인') await refreshProfile();
+                          // match_request 알림이면 매치 상세로 이동
+                          if (notif.type === 'match_request' && notif.related_id) {
+                            navigate(`/matches/${notif.related_id}`);
+                          }
                         }}
                           className="flex-1 flex items-center justify-center gap-1 bg-white/10 text-white py-2 rounded-lg text-xs font-bold">
-                          <Check size={13} /> 확인
+                          <Check size={13} /> {notif.type === 'match_request' ? '매치 보기' : '확인'}
                         </button>
                       ) : notif.type === 'match_vote' ? (
                         <>

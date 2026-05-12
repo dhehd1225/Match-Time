@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { Search, MapPin, Plus, X, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Search, MapPin, Plus, X, SlidersHorizontal, Trash2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -48,6 +48,8 @@ export default function MatchList() {
   const [regionFilter, setRegionFilter] = useState('전체');
   const [levelFilter, setLevelFilter] = useState('전체');
   const [submitting, setSubmitting] = useState(false);
+  const [mainTab, setMainTab] = useState<'all' | 'my'>('all');
+  const [myAppMatchIds, setMyAppMatchIds] = useState<Set<string>>(new Set());
 
   const fetchMatches = async () => {
     const { data, error } = await supabase
@@ -59,6 +61,17 @@ export default function MatchList() {
     if (!error && data) {
       setMatches(data);
     }
+
+    // 내 팀의 pending 신청 목록
+    if (team) {
+      const { data: apps } = await supabase
+        .from('match_applications')
+        .select('match_id')
+        .eq('team_id', team.id)
+        .eq('status', 'pending');
+      if (apps) setMyAppMatchIds(new Set(apps.map(a => a.match_id)));
+    }
+
     setLoading(false);
   };
 
@@ -94,6 +107,25 @@ export default function MatchList() {
   });
 
   const activeFilterCount = [timeFilter, regionFilter, levelFilter].filter(f => f !== '전체').length;
+
+  const isMatchPast = (match: Match) => {
+    const matchDateTime = new Date(`${match.date}T${match.time}`);
+    return matchDateTime < new Date();
+  };
+
+  const myMatches = filteredMatches.filter(match =>
+    match.home_team_id === team?.id ||
+    match.away_team_id === team?.id ||
+    myAppMatchIds.has(match.id)
+  );
+
+  const displayMatches = mainTab === 'all' ? filteredMatches : myMatches;
+
+  const getMyMatchState = (match: Match): { label: string; color: string } => {
+    // 무조건 시간 기반: 일정 전이면 시합 전, 일정 후면 시합 후
+    if (isMatchPast(match)) return { label: '시합 후', color: 'text-gray-400 bg-gray-500/10' };
+    return { label: '시합 전', color: 'text-emerald-400 bg-emerald-500/10' };
+  };
 
   const handleSubmit = async () => {
     if (!form.date || !form.time || !form.region || !form.stadium || !form.level || !user) return;
@@ -189,6 +221,18 @@ export default function MatchList() {
       <div className="px-4 pt-5 pb-3 sticky top-0 z-10 bg-[#0a0a0a]">
         <h1 className="text-2xl font-black text-white mb-3">매치</h1>
 
+        {/* Tab Switcher */}
+        <div className="flex gap-1 bg-[#111] p-1 rounded-xl mb-3">
+          <button onClick={() => setMainTab('all')}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'all' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+            전체
+          </button>
+          <button onClick={() => setMainTab('my')}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1 ${mainTab === 'my' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+            <Calendar size={13} /> 내 매칭
+          </button>
+        </div>
+
         {/* Search + Filter */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -259,7 +303,7 @@ export default function MatchList() {
 
       {/* Match List */}
       <div className="px-4 pt-2 pb-28 space-y-2">
-        {filteredMatches.map((match) => (
+        {displayMatches.map((match) => (
           <div
             key={match.id}
             onClick={() => navigate(`/matches/${match.id}`)}
@@ -272,8 +316,15 @@ export default function MatchList() {
                 <span className="text-sm text-gray-500">{formatTime(match.time)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                {match.status === 'open' && !match.away_team_id && (
-                  <span className="text-[10px] font-bold text-red-400 bg-[#7B2D3B]/10 px-2 py-0.5 rounded-full">모집중</span>
+                {mainTab === 'my' ? (
+                  (() => {
+                    const state = getMyMatchState(match);
+                    return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${state.color}`}>{state.label}</span>;
+                  })()
+                ) : (
+                  (match.status === 'open' || match.status === 'pending') && (
+                    <span className="text-[10px] font-bold text-red-400 bg-[#7B2D3B]/10 px-2 py-0.5 rounded-full">모집중</span>
+                  )
                 )}
                 <span className={`text-[10px] font-bold ${levelStyle[match.level] || 'text-gray-400'}`}>{match.level}</span>
               </div>
@@ -297,7 +348,7 @@ export default function MatchList() {
 
               {/* Away team */}
               <div className="flex-1 flex items-center gap-2 justify-end">
-                {match.away_team ? (
+                {match.away_team && match.status === 'confirmed' ? (
                   <>
                     <p className="font-bold text-white text-sm truncate">{match.away_team.name}</p>
                     {match.away_team.logo?.startsWith('http') ? (
@@ -336,8 +387,10 @@ export default function MatchList() {
           </div>
         ))}
 
-        {filteredMatches.length === 0 && (
-          <p className="text-center text-gray-600 py-12 text-sm">매치가 없습니다</p>
+        {displayMatches.length === 0 && (
+          <p className="text-center text-gray-600 py-12 text-sm">
+            {mainTab === 'my' ? '내 매칭이 없습니다' : '매치가 없습니다'}
+          </p>
         )}
       </div>
 

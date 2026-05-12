@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy, Save } from 'lucide-react';
+import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy, Save, Camera } from 'lucide-react';
+import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 import JerseyIcon from '../JerseyIcon';
 import { supabase } from '../../../lib/supabase';
@@ -59,12 +60,14 @@ export default function LineupBuilder() {
   });
   const [selectedSlot, setSelectedSlot] = useState<{ type: 'field' | 'bench'; index: number } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const fieldRef = useRef<HTMLDivElement>(null);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [newPos, setNewPos] = useState('MF');
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
+  const storageKey = user ? `scrimmage_data_${user.id}` : 'scrimmage_data';
   const handleSave = () => {
-    localStorage.setItem('scrimmage_data', JSON.stringify({
+    localStorage.setItem(storageKey, JSON.stringify({
       formation, quarterLineups, allPlayers, jerseyPrimary,
     }));
     toast.success('저장 완료!');
@@ -76,7 +79,7 @@ export default function LineupBuilder() {
     // 팀 없으면 자체전만 사용 가능
     if (!team) {
       setMainTab('scrimmage');
-      const saved = localStorage.getItem('scrimmage_data');
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         try {
           const data = JSON.parse(saved);
@@ -147,7 +150,7 @@ export default function LineupBuilder() {
         setTeamMembers(players);
 
         // localStorage에서 저장된 데이터 불러오기
-        const savedData = localStorage.getItem('scrimmage_data');
+        const savedData = localStorage.getItem(storageKey);
         if (savedData) {
           try {
             const data = JSON.parse(savedData);
@@ -362,7 +365,7 @@ export default function LineupBuilder() {
           )}
 
           {/* Field */}
-          <div className="relative bg-gradient-to-b from-green-700 to-green-600 rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
+          <div ref={fieldRef} className="relative bg-gradient-to-b from-green-700 to-green-600 rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
             <div className="absolute inset-0">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 border-2 border-white/20 rounded-full" />
               <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20" />
@@ -442,10 +445,29 @@ export default function LineupBuilder() {
             <span className="text-xs font-bold text-white">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
           </div>
 
-          <button onClick={handleSave}
-            className="mt-3 w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-            <Save size={16} /> 라인업 저장
-          </button>
+          <div className="mt-3 flex gap-2">
+            <button onClick={handleSave}
+              className="flex-1 bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              <Save size={16} /> 라인업 저장
+            </button>
+            <button onClick={async () => {
+              if (!fieldRef.current) return;
+              setSelectedSlot(null);
+              try {
+                const dataUrl = await toPng(fieldRef.current, { pixelRatio: 2 });
+                const link = document.createElement('a');
+                link.download = `lineup_${activeQuarter}_${formation}.png`;
+                link.href = dataUrl;
+                link.click();
+                toast.success('이미지 저장 완료!');
+              } catch {
+                toast.error('이미지 저장에 실패했습니다.');
+              }
+            }}
+              className="bg-[#111] text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-white/10">
+              <Camera size={16} />
+            </button>
+          </div>
         </div>
       )}
 

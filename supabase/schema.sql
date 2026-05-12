@@ -55,6 +55,17 @@ create table public.matches (
   created_at timestamptz default now()
 );
 
+-- 4-1. MATCH_APPLICATIONS
+create table public.match_applications (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches(id) on delete cascade,
+  team_id uuid not null references public.teams(id),
+  applied_by uuid not null references public.profiles(id),
+  status text default 'pending' check (status in ('pending', 'accepted', 'rejected', 'withdrawn')),
+  created_at timestamptz default now(),
+  unique(match_id, team_id)
+);
+
 -- 5. MATCH_ATTENDANCE
 create table public.match_attendance (
   id uuid primary key default gen_random_uuid(),
@@ -100,7 +111,7 @@ create table public.chat_messages (
 create table public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
-  type text not null check (type in ('match_request', 'team_join', 'match_vote')),
+  type text not null check (type in ('match_request', 'team_join', 'match_vote', 'info')),
   title text not null,
   description text,
   related_id uuid,
@@ -134,6 +145,8 @@ create index idx_team_members_team on public.team_members(team_id);
 create index idx_team_members_user on public.team_members(user_id);
 create index idx_matches_home on public.matches(home_team_id);
 create index idx_matches_away on public.matches(away_team_id);
+create index idx_match_applications_match on public.match_applications(match_id);
+create index idx_match_applications_team on public.match_applications(team_id);
 create index idx_match_attendance_match on public.match_attendance(match_id);
 create index idx_chat_messages_room on public.chat_messages(room_id);
 create index idx_notifications_user on public.notifications(user_id);
@@ -149,6 +162,7 @@ alter table public.teams enable row level security;
 alter table public.team_members enable row level security;
 alter table public.matches enable row level security;
 alter table public.match_attendance enable row level security;
+alter table public.match_applications enable row level security;
 alter table public.lineups enable row level security;
 alter table public.chat_rooms enable row level security;
 alter table public.chat_messages enable row level security;
@@ -192,6 +206,12 @@ create policy "matches_update_away" on public.matches for update using (
 create policy "att_select" on public.match_attendance for select using (true);
 create policy "att_insert" on public.match_attendance for insert with check (auth.uid() = user_id);
 create policy "att_update" on public.match_attendance for update using (auth.uid() = user_id);
+
+-- MATCH_APPLICATIONS
+create policy "ma_select" on public.match_applications for select using (true);
+create policy "ma_insert" on public.match_applications for insert with check (auth.uid() is not null);
+create policy "ma_update" on public.match_applications for update using (auth.uid() is not null);
+create policy "ma_delete" on public.match_applications for delete using (auth.uid() is not null);
 
 -- LINEUPS
 create policy "lineups_select" on public.lineups for select using (true);
