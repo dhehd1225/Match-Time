@@ -127,7 +127,19 @@ export default function MatchCard() {
     .filter(g => g.players.length > 0);
 
   if (loading) {
-    return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><span className="text-gray-500 text-sm">로딩 중...</span></div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="px-4 pt-5 pb-3"><div className="w-24 h-6 bg-white/5 rounded animate-pulse" /></div>
+        <div className="px-4 space-y-2">
+          {[1,2].map(i => (
+            <div key={i} className="bg-[#111] rounded-2xl border border-white/5 p-4 space-y-3">
+              <div className="flex justify-between"><div className="w-28 h-4 bg-white/5 rounded animate-pulse" /><div className="w-12 h-4 bg-white/5 rounded animate-pulse" /></div>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-full animate-pulse" /><div className="w-32 h-4 bg-white/5 rounded animate-pulse" /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // 카드 생성 뷰

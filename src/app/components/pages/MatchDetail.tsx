@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { trackEvent } from '../../../hooks/useAnalytics';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Match, MatchApplication } from '../../../lib/types';
+import { MatchDetailSkeleton } from '../Skeleton';
 
 export default function MatchDetail() {
   const navigate = useNavigate();
@@ -231,8 +232,9 @@ export default function MatchDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">로딩 중...</div>
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="px-4 py-3 border-b border-white/5"><div className="bg-white/5 rounded w-32 h-5 animate-pulse" /></div>
+        <MatchDetailSkeleton />
       </div>
     );
   }

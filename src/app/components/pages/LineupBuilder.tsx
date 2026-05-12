@@ -103,7 +103,7 @@ export default function LineupBuilder() {
         .from('matches')
         .select('*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)')
         .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
-        .in('status', ['confirmed', 'pending', 'open'])
+        .in('status', ['confirmed', 'open'])
         .order('date', { ascending: true });
 
       if (matchesData) {
@@ -243,8 +243,16 @@ export default function LineupBuilder() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">로딩 중...</div>
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="px-4 pt-5 pb-3"><div className="w-20 h-7 bg-white/5 rounded animate-pulse mb-3" /><div className="h-10 bg-white/5 rounded-xl animate-pulse" /></div>
+        <div className="px-4 pt-3 space-y-2">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-[#111] rounded-2xl border border-white/5 p-4 space-y-2">
+              <div className="flex justify-between"><div className="w-28 h-4 bg-white/5 rounded animate-pulse" /><div className="w-12 h-4 bg-white/5 rounded animate-pulse" /></div>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-full animate-pulse" /><div className="w-32 h-4 bg-white/5 rounded animate-pulse" /></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

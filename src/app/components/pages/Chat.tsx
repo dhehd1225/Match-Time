@@ -128,8 +128,18 @@ export default function Chat() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">로딩 중...</div>
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="px-4 py-3 border-b border-white/5"><div className="w-16 h-5 bg-white/5 rounded animate-pulse" /></div>
+        <div className="p-4 space-y-4">
+          {[1,2,3].map(i => (
+            <div key={i} className={`flex ${i % 2 ? 'justify-start' : 'justify-end'}`}>
+              <div className="space-y-1">
+                {i % 2 ? <div className="w-10 h-3 bg-white/5 rounded animate-pulse ml-1" /> : null}
+                <div className="w-44 h-10 bg-white/5 rounded-2xl animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

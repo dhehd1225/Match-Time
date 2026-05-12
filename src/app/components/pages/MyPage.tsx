@@ -93,11 +93,19 @@ export function MyPage() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       name,
       position,
       back_number: backNumber ? parseInt(backNumber) : null,
     }).eq('id', user.id);
+
+    if (error) {
+      toast.error(`저장 실패: ${error.message}`);
+      setSaving(false);
+      return;
+    }
+
+    await refreshProfile();
     setOriginalName(name);
     setOriginalPosition(position);
     setOriginalBackNumber(backNumber);
@@ -155,7 +163,6 @@ export function MyPage() {
     }
 
     // DB에서 삭제
-    await supabase.from('notifications').update({ status: action }).eq('id', id);
     await supabase.from('notifications').delete().eq('id', id);
     trackEvent('notification_action', { type: notif.type, action });
   };
@@ -227,11 +234,17 @@ export function MyPage() {
       return;
     }
 
-    await supabase.from('team_members').insert({
+    const { error: memberError } = await supabase.from('team_members').insert({
       team_id: teamData.id,
       user_id: user.id,
       role: 'president',
     });
+
+    if (memberError) {
+      toast.error('팀 멤버 등록에 실패했습니다.');
+      setCreating(false);
+      return;
+    }
 
     await refreshProfile();
     setCreating(false);
@@ -343,27 +356,17 @@ export function MyPage() {
     }
 
     // 이미 가입 요청을 보냈는지 확인
-    const { data: pendingNotifs } = await supabase
+    const { data: myPending } = await supabase
       .from('notifications')
-      .select('id')
+      .select('id, description')
       .eq('type', 'team_join')
       .eq('related_id', matched.id)
       .eq('status', 'pending');
 
-    const alreadyRequested = pendingNotifs?.some(n => true) && pendingNotifs?.length;
-    // 더 정확한 체크: description에 user.id가 포함되어 있는지 (이 사용자의 요청인지)
-    if (alreadyRequested) {
-      const { data: myPending } = await supabase
-        .from('notifications')
-        .select('id, description')
-        .eq('type', 'team_join')
-        .eq('related_id', matched.id)
-        .eq('status', 'pending');
-      if (myPending?.some(n => n.description?.startsWith(user.id))) {
-        setJoinError('이미 가입 요청을 보냈습니다. 팀장의 수락을 기다려주세요.');
-        setJoining(false);
-        return;
-      }
+    if (myPending?.some(n => n.description?.startsWith(user.id))) {
+      setJoinError('이미 가입 요청을 보냈습니다. 팀장의 수락을 기다려주세요.');
+      setJoining(false);
+      return;
     }
 
     // 팀장에게 가입 요청 알림 발송

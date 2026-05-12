@@ -44,7 +44,7 @@ export default function Auth() {
     setDevError('');
 
     // 로그인 시도
-    let { error: signInError } = await supabase.auth.signInWithPassword({
+    let { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email: devEmail,
       password: devPassword,
     });
@@ -62,16 +62,17 @@ export default function Auth() {
         setDevLoading(false);
         return;
       }
+      signInData = signUpData;
+    }
 
-      // 프로필 생성
-      if (signUpData.user) {
-        await supabase.from('profiles').upsert({
-          id: signUpData.user.id,
-          kakao_id: devEmail,
-          name: devName,
-          position: 'MF',
-        });
-      }
+    // 프로필이 없으면 생성, 있으면 유지 (데이터 초기화 후에도 안전)
+    if (signInData?.user) {
+      await supabase.from('profiles').upsert({
+        id: signInData.user.id,
+        kakao_id: devEmail,
+        name: devName,
+        position: 'MF',
+      }, { onConflict: 'id', ignoreDuplicates: true });
     }
 
     setDevLoading(false);

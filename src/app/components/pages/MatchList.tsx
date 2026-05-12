@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import { trackEvent } from '../../../hooks/useAnalytics';
 import type { Match } from '../../../lib/types';
+import { MatchCardSkeleton, ListSkeleton } from '../Skeleton';
 
 const LEVELS = ['초급', '중급', '고급'];
 const REGIONS = ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'];
@@ -207,14 +208,6 @@ export default function MatchList() {
 
   const isFormValid = form.date && form.time && form.region && form.stadium && form.level;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">로딩 중...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
@@ -303,7 +296,9 @@ export default function MatchList() {
 
       {/* Match List */}
       <div className="px-4 pt-2 pb-28 space-y-2">
-        {displayMatches.map((match) => (
+        {loading ? (
+          <ListSkeleton count={4}><MatchCardSkeleton /></ListSkeleton>
+        ) : displayMatches.map((match) => (
           <div
             key={match.id}
             onClick={() => navigate(`/matches/${match.id}`)}
@@ -387,7 +382,7 @@ export default function MatchList() {
           </div>
         ))}
 
-        {displayMatches.length === 0 && (
+        {!loading && displayMatches.length === 0 && (
           <p className="text-center text-gray-600 py-12 text-sm">
             {mainTab === 'my' ? '내 매칭이 없습니다' : '매치가 없습니다'}
           </p>

@@ -78,8 +78,17 @@ export default function TeamManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">로딩 중...</div>
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="px-4 py-3 border-b border-white/5"><div className="bg-white/5 rounded w-24 h-5 animate-pulse" /></div>
+        <div className="p-4 space-y-3">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="flex items-center gap-3 bg-[#111] rounded-xl border border-white/5 p-3">
+              <div className="w-5 h-4 bg-white/5 rounded animate-pulse" />
+              <div className="w-20 h-4 bg-white/5 rounded animate-pulse" />
+              <div className="w-8 h-3 bg-white/5 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

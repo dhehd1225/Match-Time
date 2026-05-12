@@ -40,9 +40,17 @@ export default function KakaoCallback() {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         });
         const kakaoUser = await userRes.json();
+        console.log('카카오 유저 정보:', JSON.stringify(kakaoUser, null, 2));
         const kakaoId = String(kakaoUser.id);
-        const kakaoName = kakaoUser.kakao_account?.profile?.nickname || '유저';
-        const kakaoAvatar = kakaoUser.kakao_account?.profile?.profile_image_url || null;
+        const kakaoName =
+          kakaoUser.kakao_account?.profile?.nickname ||
+          kakaoUser.properties?.nickname ||
+          kakaoUser.kakao_account?.name ||
+          '유저';
+        const kakaoAvatar =
+          kakaoUser.kakao_account?.profile?.profile_image_url ||
+          kakaoUser.properties?.profile_image ||
+          null;
 
         // 3. Supabase 로그인/회원가입
         setStatus('로그인 처리 중...');
@@ -81,7 +89,16 @@ export default function KakaoCallback() {
           }
         }
 
-        // 4. 로그인 후 바로 메인 서비스로
+        // 4. 기존 유저도 프로필 동기화 (카카오 이름/사진 변경 반영)
+        if (!isNewUser && signInData?.user) {
+          await supabase.from('profiles').upsert({
+            id: signInData.user.id,
+            kakao_id: kakaoId,
+            name: kakaoName,
+            avatar_url: kakaoAvatar,
+          });
+        }
+
         navigate('/matches');
       } catch (err: any) {
         console.error('로그인 오류:', err);

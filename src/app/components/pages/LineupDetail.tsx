@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, MapPin, Users, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle, Save } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import JerseyIcon from '../JerseyIcon';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Match } from '../../../lib/types';
+import { recommendFormation } from '../../../lib/gemini';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface PlayerInfo {
@@ -15,7 +16,17 @@ interface PlayerInfo {
   position: string;
   status: 'attending' | 'not-attending' | null;
   type?: 'regular' | 'mercenary' | 'rookie';
+  preferredPositions?: string[];
+  desiredQuarters?: string[];
 }
+
+const DETAIL_POSITIONS: Record<string, string[]> = {
+  GK: ['GK'],
+  DF: ['CB', 'LB', 'RB'],
+  MF: ['CM', 'CAM', 'CDM', 'LM', 'RM'],
+  FW: ['ST', 'LW', 'RW'],
+};
+const ALL_DETAIL_POS = ['GK', 'CB', 'LB', 'RB', 'CM', 'CAM', 'CDM', 'LM', 'RM', 'ST', 'LW', 'RW'];
 
 type Quarter = '1Q' | '2Q' | '3Q' | '4Q';
 const quarters: Quarter[] = ['1Q', '2Q', '3Q', '4Q'];
@@ -54,6 +65,13 @@ export default function LineupDetail() {
   const [newNumber, setNewNumber] = useState('');
   const [newPos, setNewPos] = useState('MF');
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiReason, setAiReason] = useState<string | null>(null);
+
+  // 참여 선호도 모달
+  const [showPrefModal, setShowPrefModal] = useState(false);
+  const [prefPositions, setPrefPositions] = useState<string[]>([]);
+  const [prefQuarters, setPrefQuarters] = useState<string[]>(['1Q', '2Q', '3Q', '4Q']);
 
   // Chat
   interface ChatMsg { id: string; sender: string; text: string; time: string; isMe: boolean; }
@@ -87,17 +105,22 @@ export default function LineupDetail() {
         .eq('match_id', id);
 
       if (membersData) {
-        const attMap = new Map<string, string>();
-        attData?.forEach(a => attMap.set(a.user_id, a.status));
+        const attMap = new Map<string, any>();
+        attData?.forEach(a => attMap.set(a.user_id, a));
 
-        const playersList: PlayerInfo[] = membersData.map(m => ({
-          id: m.user_id,
-          name: m.profile?.name || '이름 없음',
-          number: m.profile?.back_number || 0,
-          position: m.profile?.position || 'MF',
-          status: (attMap.get(m.user_id) as any) || null,
-          type: 'regular' as const,
-        }));
+        const playersList: PlayerInfo[] = membersData.map(m => {
+          const att = attMap.get(m.user_id);
+          return {
+            id: m.user_id,
+            name: m.profile?.name || '이름 없음',
+            number: m.profile?.back_number || 0,
+            position: m.profile?.position || 'MF',
+            status: att?.status || null,
+            type: 'regular' as const,
+            preferredPositions: att?.preferred_positions || [],
+            desiredQuarters: att?.desired_quarters ?? ['1Q', '2Q', '3Q', '4Q'],
+          };
+        });
         setPlayers(playersList);
 
         const attending = playersList.filter(p => p.status === 'attending');
@@ -135,9 +158,12 @@ export default function LineupDetail() {
           setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
         }
 
-        // My attendance
+        // My attendance + preferences
         if (user) {
-          setMyAttendance((attMap.get(user.id) as any) || null);
+          const myAtt = attMap.get(user.id);
+          setMyAttendance(myAtt?.status || null);
+          if (myAtt?.preferred_positions?.length) setPrefPositions(myAtt.preferred_positions);
+          if (myAtt?.desired_quarters?.length) setPrefQuarters(myAtt.desired_quarters);
         }
       }
 
@@ -212,13 +238,47 @@ export default function LineupDetail() {
 
   const handleAttendance = async (status: 'attending' | 'not-attending') => {
     if (!user || !id) return;
+    if (status === 'attending') {
+      // 참여 시 선호도 모달 띄우기
+      setShowPrefModal(true);
+      return;
+    }
     await supabase.from('match_attendance').upsert({
       match_id: id,
       user_id: user.id,
       status,
+      preferred_positions: [],
+      desired_quarters: ['1Q', '2Q', '3Q', '4Q'],
     }, { onConflict: 'match_id,user_id' });
     setMyAttendance(status);
+    setPrefPositions([]);
+    setPrefQuarters(['1Q', '2Q', '3Q', '4Q']);
     setPlayers(prev => prev.map(p => p.id === user.id ? { ...p, status } : p));
+  };
+
+  const handleSubmitPreference = async () => {
+    if (!user || !id) return;
+    await supabase.from('match_attendance').upsert({
+      match_id: id,
+      user_id: user.id,
+      status: 'attending',
+      preferred_positions: prefPositions,
+      desired_quarters: prefQuarters,
+    }, { onConflict: 'match_id,user_id' });
+    setMyAttendance('attending');
+    setPlayers(prev => prev.map(p => p.id === user.id
+      ? { ...p, status: 'attending' as const, preferredPositions: prefPositions, desiredQuarters: prefQuarters }
+      : p));
+    setShowPrefModal(false);
+    toast.success('참여 등록 완료!');
+  };
+
+  const togglePrefPosition = (pos: string) => {
+    setPrefPositions(prev => {
+      if (prev.includes(pos)) return prev.filter(p => p !== pos);
+      if (prev.length >= 3) return prev;
+      return [...prev, pos];
+    });
   };
 
   const sendChat = async () => {
@@ -244,7 +304,23 @@ export default function LineupDetail() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="text-gray-500 text-sm">로딩 중...</div></div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
+          <div className="w-6 h-6 bg-white/5 rounded animate-pulse" />
+          <div className="flex items-center gap-2"><div className="w-8 h-8 bg-white/5 rounded-full animate-pulse" /><div className="space-y-1"><div className="w-24 h-4 bg-white/5 rounded animate-pulse" /><div className="w-32 h-3 bg-white/5 rounded animate-pulse" /></div></div>
+        </div>
+        <div className="px-4 pt-4 space-y-2">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="flex items-center gap-3 bg-[#111] rounded-xl border border-white/5 p-3">
+              <div className="w-5 h-4 bg-white/5 rounded animate-pulse" />
+              <div className="w-20 h-4 bg-white/5 rounded animate-pulse" />
+              <div className="w-8 h-3 bg-white/5 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
   if (!match) return null;
 
@@ -310,6 +386,59 @@ export default function LineupDetail() {
     } else {
       toast.success('라인업이 저장되었습니다!');
     }
+  };
+
+  const handleAIRecommend = async () => {
+    if (allPlayers.length === 0) { toast.error('참여 선수가 없습니다.'); return; }
+    setAiLoading(true);
+    setAiReason(null);
+    try {
+      const playersWithPrefs = allPlayers.map(p => ({
+        name: p.name,
+        position: p.position,
+        number: p.number,
+        preferredPositions: p.preferredPositions,
+        desiredQuarters: p.desiredQuarters,
+      }));
+      const result = await recommendFormation(playersWithPrefs, match?.format || '11v11');
+
+      // 추천 포메이션 적용
+      const newFormation = result.formation;
+      if (formations[newFormation]) {
+        setFormation(newFormation);
+      }
+
+      // 추천 라인업 적용 - 이름 매칭
+      const posArr = formations[newFormation] || formations[formation];
+      const newLineup: (string | null)[] = posArr.map(() => null);
+      const used = new Set<string>();
+
+      result.lineup.forEach((name, idx) => {
+        if (idx >= posArr.length) return;
+        const player = allPlayers.find(p => p.name === name && !used.has(p.id));
+        if (player) {
+          newLineup[idx] = player.id;
+          used.add(player.id);
+        }
+      });
+
+      // 매칭 안 된 슬롯에 남은 선수 채우기
+      const remaining = allPlayers.filter(p => !used.has(p.id));
+      let ri = 0;
+      for (let i = 0; i < newLineup.length; i++) {
+        if (newLineup[i] === null && ri < remaining.length) {
+          newLineup[i] = remaining[ri].id;
+          ri++;
+        }
+      }
+
+      setQuarterLineups(prev => ({ ...prev, [activeQuarter]: newLineup }));
+      setAiReason(result.reason);
+      toast.success('AI 추천 라인업이 적용되었습니다!');
+    } catch (e: any) {
+      toast.error(e?.message || 'AI 추천에 실패했습니다.');
+    }
+    setAiLoading(false);
   };
 
   const handleAddPlayer = () => {
@@ -402,13 +531,29 @@ export default function LineupDetail() {
               </div>
               <div className="space-y-1">
                 {group.players.map(player => (
-                  <div key={player.id} className="flex items-center justify-between bg-[#111] p-3 rounded-xl border border-white/5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xs font-bold text-gray-500 w-5 text-center">{player.number}</span>
-                      <span className="text-sm text-white">{player.name}</span>
-                      <span className={`text-[10px] font-bold ${posColors[player.position]}`}>{player.position}</span>
+                  <div key={player.id} className="bg-[#111] p-3 rounded-xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-bold text-gray-500 w-5 text-center">{player.number}</span>
+                        <span className="text-sm text-white">{player.name}</span>
+                        <span className={`text-[10px] font-bold ${posColors[player.position]}`}>{player.position}</span>
+                      </div>
+                      {group.label()}
                     </div>
-                    {group.label()}
+                    {player.status === 'attending' && player.preferredPositions && player.preferredPositions.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-1.5 ml-7">
+                        {player.preferredPositions.map((pos, i) => (
+                          <span key={pos} className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-medium">
+                            {i + 1}순위 {pos}
+                          </span>
+                        ))}
+                        {player.desiredQuarters && player.desiredQuarters.length < 4 && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
+                            {player.desiredQuarters.join('·')}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -550,10 +695,26 @@ export default function LineupDetail() {
           </div>
 
           {isTeamCreator && (
-            <button onClick={handleSaveLineup}
-              className="mt-3 w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-              <Save size={16} /> 라인업 저장
-            </button>
+            <div className="mt-3 space-y-2">
+              <button onClick={handleAIRecommend} disabled={aiLoading}
+                className="w-full bg-gradient-to-r from-violet-600 to-blue-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+                <Sparkles size={16} className={aiLoading ? 'animate-spin' : ''} />
+                {aiLoading ? 'AI 분석 중...' : 'AI 포메이션 추천'}
+              </button>
+              {aiReason && (
+                <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles size={12} className="text-violet-400" />
+                    <span className="text-[11px] font-bold text-violet-400">AI 추천 이유</span>
+                  </div>
+                  <p className="text-xs text-gray-300">{aiReason}</p>
+                </div>
+              )}
+              <button onClick={handleSaveLineup}
+                className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <Save size={16} /> 라인업 저장
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -590,6 +751,72 @@ export default function LineupDetail() {
                 <Send size={18} />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preference Modal */}
+      {showPrefModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setShowPrefModal(false)}>
+          <div className="bg-[#111] rounded-t-2xl p-5 w-full max-w-[430px] border-t border-white/10" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-white">참여 선호도 설정</h3>
+              <button onClick={() => setShowPrefModal(false)} className="text-gray-500"><X size={18} /></button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-xs text-gray-400 mb-2">희망 포지션 <span className="text-violet-400">(최대 3개, 순서대로 우선순위)</span></p>
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_DETAIL_POS.map(pos => {
+                  const idx = prefPositions.indexOf(pos);
+                  const selected = idx !== -1;
+                  return (
+                    <button key={pos} onClick={() => togglePrefPosition(pos)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold relative ${
+                        selected ? 'bg-violet-500 text-white' : 'bg-white/5 text-gray-500'
+                      }`}>
+                      {pos}
+                      {selected && (
+                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-white text-violet-600 rounded-full text-[9px] font-black flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {prefPositions.length > 0 && (
+                <div className="flex items-center gap-1 mt-2">
+                  {prefPositions.map((pos, i) => (
+                    <span key={pos} className="text-[10px] text-violet-400">{i > 0 && '→'} {pos}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mb-5">
+              <p className="text-xs text-gray-400 mb-2">뛰고 싶은 쿼터 <span className="text-blue-400">(복수 선택 가능)</span></p>
+              <div className="flex gap-2">
+                {quarters.map(q => {
+                  const selected = prefQuarters.includes(q);
+                  return (
+                    <button key={q} onClick={() => setPrefQuarters(prev =>
+                      selected ? prev.filter(p => p !== q) : [...prev, q]
+                    )}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${
+                        selected ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-500'
+                      }`}>
+                      {q}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button onClick={handleSubmitPreference}
+              className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform">
+              참여 등록
+            </button>
           </div>
         </div>
       )}

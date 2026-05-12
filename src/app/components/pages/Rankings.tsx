@@ -86,7 +86,18 @@ export default function Rankings() {
 
       <div className="px-4 space-y-2">
         {loading ? (
-          <p className="text-center text-gray-600 py-12 text-sm">로딩 중...</p>
+          <div className="space-y-2">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="flex items-center gap-3 bg-[#111] rounded-2xl border border-white/5 p-4">
+                <div className="w-6 h-6 bg-white/5 rounded animate-pulse" />
+                <div className="w-8 h-8 bg-white/5 rounded-full animate-pulse" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="w-20 h-4 bg-white/5 rounded animate-pulse" />
+                  <div className="w-12 h-3 bg-white/5 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : rankings.length === 0 ? (
           <p className="text-center text-gray-600 py-12 text-sm">순위 데이터가 없습니다</p>
         ) : (
