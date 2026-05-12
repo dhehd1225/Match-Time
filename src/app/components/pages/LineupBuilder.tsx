@@ -107,20 +107,11 @@ export default function LineupBuilder() {
         .order('date', { ascending: true });
 
       if (matchesData) {
-        // 내가 참여(attending)한 경기만 필터링
-        const { data: userAttendance } = await supabase
-          .from('match_attendance')
-          .select('match_id')
-          .eq('user_id', user.id)
-          .eq('status', 'attending');
-
-        const attendingMatchIds = new Set(userAttendance?.map(a => a.match_id) || []);
-        const myFilteredMatches = matchesData.filter(m => attendingMatchIds.has(m.id));
-        setMyMatches(myFilteredMatches);
+        setMyMatches(matchesData);
 
         // Fetch attendance counts
         const counts: Record<string, { attending: number; total: number }> = {};
-        for (const m of myFilteredMatches) {
+        for (const m of matchesData) {
           const { data: att } = await supabase
             .from('match_attendance')
             .select('status')

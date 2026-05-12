@@ -164,6 +164,26 @@ export default function MatchDetail() {
       });
     }
 
+    // away팀 멤버들에게 참여 투표 알림 발송
+    const { data: awayMembers } = await supabase
+      .from('team_members')
+      .select('user_id')
+      .eq('team_id', app.team_id);
+
+    if (awayMembers) {
+      const formatDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+      const notifs = awayMembers.map(m => ({
+        user_id: m.user_id,
+        type: 'match_vote' as const,
+        title: '시합 참여 투표',
+        description: `${formatDate(match.date)} ${match.time?.slice(0, 5)} ${match.stadium}에서 시합이 확정되었습니다.`,
+        related_id: match.id,
+      }));
+      if (notifs.length > 0) {
+        await supabase.from('notifications').insert(notifs);
+      }
+    }
+
     toast.success('매치가 확정되었습니다!');
     trackEvent('match_accept_app', { match_id: match.id });
   };
