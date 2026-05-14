@@ -410,50 +410,63 @@ export function MyPage() {
   const emojis = ['\u26bd', '\ud83d\udc06', '\ud83e\udd85', '\ud83d\udc2f', '\ud83e\udd81', '\ud83d\udc99', '\u26a1', '\ud83d\udd25', '\ud83d\udc09', '\u2b50'];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-white/5">
-        <h1 className="text-lg font-bold text-white">마이 페이지</h1>
-      </div>
-
-      {/* Profile */}
-      <div className="p-5">
-        <div className="flex items-center gap-4 mb-6">
+    <div className="min-h-screen bg-[#FAFAF8] pb-20">
+      {/* Profile Header */}
+      <div className="bg-gradient-to-br from-[#7B2D3B] to-[#5a1f2c] px-5 pt-5 pb-8 rounded-b-3xl">
+        <h1 className="text-sm font-bold text-white/60 mb-3">마이 페이지</h1>
+        <div className="flex items-center gap-4">
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
+            <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30" />
           ) : (
-            <div className="w-14 h-14 bg-[#7B2D3B] rounded-full flex items-center justify-center text-white text-xl font-bold">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold ring-2 ring-white/30">
               {name?.charAt(0) || '?'}
             </div>
           )}
           <div className="flex-1">
             <h2 className="text-lg font-bold text-white">{name || '이름 없음'}</h2>
-            <p className="text-sm text-gray-500">{position} {backNumber ? `· #${backNumber}` : ''}</p>
+            <p className="text-sm text-white/60">{position} {backNumber ? `· #${backNumber}` : ''}</p>
           </div>
         </div>
+      </div>
+
+      {/* Stats - overlapping the header */}
+      <div className="px-5 -mt-4 mb-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white shadow-md p-4 rounded-2xl text-center border border-gray-100">
+            <p className="text-xs text-gray-400 mb-1">득점</p>
+            <p className="text-2xl font-black text-[#7B2D3B]">{membership?.goals ?? 0}</p>
+          </div>
+          <div className="bg-white shadow-md p-4 rounded-2xl text-center border border-gray-100">
+            <p className="text-xs text-gray-400 mb-1">도움</p>
+            <p className="text-2xl font-black text-emerald-500">{membership?.assists ?? 0}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5">
 
         {/* Edit Info */}
         <div className="space-y-3 mb-4">
           <div>
-            <label className="text-[10px] font-bold text-gray-600 mb-1.5 block">이름</label>
+            <label className="text-[10px] font-bold text-gray-400 mb-1.5 block">이름</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
-              className="w-full p-3 bg-[#111] border border-white/10 rounded-xl text-sm text-white font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
+              className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-gray-600 mb-1.5 block">포지션</label>
+              <label className="text-[10px] font-bold text-gray-400 mb-1.5 block">포지션</label>
               <select value={position} onChange={e => setPosition(e.target.value)}
-                className="w-full p-3 bg-[#111] border border-white/10 rounded-xl text-sm text-white font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none appearance-none">
-                <option value="FW" className="bg-[#1a1a1a] text-white">포워드(FW)</option>
-                <option value="MF" className="bg-[#1a1a1a] text-white">미드필더(MF)</option>
-                <option value="DF" className="bg-[#1a1a1a] text-white">수비수(DF)</option>
-                <option value="GK" className="bg-[#1a1a1a] text-white">골키퍼(GK)</option>
+                className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none appearance-none">
+                <option value="FW" className="bg-white text-gray-900">포워드(FW)</option>
+                <option value="MF" className="bg-white text-gray-900">미드필더(MF)</option>
+                <option value="DF" className="bg-white text-gray-900">수비수(DF)</option>
+                <option value="GK" className="bg-white text-gray-900">골키퍼(GK)</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-600 mb-1.5 block">등번호</label>
+              <label className="text-[10px] font-bold text-gray-400 mb-1.5 block">등번호</label>
               <input type="number" value={backNumber} onChange={e => setBackNumber(e.target.value)}
-                className="w-full p-3 bg-[#111] border border-white/10 rounded-xl text-sm text-white font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
+                className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
             </div>
           </div>
           {hasChanges && (
@@ -467,250 +480,48 @@ export function MyPage() {
           )}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
-            <p className="text-[10px] text-gray-600 mb-1">득점</p>
-            <p className="text-xl font-black text-[#7B2D3B]">{membership?.goals ?? 0}</p>
-          </div>
-          <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
-            <p className="text-[10px] text-gray-600 mb-1">도움</p>
-            <p className="text-xl font-black text-emerald-500">{membership?.assists ?? 0}</p>
-          </div>
-          <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
-            <p className="text-[10px] text-gray-600 mb-1">평점</p>
-            <p className="text-xl font-black text-blue-500">{membership?.rating ?? 0}</p>
-          </div>
-        </div>
-
-        {/* My Teams */}
-        <div className="mb-4">
-          <h3 className="text-sm font-bold text-white mb-3">내 팀</h3>
+        {/* My Teams - 배너 스타일 */}
+        <div className="mb-5">
+          <h3 className="text-sm font-bold text-gray-900 mb-3">소속 팀</h3>
           {teams.length > 0 ? (
-            <div className="space-y-2 mb-3">
+            <div className="space-y-3">
               {teams.map(t => (
                 <div key={t.id}
-                  className={`flex items-center justify-between p-3 bg-[#111] rounded-2xl border transition-all ${
-                    t.id === team?.id ? 'border-[#7B2D3B]/50' : 'border-white/5'
+                  className={`relative overflow-hidden rounded-2xl p-4 ${
+                    t.id === team?.id
+                      ? 'bg-gradient-to-r from-[#7B2D3B] to-[#9e4a5c]'
+                      : 'bg-white border border-gray-200'
                   }`}
                 >
-                  <button
-                    onClick={() => {
-                      setCurrentTeamId(t.id);
-                      navigate('/team');
-                    }}
-                    className="flex items-center gap-2 flex-1 min-w-0"
-                  >
+                  <div className="flex items-center gap-3">
                     {t.logo?.startsWith('http') ? (
-                      <img src={t.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      <img src={t.logo} alt="" className={`w-11 h-11 rounded-full object-cover ${t.id === team?.id ? 'ring-2 ring-white/30' : ''}`} />
                     ) : (
-                      <span className="text-xl">{t.logo}</span>
-                    )}
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-bold text-white text-sm truncate">{t.name}</p>
-                        {isPresidentOf(t.id) && (
-                          <span className="text-[8px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full font-bold shrink-0">팀장</span>
-                        )}
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl ${t.id === team?.id ? 'bg-white/20' : 'bg-[#F5F3F0]'}`}>
+                        {t.logo}
                       </div>
-                      <p className="text-[10px] text-gray-600 flex items-center gap-1">
-                        <Hash size={10} /> {getTeamCode(t.id)}
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold text-sm truncate ${t.id === team?.id ? 'text-white' : 'text-gray-900'}`}>{t.name}</p>
+                      <p className={`text-xs ${t.id === team?.id ? 'text-white/60' : 'text-gray-400'}`}>
+                        {isPresidentOf(t.id) ? '팀장' : '팀원'}
                       </p>
                     </div>
-                  </button>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleCopyCode(getTeamCode(t.id), t.id)}
-                      className="p-2 text-gray-500 hover:text-white transition-colors"
-                      title="팀 코드 복사"
-                    >
-                      {copiedTeamId === t.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                    </button>
-                    {isPresidentOf(t.id) ? (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteTeam(t.id); }}
-                        className="p-2 text-gray-500 hover:text-red-400 transition-colors"
-                        title="팀 삭제"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleLeaveTeam(t.id, t.name); }}
-                        className="p-2 text-gray-500 hover:text-yellow-400 transition-colors"
-                        title="팀 탈퇴"
-                      >
-                        <LogOut size={14} />
-                      </button>
-                    )}
                     {t.id === team?.id && (
-                      <span className="text-[9px] bg-[#7B2D3B] text-white px-1.5 py-0.5 rounded-full">선택됨</span>
+                      <span className="text-xs bg-white/20 text-white px-2.5 py-1 rounded-full font-medium">현재 팀</span>
                     )}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-500 mb-3 py-2">아직 소속 팀이 없습니다</p>
-          )}
-        </div>
-
-        {/* 팀 생성 */}
-        <div className="mb-3">
-          <button
-            onClick={() => { setShowCreateForm(!showCreateForm); setShowJoinForm(false); resetJoinForm(); }}
-            className="w-full flex items-center gap-3 p-4 bg-[#111] rounded-2xl border border-white/5 active:scale-[0.98] transition-transform"
-          >
-            <PlusCircle size={20} className="text-[#7B2D3B]" />
-            <div className="text-left flex-1">
-              <p className="font-bold text-white text-sm">새로운 팀 생성하기</p>
-              <p className="text-[11px] text-gray-500">팀을 만들고 코드를 공유하세요</p>
-            </div>
-            {showCreateForm ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
-          </button>
-
-          {showCreateForm && (
-            <div className="mt-2 bg-[#111] rounded-2xl border border-white/5 p-4">
-              {createdCode ? (
-                // 생성 완료 - 코드 표시
-                <div className="text-center py-2">
-                  <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
-                  <p className="text-white font-bold mb-1">팀 생성 완료!</p>
-                  <p className="text-xs text-gray-500 mb-4">아래 코드를 팀원에게 공유하세요</p>
-                  <div className="bg-[#0a0a0a] rounded-xl p-4 mb-3">
-                    <p className="text-3xl font-black text-[#7B2D3B] tracking-[0.3em]">{createdCode}</p>
-                  </div>
-                  <button
-                    onClick={() => handleCopyCode(createdCode)}
-                    className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-white/5 rounded-xl text-sm text-gray-300 active:scale-95 transition-transform mb-3"
-                  >
-                    {copiedTeamId === '__created' ? <><Check size={14} className="text-emerald-400" /> 복사 완료</> : <><Copy size={14} /> 코드 복사</>}
-                  </button>
-                  <button onClick={resetCreateForm} className="text-xs text-gray-500 underline">닫기</button>
-                </div>
-              ) : (
-                // 생성 폼
-                <div className="space-y-3">
-                  {/* 로고 선택 */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="relative">
-                      <div className="w-16 h-16 bg-[#0a0a0a] rounded-full flex items-center justify-center border border-white/10 overflow-hidden">
-                        {newTeamLogoPreview ? (
-                          <img src={newTeamLogoPreview} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-3xl">{newTeamLogo}</span>
-                        )}
-                      </div>
-                      <button onClick={() => logoInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#7B2D3B] rounded-full flex items-center justify-center">
-                        <Camera size={12} className="text-white" />
-                      </button>
-                      <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoFileChange} className="hidden" />
-                    </div>
-                    {newTeamLogoPreview ? (
-                      <button onClick={() => { setNewTeamLogoFile(null); setNewTeamLogoPreview(null); setNewTeamLogo('\u26bd'); }}
-                        className="text-xs text-gray-500 underline">이모지로 변경</button>
-                    ) : (
-                      <div className="flex justify-center gap-1.5 flex-wrap">
-                        {emojis.map(e => (
-                          <button key={e} onClick={() => { setNewTeamLogo(e); setNewTeamLogoFile(null); setNewTeamLogoPreview(null); }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${newTeamLogo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#0a0a0a] border border-white/10'}`}>
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-600 block mb-1">팀 이름 *</label>
-                    <input type="text" placeholder="팀 이름을 입력하세요" value={newTeamName}
-                      onChange={e => setNewTeamName(e.target.value)}
-                      className="w-full p-3 border border-white/10 rounded-xl bg-[#0a0a0a] text-white text-sm placeholder:text-gray-600 focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-600 block mb-1">팀 설명 (선택)</label>
-                    <textarea placeholder="우리 팀을 소개해주세요" value={newTeamDesc}
-                      onChange={e => setNewTeamDesc(e.target.value)}
-                      className="w-full p-3 border border-white/10 rounded-xl bg-[#0a0a0a] text-white text-sm placeholder:text-gray-600 h-20 outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-600 block mb-1">인스타그램 (선택)</label>
-                    <div className="relative">
-                      <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                      <input type="text" placeholder="username" value={newTeamInsta}
-                        onChange={e => setNewTeamInsta(e.target.value)}
-                        className="w-full pl-9 pr-3 py-3 border border-white/10 rounded-xl bg-[#0a0a0a] text-white text-sm placeholder:text-gray-600 outline-none" />
-                    </div>
-                  </div>
-                  <button onClick={handleCreateTeam} disabled={!newTeamName.trim() || creating}
-                    className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm active:scale-[0.98] transition-all disabled:opacity-50">
-                    {creating ? '생성 중...' : '팀 생성'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 팀 가입 */}
-        <div className="mb-4">
-          <button
-            onClick={() => { setShowJoinForm(!showJoinForm); setShowCreateForm(false); resetCreateForm(); }}
-            className="w-full flex items-center gap-3 p-4 bg-[#111] rounded-2xl border border-white/5 active:scale-[0.98] transition-transform"
-          >
-            <Hash size={20} className="text-[#7B2D3B]" />
-            <div className="text-left flex-1">
-              <p className="font-bold text-white text-sm">팀 코드로 가입하기</p>
-              <p className="text-[11px] text-gray-500">코드를 입력해 팀에 참여하세요</p>
-            </div>
-            {showJoinForm ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
-          </button>
-
-          {showJoinForm && (
-            <div className="mt-2 bg-[#111] rounded-2xl border border-white/5 p-4">
-              {joinedTeamName ? (
-                // 가입 요청 완료
-                <div className="text-center py-2">
-                  <Clock size={40} className="text-yellow-400 mx-auto mb-3" />
-                  <p className="text-white font-bold mb-1">가입 요청 완료!</p>
-                  <p className="text-sm text-gray-400">{joinedTeamName} 팀장의 수락을 기다려주세요.</p>
-                  <button onClick={resetJoinForm} className="text-xs text-gray-500 underline mt-3">닫기</button>
-                </div>
-              ) : (
-                // 가입 폼
-                <div className="space-y-3">
-                  <p className="text-xs text-gray-500 text-center">팀 생성자에게 받은 6자리 코드를 입력하세요</p>
-                  <input
-                    type="text"
-                    placeholder="예: A3B5C7"
-                    value={joinCode}
-                    onChange={e => {
-                      setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
-                      setJoinError('');
-                    }}
-                    maxLength={6}
-                    className="w-full text-center text-2xl font-black tracking-[0.3em] p-3 border border-white/10 rounded-xl bg-[#0a0a0a] text-white placeholder:text-sm placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-600 focus:ring-1 focus:ring-[#7B2D3B] outline-none"
-                  />
-                  {joinError && (
-                    <div className="flex items-center justify-center gap-2 text-red-400 text-xs">
-                      <AlertCircle size={14} />
-                      <span>{joinError}</span>
-                    </div>
-                  )}
-                  <button onClick={handleJoinTeam} disabled={joinCode.length < 6 || joining}
-                    className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm active:scale-[0.98] transition-all disabled:opacity-50">
-                    {joining ? '가입 중...' : '팀 가입'}
-                  </button>
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-gray-400 py-6 text-center">아직 소속 팀이 없습니다</p>
           )}
         </div>
 
         {/* Logout */}
         <button onClick={async () => { await signOut(); navigate('/auth'); }}
-          className="w-full p-3 bg-white/5 rounded-2xl border border-white/5 text-gray-500 text-sm font-medium">
+          className="w-full p-3 bg-gray-100 rounded-xl text-gray-500 text-sm font-medium">
           로그아웃
         </button>
       </div>
@@ -718,8 +529,8 @@ export function MyPage() {
       {/* 알림함 */}
       <div className="px-5">
         <div className="flex items-center gap-2 mb-3">
-          <Bell size={16} className="text-white" />
-          <h3 className="font-bold text-white text-sm">알림함</h3>
+          <Bell size={16} className="text-gray-900" />
+          <h3 className="font-bold text-gray-900 text-sm">알림함</h3>
           {pendingCount > 0 && (
             <span className="bg-[#7B2D3B] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
               {pendingCount}
@@ -728,17 +539,17 @@ export function MyPage() {
         </div>
 
         {notifications.length === 0 ? (
-          <p className="text-sm text-gray-600 text-center py-8">알림이 없습니다</p>
+          <p className="text-sm text-gray-400 text-center py-8">알림이 없습니다</p>
         ) : (
           <div className="space-y-2">
             {notifications.map(notif => (
-              <div key={notif.id} className="bg-[#111] rounded-2xl border border-white/10 p-4 transition-all">
+              <div key={notif.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 transition-all">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{getIcon(notif.type)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-bold text-white">{notif.title}</span>
-                      <span className="text-[10px] text-gray-600">{formatTime(notif.created_at)}</span>
+                      <span className="text-xs font-bold text-gray-900">{notif.title}</span>
+                      <span className="text-[10px] text-gray-400">{formatTime(notif.created_at)}</span>
                     </div>
                     <p className="text-xs text-gray-400 mb-2.5">
                       {notif.type === 'team_join' && notif.description?.includes('::')
@@ -757,15 +568,31 @@ export function MyPage() {
                             navigate(`/matches/${notif.related_id}`);
                           }
                         }}
-                          className="flex-1 flex items-center justify-center gap-1 bg-white/10 text-white py-2 rounded-lg text-xs font-bold">
+                          className="flex-1 flex items-center justify-center gap-1 bg-gray-100 text-gray-900 py-2 rounded-lg text-xs font-bold">
                           <Check size={13} /> {notif.type === 'match_request' ? '매치 보기' : '확인'}
                         </button>
                       ) : notif.type === 'match_vote' ? (
                         <>
                           <button onClick={async () => {
+                            if (!user || !notif.related_id) return;
+                            // 참여 상태 먼저 설정
+                            const { data: existing } = await supabase
+                              .from('match_attendance')
+                              .select('id')
+                              .eq('match_id', notif.related_id)
+                              .eq('user_id', user.id)
+                              .maybeSingle();
+                            if (existing) {
+                              await supabase.from('match_attendance')
+                                .update({ status: 'attending' })
+                                .eq('id', existing.id);
+                            } else {
+                              await supabase.from('match_attendance')
+                                .insert({ match_id: notif.related_id, user_id: user.id, status: 'attending' });
+                            }
                             setNotifications(prev => prev.filter(n => n.id !== notif.id));
                             await supabase.from('notifications').delete().eq('id', notif.id);
-                            if (notif.related_id) navigate(`/lineup/${notif.related_id}`);
+                            navigate(`/lineup/${notif.related_id}`);
                           }}
                             className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
                             <Check size={13} /> 참여 등록

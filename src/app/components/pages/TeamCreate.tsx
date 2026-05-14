@@ -69,7 +69,6 @@ export function TeamCreate() {
       .single();
 
     if (teamError || !teamData) {
-      console.error('\ud300 \uc0dd\uc131 \uc2e4\ud328:', teamError);
       toast.error('팀 생성에 실패했습니다.');
       setSubmitting(false);
       return;
@@ -84,7 +83,7 @@ export function TeamCreate() {
       });
 
     if (memberError) {
-      console.error('\ud300 \uba64\ubc84 \ucd94\uac00 \uc2e4\ud328:', memberError);
+      console.error('팀 멤버 추가 실패:', memberError);
     }
 
     setSubmitting(false);
@@ -99,7 +98,6 @@ export function TeamCreate() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const textarea = document.createElement('textarea');
       textarea.value = createdTeamCode;
       document.body.appendChild(textarea);
@@ -113,10 +111,9 @@ export function TeamCreate() {
 
   const emojis = ['\u26bd', '\ud83d\udc06', '\ud83e\udd85', '\ud83d\udc2f', '\ud83e\udd81', '\ud83d\udc99', '\u26a1', '\ud83d\udd25', '\ud83d\udc09', '\u2b50'];
 
-  // \ud300 \ucf54\ub4dc \ud45c\uc2dc \ud654\uba74
   if (createdTeamCode) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center p-6">
         <div className="text-6xl mb-4">
           {logoPreview ? (
             <img src={logoPreview} alt="" className="w-24 h-24 rounded-full object-cover" />
@@ -124,49 +121,49 @@ export function TeamCreate() {
             logo
           )}
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">{name}</h2>
-        <p className="text-gray-400 text-sm mb-8">\ud300\uc774 \uc0dd\uc131\ub418\uc5c8\uc2b5\ub2c8\ub2e4!</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{name}</h2>
+        <p className="text-gray-400 text-sm mb-8">팀이 생성되었습니다!</p>
 
-        <div className="w-full max-w-xs bg-[#111] rounded-2xl border border-white/10 p-6 text-center mb-6">
-          <p className="text-xs text-gray-500 mb-3">\ud300 \ucf54\ub4dc</p>
+        <div className="w-full max-w-xs bg-white rounded-2xl border border-gray-200 p-6 text-center mb-6">
+          <p className="text-xs text-gray-500 mb-3">팀 코드</p>
           <p className="text-4xl font-black text-[#7B2D3B] tracking-[0.3em] mb-4">{createdTeamCode}</p>
           <button
             onClick={handleCopy}
-            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-white/5 rounded-xl text-sm text-gray-300 active:scale-95 transition-transform"
+            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-gray-100 rounded-xl text-sm text-gray-600 active:scale-95 transition-transform"
           >
-            {copied ? <><Check size={16} className="text-emerald-400" /> \ubcf5\uc0ac \uc644\ub8cc</> : <><Copy size={16} /> \ucf54\ub4dc \ubcf5\uc0ac</>}
+            {copied ? <><Check size={16} className="text-emerald-400" /> 복사 완료</> : <><Copy size={16} /> 코드 복사</>}
           </button>
         </div>
 
-        <p className="text-xs text-gray-600 text-center mb-8 leading-relaxed">
-          \uc774 \ucf54\ub4dc\ub97c \ud300\uc6d0\ub4e4\uc5d0\uac8c \uacf5\uc720\ud558\uba74<br />
-          \ucf54\ub4dc \uc785\ub825\ub9cc\uc73c\ub85c \ud300\uc5d0 \uac00\uc785\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.
+        <p className="text-xs text-gray-500 text-center mb-8 leading-relaxed">
+          이 코드를 팀원들에게 공유하면<br />
+          코드 입력만으로 팀에 가입할 수 있습니다.
         </p>
 
         <button
-          onClick={() => navigate('/mypage')}
+          onClick={() => navigate('/team')}
           className="w-full max-w-xs bg-[#7B2D3B] text-white py-4 rounded-xl font-bold shadow-lg active:scale-[0.98] transition-all"
         >
-          \ud655\uc778
+          확인
         </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
+    <div className="min-h-screen bg-[#FAFAF8]">
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200">
         <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-lg font-bold text-white">\ud300 \uc0dd\uc131</h1>
+        <h1 className="text-lg font-bold text-gray-900">팀 생성</h1>
       </div>
 
       <div className="p-6">
         {/* 로고 선택 */}
         <div className="flex flex-col items-center mb-4">
           <div className="relative mb-3">
-            <div className="w-24 h-24 bg-[#111] rounded-full flex items-center justify-center border-2 border-white/10 overflow-hidden">
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center border-2 border-gray-200 overflow-hidden">
               {logoPreview ? (
                 <img src={logoPreview} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -186,7 +183,7 @@ export function TeamCreate() {
             <div className="flex justify-center gap-2 mb-8 flex-wrap">
               {emojis.map(e => (
                 <button key={e} onClick={() => { setLogo(e); setLogoFile(null); setLogoPreview(null); }}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${logo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#111] border border-white/10'}`}>
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${logo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-white border border-gray-200'}`}>
                   {e}
                 </button>
               ))}
@@ -196,28 +193,28 @@ export function TeamCreate() {
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-bold text-gray-300 block mb-1">\ud300 \uc774\ub984 *</label>
+            <label className="text-sm font-bold text-gray-400 block mb-1">팀 이름 *</label>
             <input
               type="text"
-              placeholder="\ud300 \uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694"
+              placeholder="팀 이름을 입력하세요"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full p-3 border border-white/10 rounded-xl bg-[#111] text-white placeholder:text-gray-600 focus:ring-2 focus:ring-[#7B2D3B] outline-none"
+              className="w-full p-3 border border-gray-200 rounded-xl bg-[#F5F3F0] text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-[#7B2D3B] outline-none"
             />
           </div>
 
           <div>
-            <label className="text-sm font-bold text-gray-300 block mb-1">\ud300 \uc124\uba85 (\uc120\ud0dd)</label>
+            <label className="text-sm font-bold text-gray-400 block mb-1">팀 설명 (선택)</label>
             <textarea
-              placeholder="\uc6b0\ub9ac \ud300\uc744 \uc18c\uac1c\ud574\uc8fc\uc138\uc694"
+              placeholder="우리 팀을 소개해주세요"
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full p-3 border border-white/10 rounded-xl bg-[#111] text-white placeholder:text-gray-600 h-24 outline-none"
+              className="w-full p-3 border border-gray-200 rounded-xl bg-[#F5F3F0] text-gray-900 placeholder:text-gray-400 h-24 outline-none"
             />
           </div>
 
           <div>
-            <label className="text-sm font-bold text-gray-300 block mb-1">\uc778\uc2a4\ud0c0\uadf8\ub7a8 \uacc4\uc815 (\uc120\ud0dd)</label>
+            <label className="text-sm font-bold text-gray-400 block mb-1">인스타그램 (선택)</label>
             <div className="relative">
               <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
               <input
@@ -225,7 +222,7 @@ export function TeamCreate() {
                 placeholder="username"
                 value={instagram}
                 onChange={e => setInstagram(e.target.value)}
-                className="w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl bg-[#111] text-white placeholder:text-gray-600 outline-none"
+                className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-[#F5F3F0] text-gray-900 placeholder:text-gray-400 outline-none"
               />
             </div>
           </div>
@@ -236,7 +233,7 @@ export function TeamCreate() {
           disabled={!name.trim() || submitting}
           className="w-full bg-[#7B2D3B] text-white py-4 rounded-xl font-bold mt-8 shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
         >
-          {submitting ? '\uc0dd\uc131 \uc911...' : '\ud300 \uc0dd\uc131 \uc644\ub8cc'}
+          {submitting ? '생성 중...' : '팀 생성'}
         </button>
       </div>
     </div>

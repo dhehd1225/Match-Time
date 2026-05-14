@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Download, ChevronRight, MapPin, Plus, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, ChevronRight, MapPin, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { supabase } from '../../../lib/supabase';
@@ -7,8 +7,8 @@ import { trackEvent } from '../../../hooks/useAnalytics';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Match } from '../../../lib/types';
 
-interface GoalEntry { name: string; minute: string; }
-interface CardPlayer { name: string; position: string; number: number; }
+interface GoalEntry { scorer_name: string; assister_name: string; minute: string; }
+interface CardPlayer { id: string; name: string; position: string; number: number; }
 
 const posOrder = ['FW', 'MF', 'DF', 'GK'];
 const posLabel: Record<string, string> = { FW: 'FW', MF: 'MF', DF: 'DF', GK: 'GK' };
@@ -27,8 +27,6 @@ export default function MatchCard() {
   const [homeScore, setHomeScore] = useState('0');
   const [awayScore, setAwayScore] = useState('0');
   const [goals, setGoals] = useState<GoalEntry[]>([]);
-  const [newGoalName, setNewGoalName] = useState('');
-  const [newGoalMinute, setNewGoalMinute] = useState('');
   const [players, setPlayers] = useState<CardPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -64,7 +62,7 @@ export default function MatchCard() {
           .select('id, name, position, back_number')
           .in('id', userIds);
         if (profiles) {
-          setPlayers(profiles.map(p => ({ name: p.name || '이름 없음', position: p.position || 'MF', number: p.back_number || 0 })));
+          setPlayers(profiles.map(p => ({ id: p.id, name: p.name || '이름 없음', position: p.position || 'MF', number: p.back_number || 0 })));
         }
       } else {
         const { data: members } = await supabase
@@ -72,15 +70,39 @@ export default function MatchCard() {
           .select('*, profile:profiles(*)')
           .eq('team_id', team.id);
         if (members) {
-          setPlayers(members.map(m => ({ name: m.profile?.name || '이름 없음', position: m.profile?.position || 'MF', number: m.profile?.back_number || 0 })));
+          setPlayers(members.map(m => ({ id: m.user_id, name: m.profile?.name || '이름 없음', position: m.profile?.position || 'MF', number: m.profile?.back_number || 0 })));
         }
       }
 
       const matchDate = new Date(selectedMatch.date + 'T' + (selectedMatch.time || '00:00'));
       setCardType(matchDate < new Date() ? 'post' : 'pre');
-      setHomeScore('0');
-      setAwayScore('0');
-      setGoals([]);
+
+      // 저장된 스코어 로드
+      if (selectedMatch.home_score !== null) {
+        const isHome = selectedMatch.home_team_id === team.id;
+        setHomeScore(String(isHome ? selectedMatch.home_score : selectedMatch.away_score ?? 0));
+        setAwayScore(String(isHome ? selectedMatch.away_score ?? 0 : selectedMatch.home_score));
+      } else {
+        setHomeScore('0');
+        setAwayScore('0');
+      }
+
+      // 저장된 골/어시 이벤트 로드
+      const { data: events } = await supabase
+        .from('match_events')
+        .select('*, scorer:profiles!match_events_scorer_id_fkey(id, name), assister:profiles!match_events_assister_id_fkey(id, name)')
+        .eq('match_id', selectedMatch.id)
+        .order('minute', { ascending: true });
+
+      if (events && events.length > 0) {
+        setGoals(events.map(e => ({
+          scorer_name: (e.scorer as any)?.name || '',
+          assister_name: (e.assister as any)?.name || '',
+          minute: e.minute ? String(e.minute) : '',
+        })));
+      } else {
+        setGoals([]);
+      }
     };
     fetchPlayers();
   }, [selectedMatch, team]);
@@ -115,26 +137,19 @@ export default function MatchCard() {
     setDownloading(false);
   };
 
-  const addGoal = () => {
-    if (!newGoalName.trim()) return;
-    setGoals(prev => [...prev, { name: newGoalName.trim(), minute: newGoalMinute.trim() }]);
-    setNewGoalName('');
-    setNewGoalMinute('');
-  };
-
   const groupedPlayers = posOrder
     .map(pos => ({ position: pos, players: players.filter(p => p.position === pos) }))
     .filter(g => g.players.length > 0);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <div className="px-4 pt-5 pb-3"><div className="w-24 h-6 bg-white/5 rounded animate-pulse" /></div>
+      <div className="min-h-screen bg-[#FAFAF8]">
+        <div className="px-4 pt-5 pb-3"><div className="w-24 h-6 bg-gray-200 rounded animate-pulse" /></div>
         <div className="px-4 space-y-2">
           {[1,2].map(i => (
-            <div key={i} className="bg-[#111] rounded-2xl border border-white/5 p-4 space-y-3">
-              <div className="flex justify-between"><div className="w-28 h-4 bg-white/5 rounded animate-pulse" /><div className="w-12 h-4 bg-white/5 rounded animate-pulse" /></div>
-              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-full animate-pulse" /><div className="w-32 h-4 bg-white/5 rounded animate-pulse" /></div>
+            <div key={i} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 space-y-3">
+              <div className="flex justify-between"><div className="w-28 h-4 bg-gray-200 rounded animate-pulse" /><div className="w-12 h-4 bg-gray-200 rounded animate-pulse" /></div>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" /><div className="w-32 h-4 bg-gray-200 rounded animate-pulse" /></div>
             </div>
           ))}
         </div>
@@ -149,15 +164,15 @@ export default function MatchCard() {
     const opponentTeam = isHome ? selectedMatch.away_team : selectedMatch.home_team;
 
     return (
-      <div className="min-h-screen bg-[#0a0a0a] pb-20">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5 sticky top-0 z-10 bg-[#0a0a0a]">
+      <div className="min-h-screen bg-[#FAFAF8] pb-20">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 sticky top-0 z-10 bg-[#FAFAF8]">
           <button onClick={() => setSelectedMatch(null)} className="p-1 text-gray-400"><ArrowLeft size={22} /></button>
-          <h1 className="text-lg font-bold text-white">매치 카드</h1>
+          <h1 className="text-lg font-bold text-gray-900">매치 카드</h1>
         </div>
 
         {/* 카드 타입 토글 */}
         <div className="px-4 pt-4">
-          <div className="flex gap-1 bg-[#111] p-1 rounded-xl mb-4">
+          <div className="flex gap-1 bg-[#F5F3F0] p-1 rounded-xl mb-4">
             <button onClick={() => setCardType('pre')}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold ${cardType === 'pre' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
               시합 전
@@ -168,46 +183,6 @@ export default function MatchCard() {
             </button>
           </div>
         </div>
-
-        {/* 시합 후 입력 */}
-        {cardType === 'post' && (
-          <div className="px-4 mb-4 space-y-3">
-            <div className="bg-[#111] rounded-xl border border-white/5 p-3">
-              <p className="text-[10px] text-gray-500 font-bold mb-2">스코어</p>
-              <div className="flex items-center gap-3 justify-center">
-                <div className="text-center">
-                  <p className="text-[10px] text-gray-500 mb-1">{myTeam?.name}</p>
-                  <input type="number" value={homeScore} onChange={e => setHomeScore(e.target.value)}
-                    className="w-14 text-center text-2xl font-black bg-white/5 border border-white/10 rounded-lg py-1 text-white outline-none" />
-                </div>
-                <span className="text-gray-600 font-bold text-xl">:</span>
-                <div className="text-center">
-                  <p className="text-[10px] text-gray-500 mb-1">{opponentTeam?.name || '상대'}</p>
-                  <input type="number" value={awayScore} onChange={e => setAwayScore(e.target.value)}
-                    className="w-14 text-center text-2xl font-black bg-white/5 border border-white/10 rounded-lg py-1 text-white outline-none" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#111] rounded-xl border border-white/5 p-3">
-              <p className="text-[10px] text-gray-500 font-bold mb-2">골 기록</p>
-              {goals.map((g, i) => (
-                <div key={i} className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-white flex-1">⚽ {g.name} {g.minute && `${g.minute}'`}</span>
-                  <button onClick={() => setGoals(prev => prev.filter((_, j) => j !== i))} className="text-gray-600"><X size={14} /></button>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <input value={newGoalName} onChange={e => setNewGoalName(e.target.value)} placeholder="선수 이름"
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none" />
-                <input value={newGoalMinute} onChange={e => setNewGoalMinute(e.target.value)} placeholder="분" type="number"
-                  className="w-14 px-2 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none text-center" />
-                <button onClick={addGoal} disabled={!newGoalName.trim()}
-                  className="bg-[#7B2D3B] text-white px-3 py-2 rounded-lg disabled:opacity-30"><Plus size={16} /></button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* 카드 프리뷰 - 인라인 스타일 (html2canvas oklch 호환) */}
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
@@ -251,15 +226,27 @@ export default function MatchCard() {
                 <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)', marginTop: 8 }} />
               </div>
 
-              {/* 골 기록 (시합 후) */}
-              {cardType === 'post' && goals.length > 0 && (
+              {/* 골 + 어시스트 기록 (시합 후) */}
+              {cardType === 'post' && goals.filter(g => g.scorer_name).length > 0 && (
                 <div style={{ marginBottom: 12 }}>
                   <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.3em', color: '#777', textAlign: 'center', marginBottom: 8 }}>G O A L S</p>
-                  {goals.map((g, i) => (
-                    <p key={i} style={{ textAlign: 'center', color: '#FBBF24', fontSize: 12 }}>
-                      ⚽ {g.name} {g.minute && <span style={{ color: '#777' }}>{g.minute}'</span>}
+                  {goals.filter(g => g.scorer_name).map((g, i) => (
+                    <p key={i} style={{ textAlign: 'center', fontSize: 12, marginBottom: 2 }}>
+                      <span style={{ color: '#FBBF24' }}>⚽ {g.scorer_name}</span>
+                      {g.minute && <span style={{ color: '#777' }}> {g.minute}'</span>}
                     </p>
                   ))}
+                  {goals.some(g => g.assister_name) && (
+                    <>
+                      <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.3em', color: '#777', textAlign: 'center', marginBottom: 6, marginTop: 8 }}>A S S I S T S</p>
+                      {goals.filter(g => g.assister_name).map((g, i) => (
+                        <p key={i} style={{ textAlign: 'center', fontSize: 12, color: '#34D399', marginBottom: 2 }}>
+                          🅰️ {g.assister_name}
+                          {g.minute && <span style={{ color: '#777' }}> {g.minute}'</span>}
+                        </p>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
 
@@ -310,15 +297,15 @@ export default function MatchCard() {
 
   // 매치 목록
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="px-4 pt-5 pb-3">
+    <div className="min-h-screen bg-[#FAFAF8]">
+      <div className="px-4 pt-5 pb-4 bg-gradient-to-b from-[#7B2D3B] to-[#5a1f2c] rounded-b-2xl">
         <h1 className="text-2xl font-black text-white mb-1">매치 카드</h1>
-        <p className="text-xs text-gray-500">시합 정보를 카드로 만들어 공유하세요</p>
+        <p className="text-xs text-white/60">시합 정보를 카드로 만들어 공유하세요</p>
       </div>
 
       <div className="px-4 pb-28 space-y-2">
         {matches.length === 0 && (
-          <p className="text-center text-gray-600 py-12 text-sm">매치가 없습니다</p>
+          <p className="text-center text-gray-400 py-12 text-sm">매치가 없습니다</p>
         )}
         {matches.map(match => {
           const isHome = match.home_team_id === team?.id;
@@ -326,14 +313,14 @@ export default function MatchCard() {
           const isPast = new Date(match.date + 'T00:00:00') < new Date();
           return (
             <div key={match.id} onClick={() => setSelectedMatch(match)}
-              className="bg-[#111] rounded-2xl border border-white/5 p-4 active:scale-[0.98] transition-transform cursor-pointer">
+              className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 active:scale-[0.98] transition-transform cursor-pointer">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-white">{formatDate(match.date)}</span>
+                  <span className="text-sm font-bold text-gray-900">{formatDate(match.date)}</span>
                   <span className="text-sm text-gray-500">{match.time?.slice(0, 5)}</span>
                 </div>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  isPast ? 'text-gray-400 bg-white/5' : 'text-emerald-400 bg-emerald-500/10'
+                  isPast ? 'text-gray-400 bg-gray-100' : 'text-emerald-400 bg-emerald-500/10'
                 }`}>
                   {isPast ? '시합 후' : '시합 전'}
                 </span>
@@ -341,7 +328,7 @@ export default function MatchCard() {
               <div className="flex items-center gap-3">
                 <div className="text-2xl">{opponent?.logo || '⚽'}</div>
                 <div className="flex-1">
-                  <p className="font-bold text-white text-sm">vs {opponent?.name || '상대 미정'}</p>
+                  <p className="font-bold text-gray-900 text-sm">vs {opponent?.name || '상대 미정'}</p>
                   <p className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin size={11} />{match.stadium}</p>
                 </div>
                 <div className="flex items-center gap-1 text-[#7B2D3B]">

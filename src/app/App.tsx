@@ -9,7 +9,6 @@ import MatchDetail from './components/pages/MatchDetail';
 import LineupBuilder from './components/pages/LineupBuilder';
 import LineupDetail from './components/pages/LineupDetail';
 import TeamManagement from './components/pages/TeamManagement';
-import Rankings from './components/pages/Rankings';
 import Auth from './components/pages/Auth';
 import Onboarding from './components/pages/Onboarding';
 import { TeamCreate } from './components/pages/TeamCreate';
@@ -22,8 +21,8 @@ import MatchCard from './components/pages/MatchCard';
 export default function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-center" theme="dark" toastOptions={{
-        style: { background: '#111', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' },
+      <Toaster position="top-center" theme="light" toastOptions={{
+        style: { background: '#fff', border: '1px solid #e5e7eb', color: '#1a1a1a' },
       }} />
       <BrowserRouter>
         <Routes>
@@ -44,7 +43,6 @@ export default function App() {
             <Route path="lineup" element={<LineupBuilder />} />
             <Route path="lineup/:id" element={<LineupDetail />} />
             <Route path="team" element={<TeamManagement />} />
-            <Route path="rankings" element={<Rankings />} />
             <Route path="cards" element={<MatchCard />} />
             <Route path="chat" element={<Chat />} />
             <Route path="mypage" element={<MyPage />} />

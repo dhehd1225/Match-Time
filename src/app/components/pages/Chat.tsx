@@ -128,14 +128,14 @@ export default function Chat() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <div className="px-4 py-3 border-b border-white/5"><div className="w-16 h-5 bg-white/5 rounded animate-pulse" /></div>
+      <div className="min-h-screen bg-[#FAFAF8]">
+        <div className="px-4 py-3 border-b border-gray-200"><div className="w-16 h-5 bg-gray-200 rounded animate-pulse" /></div>
         <div className="p-4 space-y-4">
           {[1,2,3].map(i => (
             <div key={i} className={`flex ${i % 2 ? 'justify-start' : 'justify-end'}`}>
               <div className="space-y-1">
-                {i % 2 ? <div className="w-10 h-3 bg-white/5 rounded animate-pulse ml-1" /> : null}
-                <div className="w-44 h-10 bg-white/5 rounded-2xl animate-pulse" />
+                {i % 2 ? <div className="w-10 h-3 bg-gray-200 rounded animate-pulse ml-1" /> : null}
+                <div className="w-44 h-10 bg-gray-200 rounded-2xl animate-pulse" />
               </div>
             </div>
           ))}
@@ -146,18 +146,18 @@ export default function Chat() {
 
   if (!team) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center px-4">
         <p className="text-gray-500 text-sm">팀에 가입하면 채팅을 이용할 수 있습니다</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
+    <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-5 pb-0 sticky top-0 z-10 bg-[#0a0a0a]">
-        <h1 className="text-2xl font-black text-white mb-3">채팅</h1>
-        <div className="flex gap-1 bg-[#111] p-1 rounded-xl mb-3">
+      <div className="px-4 pt-5 pb-0 sticky top-0 z-10 bg-[#FAFAF8]">
+        <h1 className="text-2xl font-black text-gray-900 mb-3">채팅</h1>
+        <div className="flex gap-1 bg-[#F5F3F0] p-1 rounded-xl mb-3">
           <button onClick={() => setTab('team')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 ${tab === 'team' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
             <Users size={14} /> 팀 채팅
@@ -170,27 +170,27 @@ export default function Chat() {
         <>
           <div className="flex-1 overflow-auto px-4 space-y-3 pb-2">
             {teamMsgs.length === 0 && (
-              <p className="text-center text-gray-600 py-12 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
+              <p className="text-center text-gray-400 py-12 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
             )}
             {teamMsgs.map(msg => (
               <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className="max-w-[75%]">
                   {!msg.isMe && <p className="text-[10px] text-gray-500 mb-0.5 ml-1">{msg.sender}</p>}
-                  <div className={`px-3 py-2 rounded-2xl ${msg.isMe ? 'bg-[#7B2D3B] text-white rounded-br-md' : 'bg-[#1a1a1a] text-gray-200 rounded-bl-md'}`}>
+                  <div className={`px-3 py-2 rounded-2xl ${msg.isMe ? 'bg-[#7B2D3B] text-white rounded-br-md' : 'bg-[#F5F3F0] text-gray-900 rounded-bl-md'}`}>
                     <p className="text-sm">{msg.text}</p>
                   </div>
-                  <p className={`text-[9px] text-gray-600 mt-0.5 ${msg.isMe ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
+                  <p className={`text-[9px] text-gray-400 mt-0.5 ${msg.isMe ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
                 </div>
               </div>
             ))}
             <div ref={chatEndRef} />
           </div>
-          <div className="p-3 border-t border-white/5">
+          <div className="p-3 border-t border-gray-200">
             <div className="flex gap-2">
               <input value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendTeamMsg()}
                 placeholder="메시지 입력..."
-                className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none" />
+                className="flex-1 bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none" />
               <button onClick={sendTeamMsg} className="bg-[#7B2D3B] text-white p-2.5 rounded-xl active:scale-95 transition-transform">
                 <Send size={18} />
               </button>

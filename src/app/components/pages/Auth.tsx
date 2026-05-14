@@ -80,13 +80,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm text-center">
         <div className="mb-8">
           <div className="flex justify-center mb-4">
             <MatchTimeLogo />
           </div>
-          <h1 className="text-4xl font-black text-white mb-1 tracking-tight">Match Time</h1>
+          <h1 className="text-4xl font-black text-gray-900 mb-1 tracking-tight">Match Time</h1>
           <p className="text-[#C4697A] font-medium text-sm">"우리의 시간"</p>
         </div>
 
@@ -107,7 +107,7 @@ export default function Auth() {
         </p>
 
         {/* 개발용 테스트 로그인 */}
-        <div className="mt-10 border-t border-white/5 pt-6">
+        <div className="mt-10 border-t border-gray-200 pt-6">
           <button
             onClick={() => setShowDevLogin(!showDevLogin)}
             className="text-[10px] text-gray-600 hover:text-gray-400"
@@ -122,27 +122,27 @@ export default function Auth() {
                 placeholder="이름"
                 value={devName}
                 onChange={e => setDevName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
               />
               <input
                 type="email"
                 placeholder="이메일"
                 value={devEmail}
                 onChange={e => setDevEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
               />
               <input
                 type="password"
                 placeholder="비밀번호"
                 value={devPassword}
                 onChange={e => setDevPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
               />
               {devError && <p className="text-red-400 text-xs">{devError}</p>}
               <button
                 onClick={handleDevLogin}
                 disabled={devLoading}
-                className="w-full bg-white/10 text-white py-3 rounded-xl font-semibold text-sm hover:bg-white/15 transition-colors disabled:opacity-50"
+                className="w-full bg-gray-100 text-gray-900 py-3 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
                 {devLoading ? '처리 중...' : '테스트 계정 로그인 / 생성'}
               </button>

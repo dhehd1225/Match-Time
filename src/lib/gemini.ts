@@ -33,38 +33,43 @@ export async function recommendFormation(
     return desc;
   }).join('\n');
 
-  const prompt = `당신은 축구 전술 전문가입니다. 아래 선수 명단과 각 선수의 희망 포지션을 고려하여 최적의 포메이션과 라인업을 추천해주세요.
+  const playerNames = players.map(p => p.name);
+
+  const prompt = `축구 전술 전문가로서 최적의 포메이션과 라인업을 추천하세요.
 
 선수 목록:
 ${playerList}
 
-사용 가능한 포메이션: ${formations.join(', ')}
+가능한 포메이션: ${formations.join(', ')}
 경기 포맷: ${format || '11v11'}
+총 선수 수: ${players.length}명
 
 규칙:
-1. 각 선수의 희망 포지션 우선순위를 최대한 반영하세요 (1순위 > 2순위 > 3순위)
-2. 희망 포지션이 없는 선수는 기본 포지션 기준으로 배치
-3. GK가 있으면 반드시 골키퍼 자리에 배치
-4. 선수가 희망한 특정 쿼터에 배치하도록 노력하세요 (예: 1Q,3Q 희망 → 해당 쿼터에 우선 배치)
-5. 포메이션의 포지션 수만큼만 선수를 배치 (나머지는 교체 선수)
-6. 모든 선수의 희망을 100% 반영할 수 없을 때는 팀 밸런스를 우선
-7. 선수가 포메이션 인원보다 적어도 반드시 추천하세요. 빈 자리는 lineup에 포함하지 마세요.
+1. 반드시 각 선수의 기본 포지션(GK/DF/MF/FW)에 맞는 슬롯에 배치
+2. 희망 포지션이 있으면 우선 반영 (1순위 > 2순위 > 3순위)
+3. GK 선수 → GK 슬롯, DF 선수 → DF 슬롯, MF 선수 → MF 슬롯, FW 선수 → FW 슬롯
+4. 해당 포지션 슬롯이 꽉 차면 인접 포지션에 배치
+5. 포메이션 슬롯 수만큼만 lineup에 포함 (나머지는 교체)
+6. 선수가 슬롯보다 적으면 있는 만큼만 배치하고 나머지는 빈 문자열("")
 
-중요: 어떤 상황이든 반드시 아래 JSON 형식으로만 응답하세요. 설명, 사과, 질문 없이 JSON만:
+[중요] lineup 배열의 선수 이름은 반드시 아래 목록에서 정확히 복사하세요. 한 글자도 변경하지 마세요:
+${JSON.stringify(playerNames)}
+
+JSON만 응답 (설명/질문 금지):
 {
-  "formation": "선택한 포메이션",
-  "lineup": ["GK 자리 선수이름", "DF1 선수이름", "DF2 선수이름", ...],
-  "reason": "이 포메이션과 배치를 선택한 이유. 선수 희망을 어떻게 반영했는지 설명 (한국어, 2~3문장)"
+  "formation": "포메이션",
+  "lineup": ["GK선수이름", "DF1이름", "DF2이름", ..., "MF1이름", ..., "FW1이름", ...],
+  "reason": "추천 이유 (한국어 2~3문장)"
 }
 
-lineup 배열 순서: GK → DF(왼→오) → MF(왼→오) → FW(왼→오)`;
+lineup 순서: GK → DF(왼→오) → MF(왼→오) → FW(왼→오)`;
 
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } },
     }),
   });
 
