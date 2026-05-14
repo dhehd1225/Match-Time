@@ -31,20 +31,20 @@ export default function LineupMembers({ players, allPlayers, isTeamCreator, onRe
       {[
         { title: '참여', players: attendingPlayers, dot: 'bg-emerald-500', label: () => <span className="text-emerald-400 text-[11px]">참여</span> },
         { title: '불참', players: notAttendingPlayers, dot: 'bg-[#7B2D3B]', label: () => <span className="text-red-400 text-[11px]">불참</span> },
-        { title: '미응답', players: pendingPlayers, dot: 'bg-gray-600', label: () => <span className="text-gray-400 text-[11px]">미응답</span> },
+        { title: '미응답', players: pendingPlayers, dot: 'bg-gray-600', label: () => <span className="text-[#CCC] text-[11px]">미응답</span> },
       ].filter(g => g.players.length > 0).map(group => (
         <div key={group.title}>
           <div className="flex items-center gap-2 mb-2">
             <div className={`w-1.5 h-1.5 rounded-full ${group.dot}`} />
-            <span className="text-xs font-semibold text-gray-400">{group.title} ({group.players.length})</span>
+            <span className="text-xs font-semibold text-[#CCC]">{group.title} ({group.players.length})</span>
           </div>
           <div className="space-y-1">
             {group.players.map(player => (
-              <div key={player.id} className="bg-white shadow-sm p-3 rounded-xl border border-gray-200">
+              <div key={player.id} className="bg-white p-3 rounded-xl border border-[#E5E2DC]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold text-gray-500 w-5 text-center">{player.number}</span>
-                    <span className="text-sm text-gray-900">{player.name}</span>
+                    <span className="text-xs font-bold text-[#888] w-5 text-center">{player.number}</span>
+                    <span className="text-sm text-[#111]">{player.name}</span>
                     <span className={`text-[10px] font-bold ${posColors[player.position]}`}>{player.position}</span>
                   </div>
                   {group.label()}
@@ -76,20 +76,20 @@ export default function LineupMembers({ players, allPlayers, isTeamCreator, onRe
         <div>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            <span className="text-xs font-semibold text-gray-400">추가 선수 ({tempPlayers.length})</span>
+            <span className="text-xs font-semibold text-[#CCC]">추가 선수 ({tempPlayers.length})</span>
           </div>
           <div className="space-y-1">
             {tempPlayers.map(player => (
-              <div key={player.id} className="bg-white shadow-sm p-3 rounded-xl border border-gray-200">
+              <div key={player.id} className="bg-white p-3 rounded-xl border border-[#E5E2DC]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold text-gray-500 w-5 text-center">{player.number}</span>
-                    <span className="text-sm text-gray-900">{player.name}</span>
+                    <span className="text-xs font-bold text-[#888] w-5 text-center">{player.number}</span>
+                    <span className="text-sm text-[#111]">{player.name}</span>
                     <span className={`text-[10px] font-bold ${posColors[player.position]}`}>{player.position}</span>
                   </div>
                   {isTeamCreator && (
                     <button onClick={() => onRemovePlayer(player.id)}
-                      className="text-gray-400 hover:text-red-400 p-1">
+                      className="text-[#CCC] hover:text-red-400 p-1">
                       <X size={14} />
                     </button>
                   )}
@@ -102,13 +102,13 @@ export default function LineupMembers({ players, allPlayers, isTeamCreator, onRe
 
       {isTeamCreator && (
         <button onClick={onShowAddModal}
-          className="w-full py-3 rounded-xl border border-dashed border-gray-300 text-sm text-gray-400 font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+          className="w-full py-3 rounded-xl border border-dashed border-[#E5E2DC] text-sm text-[#CCC] font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
           <UserPlus size={16} /> 선수 추가
         </button>
       )}
 
       {players.length === 0 && tempPlayers.length === 0 && (
-        <p className="text-center text-gray-400 py-8 text-sm">팀원 정보가 없습니다</p>
+        <p className="text-center text-[#CCC] py-8 text-sm">팀원 정보가 없습니다</p>
       )}
     </div>
   );

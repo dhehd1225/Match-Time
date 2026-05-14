@@ -433,21 +433,25 @@ export function MyPage() {
   const emojis = ['\u26bd', '\ud83d\udc06', '\ud83e\udd85', '\ud83d\udc2f', '\ud83e\udd81', '\ud83d\udc99', '\u26a1', '\ud83d\udd25', '\ud83d\udc09', '\u2b50'];
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pb-20">
+    <div className="min-h-screen bg-[#F7F6F3] pb-20">
       {/* Profile Header */}
-      <div className="bg-gradient-to-br from-[#7B2D3B] to-[#5a1f2c] px-5 pt-5 pb-8 rounded-b-3xl">
-        <h1 className="text-sm font-bold text-white/60 mb-3">마이 페이지</h1>
-        <div className="flex items-center gap-4">
+      <div className="bg-white border-b border-[#E5E2DC] px-4 pt-4 pb-3">
+        <h1 className="font-title text-[30px] text-[#111] leading-none">MY</h1>
+      </div>
+
+      {/* Profile Card */}
+      <div className="px-4 pt-3">
+        <div className="bg-white rounded-xl border border-[#E5E2DC] p-4 flex items-center gap-4">
           <div className="relative cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30" />
+              <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
             ) : (
-              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold ring-2 ring-white/30">
+              <div className="w-14 h-14 bg-[#F0EEE9] rounded-full flex items-center justify-center text-[#888] text-xl font-bold">
                 {name?.charAt(0) || '?'}
               </div>
             )}
-            <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow">
-              <Camera size={11} className="text-[#7B2D3B]" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-[#111] rounded-full flex items-center justify-center">
+              <Camera size={11} className="text-white" />
             </div>
             <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
             {avatarUploading && (
@@ -457,55 +461,55 @@ export function MyPage() {
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-white">{name || '이름 없음'}</h2>
-            <p className="text-sm text-white/60">{position} {backNumber ? `· #${backNumber}` : ''}</p>
+            <h2 className="text-lg font-bold text-[#111]">{name || '이름 없음'}</h2>
+            <p className="text-sm text-[#888]">{position} {backNumber ? `· #${backNumber}` : ''}</p>
           </div>
         </div>
       </div>
 
-      {/* Stats - overlapping the header */}
-      <div className="px-5 -mt-4 mb-4">
+      {/* Stats */}
+      <div className="px-4 mt-3 mb-4">
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white shadow-md p-4 rounded-2xl text-center border border-gray-100">
-            <p className="text-xs text-gray-400 mb-1">득점</p>
-            <p className="text-2xl font-black text-[#7B2D3B]">{membership?.goals ?? 0}</p>
+          <div className="bg-[#F0EEE9] p-4 rounded-lg text-center">
+            <p className="text-xs text-[#CCC] mb-1">득점</p>
+            <p className="text-2xl font-black text-[#9A3412]">{membership?.goals ?? 0}</p>
           </div>
-          <div className="bg-white shadow-md p-4 rounded-2xl text-center border border-gray-100">
-            <p className="text-xs text-gray-400 mb-1">도움</p>
-            <p className="text-2xl font-black text-emerald-500">{membership?.assists ?? 0}</p>
+          <div className="bg-[#F0EEE9] p-4 rounded-lg text-center">
+            <p className="text-xs text-[#CCC] mb-1">도움</p>
+            <p className="text-2xl font-black text-[#166534]">{membership?.assists ?? 0}</p>
           </div>
         </div>
       </div>
 
-      <div className="px-5">
+      <div className="px-4">
 
         {/* Edit Info */}
         <div className="space-y-3 mb-4">
           <div>
-            <label className="text-[10px] font-bold text-gray-400 mb-1.5 block">이름</label>
+            <label className="text-[11px] font-semibold text-[#999] mb-1.5 block">이름</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
-              className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
+              className="w-full p-3 bg-[#F0EEE9] border-none rounded-lg text-sm text-[#111] font-medium focus:ring-1 focus:ring-[#111] outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-1.5 block">포지션</label>
+              <label className="text-[11px] font-semibold text-[#999] mb-1.5 block">포지션</label>
               <select value={position} onChange={e => setPosition(e.target.value)}
-                className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none appearance-none">
-                <option value="FW" className="bg-white text-gray-900">포워드(FW)</option>
-                <option value="MF" className="bg-white text-gray-900">미드필더(MF)</option>
-                <option value="DF" className="bg-white text-gray-900">수비수(DF)</option>
-                <option value="GK" className="bg-white text-gray-900">골키퍼(GK)</option>
+                className="w-full p-3 bg-[#F0EEE9] border-none rounded-lg text-sm text-[#111] font-medium focus:ring-1 focus:ring-[#111] outline-none appearance-none">
+                <option value="FW" className="bg-[#F0EEE9] text-[#111]">포워드(FW)</option>
+                <option value="MF" className="bg-[#F0EEE9] text-[#111]">미드필더(MF)</option>
+                <option value="DF" className="bg-[#F0EEE9] text-[#111]">수비수(DF)</option>
+                <option value="GK" className="bg-[#F0EEE9] text-[#111]">골키퍼(GK)</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-1.5 block">등번호</label>
+              <label className="text-[11px] font-semibold text-[#999] mb-1.5 block">등번호</label>
               <input type="number" value={backNumber} onChange={e => setBackNumber(e.target.value)}
-                className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
+                className="w-full p-3 bg-[#F0EEE9] border-none rounded-lg text-sm text-[#111] font-medium focus:ring-1 focus:ring-[#111] outline-none" />
             </div>
           </div>
           {hasChanges && (
             <button onClick={handleSave} disabled={saving}
-              className="w-full bg-[#7B2D3B] text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+              className="w-full bg-[#111] text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
               {saving ? '저장 중...' : <><Save size={14} /> 프로필 저장</>}
             </button>
           )}
@@ -516,28 +520,28 @@ export function MyPage() {
 
         {/* My Teams - 배너 스타일 */}
         <div className="mb-5">
-          <h3 className="text-sm font-bold text-gray-900 mb-3">소속 팀</h3>
+          <h3 className="text-sm font-bold text-[#111] mb-3">소속 팀</h3>
           {teams.length > 0 ? (
             <div className="space-y-3">
               {teams.map(t => (
                 <div key={t.id}
                   className={`relative overflow-hidden rounded-2xl p-4 ${
                     t.id === team?.id
-                      ? 'bg-gradient-to-r from-[#7B2D3B] to-[#9e4a5c]'
-                      : 'bg-white border border-gray-200'
+                      ? 'bg-[#111] text-white'
+                      : 'bg-white border border-[#E5E2DC]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     {t.logo?.startsWith('http') ? (
                       <img src={t.logo} alt="" className={`w-11 h-11 rounded-full object-cover ${t.id === team?.id ? 'ring-2 ring-white/30' : ''}`} />
                     ) : (
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl ${t.id === team?.id ? 'bg-white/20' : 'bg-[#F5F3F0]'}`}>
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl ${t.id === team?.id ? 'bg-white/20' : 'bg-[#F0EEE9]'}`}>
                         {t.logo}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className={`font-bold text-sm truncate ${t.id === team?.id ? 'text-white' : 'text-gray-900'}`}>{t.name}</p>
-                      <p className={`text-xs ${t.id === team?.id ? 'text-white/60' : 'text-gray-400'}`}>
+                      <p className={`font-bold text-sm truncate ${t.id === team?.id ? 'text-white' : 'text-[#111]'}`}>{t.name}</p>
+                      <p className={`text-xs ${t.id === team?.id ? 'text-white/60' : 'text-[#CCC]'}`}>
                         {isPresidentOf(t.id) ? '팀장' : '팀원'}
                       </p>
                     </div>
@@ -549,49 +553,49 @@ export function MyPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 py-6 text-center">아직 소속 팀이 없습니다</p>
+            <p className="text-sm text-[#CCC] py-6 text-center">아직 소속 팀이 없습니다</p>
           )}
         </div>
 
         {/* Logout */}
         <button onClick={async () => { await signOut(); navigate('/auth'); }}
-          className="w-full p-3 bg-gray-100 rounded-xl text-gray-500 text-sm font-medium">
+          className="w-full p-3 bg-[#F0EEE9] rounded-xl text-[#555] text-sm font-medium">
           로그아웃
         </button>
       </div>
 
       {/* 알림함 */}
-      <div className="px-5">
+      <div className="px-4">
         <div className="flex items-center gap-2 mb-3">
-          <Bell size={16} className="text-gray-900" />
-          <h3 className="font-bold text-gray-900 text-sm">알림함</h3>
+          <Bell size={16} className="text-[#111]" />
+          <h3 className="font-bold text-[#111] text-sm">알림함</h3>
           {pendingCount > 0 && (
-            <span className="bg-[#7B2D3B] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+            <span className="bg-[#C8102E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
               {pendingCount}
             </span>
           )}
         </div>
 
         {notifications.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">알림이 없습니다</p>
+          <p className="text-sm text-[#CCC] text-center py-8">알림이 없습니다</p>
         ) : (
           <div className="space-y-2">
             {notifications.map(notif => (
-              <div key={notif.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 transition-all relative">
+              <div key={notif.id} className="bg-white rounded-xl border border-[#E5E2DC] p-4 transition-all relative">
                 <button onClick={async () => {
                   setNotifications(prev => prev.filter(n => n.id !== notif.id));
                   await supabase.from('notifications').delete().eq('id', notif.id);
-                }} className="absolute top-3 right-3 text-gray-300 hover:text-gray-500 p-0.5">
+                }} className="absolute top-3 right-3 text-[#CCC] hover:text-[#888] p-0.5">
                   <X size={14} />
                 </button>
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{getIcon(notif.type)}</div>
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-bold text-gray-900">{notif.title}</span>
-                      <span className="text-[10px] text-gray-400">{formatTime(notif.created_at)}</span>
+                      <span className="text-xs font-bold text-[#111]">{notif.title}</span>
+                      <span className="text-[10px] text-[#CCC]">{formatTime(notif.created_at)}</span>
                     </div>
-                    <p className="text-xs text-gray-400 mb-2.5">
+                    <p className="text-xs text-[#CCC] mb-2.5">
                       {notif.type === 'team_join' && notif.description?.includes('::')
                         ? notif.description.split('::')[1]
                         : notif.description}
@@ -608,7 +612,7 @@ export function MyPage() {
                             navigate(`/matches/${notif.related_id}`);
                           }
                         }}
-                          className="flex-1 flex items-center justify-center gap-1 bg-gray-100 text-gray-900 py-2 rounded-lg text-xs font-bold">
+                          className="flex-1 flex items-center justify-center gap-1 bg-[#F0EEE9] text-[#111] py-2 rounded-lg text-xs font-bold">
                           <Check size={13} /> {notif.type === 'match_request' ? '매치 보기' : '확인'}
                         </button>
                       ) : notif.type === 'match_vote' ? (
@@ -634,22 +638,22 @@ export function MyPage() {
                             await supabase.from('notifications').delete().eq('id', notif.id);
                             navigate(`/lineup/${notif.related_id}`);
                           }}
-                            className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#ECFDF4] text-[#166534] py-2 rounded-lg text-xs font-bold">
                             <Check size={13} /> 참여 등록
                           </button>
                           <button onClick={() => handleAction(notif.id, 'rejected')}
-                            className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#FEF2F2] text-[#991B1B] py-2 rounded-lg text-xs font-bold">
                             <X size={13} /> 불참
                           </button>
                         </>
                       ) : (
                         <>
                           <button onClick={() => handleAction(notif.id, 'accepted')}
-                            className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/20 text-emerald-400 py-2 rounded-lg text-xs font-bold">
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#ECFDF4] text-[#166534] py-2 rounded-lg text-xs font-bold">
                             <Check size={13} /> 수락
                           </button>
                           <button onClick={() => handleAction(notif.id, 'rejected')}
-                            className="flex-1 flex items-center justify-center gap-1 bg-[#7B2D3B]/20 text-red-400 py-2 rounded-lg text-xs font-bold">
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#FEF2F2] text-[#991B1B] py-2 rounded-lg text-xs font-bold">
                             <X size={13} /> 거절
                           </button>
                         </>

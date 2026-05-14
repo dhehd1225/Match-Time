@@ -44,6 +44,9 @@ export interface Match {
   home_team_id: string;
   away_team_id: string | null;
   status: 'open' | 'pending' | 'confirmed' | 'completed';
+  player_type?: string | null;
+  home_score?: number | null;
+  away_score?: number | null;
   created_by: string;
   created_at: string;
   // joined relations

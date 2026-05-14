@@ -75,7 +75,7 @@ export default function LineupFormation({
       <div className="flex gap-2 mb-3">
         {quarters.map(q => (
           <button key={q} onClick={() => { setActiveQuarter(q); setSelectedSlot(null); }}
-            className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#7B2D3B] text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>{q}</button>
+            className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#111] text-white' : 'bg-white text-[#888] border border-[#E5E2DC]'}`}>{q}</button>
         ))}
       </div>
 
@@ -83,7 +83,7 @@ export default function LineupFormation({
         <div className="flex gap-2 mb-3">
           {quarters.filter(q => q !== activeQuarter).map(q => (
             <button key={q} onClick={() => setQuarterLineups(prev => ({ ...prev, [activeQuarter]: [...prev[q]] }))}
-              className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-[11px] text-gray-500">
+              className="flex items-center gap-1 px-2.5 py-1 bg-[#F0EEE9] rounded-lg text-[11px] text-[#888]">
               <Copy size={10} />{q} 복사
             </button>
           ))}
@@ -93,7 +93,7 @@ export default function LineupFormation({
       {/* 유니폼 색상 - 팀장만 변경 가능 */}
       {isTeamCreator && (
         <div className="flex items-center gap-3 mb-3">
-          <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
+          <span className="text-[10px] text-[#888] font-bold">유니폼</span>
           <div className="flex gap-1.5">
             {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
               <button key={c} onClick={() => setJerseyPrimary(c)}
@@ -108,13 +108,13 @@ export default function LineupFormation({
         <div className="flex gap-2 mb-3">
           {Object.keys(formations).map(f => (
             <button key={f} onClick={() => handleFormationChange(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}>{f}</button>
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#888]'}`}>{f}</button>
           ))}
         </div>
       ) : (
-        <div className="mb-3 bg-white shadow-sm rounded-xl border border-gray-200 px-3 py-2">
-          <span className="text-xs text-gray-500">포메이션: </span>
-          <span className="text-xs font-bold text-gray-900">{formation}</span>
+        <div className="mb-3 bg-white rounded-xl border border-[#E5E2DC] px-3 py-2">
+          <span className="text-xs text-[#888]">포메이션: </span>
+          <span className="text-xs font-bold text-[#111]">{formation}</span>
         </div>
       )}
 
@@ -158,7 +158,7 @@ export default function LineupFormation({
                   <div className={`${isSel ? 'ring-2 ring-yellow-400 rounded-xl' : ''}`}>
                     <JerseyIcon number={player.number} primaryColor={jerseyPrimary} secondaryColor={jerseySecondary} size="md" />
                   </div>
-                  <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-gray-900'}`}>
+                  <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-[#111]'}`}>
                     <span className={`text-[9px] font-black ${
                       getSlotPos(idx) === 'GK' ? 'text-yellow-500' :
                       getSlotPos(idx) === 'DF' ? 'text-blue-500' :
@@ -179,10 +179,10 @@ export default function LineupFormation({
       {/* Bench */}
       <div className="mt-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold text-gray-900">교체 <span className="text-gray-500 font-normal">{benchPlayers.length}명</span></span>
+          <span className="text-sm font-bold text-[#111]">교체 <span className="text-[#888] font-normal">{benchPlayers.length}명</span></span>
           {isTeamCreator && (
             <button onClick={onShowAddModal}
-              className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
+              className="flex items-center gap-1 bg-[#111] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
               <UserPlus size={12} /> 추가
             </button>
           )}
@@ -193,7 +193,7 @@ export default function LineupFormation({
               const isSel = selectedSlot?.type === 'bench' && selectedSlot.index === i;
               return (
                 <div key={p.id} onClick={() => handleBenchTap(i)}
-                  className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-gray-200 bg-white shadow-sm'}`}>
+                  className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-[#E5E2DC] bg-white shadow-sm'}`}>
                   <JerseyIcon number={p.number} primaryColor={jerseyPrimary} secondaryColor={jerseySecondary} size="sm" />
                   <span className="text-[10px] font-medium mt-1 text-gray-600 truncate w-full text-center">{p.name}</span>
                   <span className={`text-[9px] font-bold ${posColors[p.position]}`}>{p.position}</span>
@@ -202,25 +202,25 @@ export default function LineupFormation({
             })}
           </div>
         ) : (
-          <p className="text-xs text-gray-400 text-center py-4">모든 선수 배치 완료</p>
+          <p className="text-xs text-[#CCC] text-center py-4">모든 선수 배치 완료</p>
         )}
       </div>
 
-      <div className="mt-3 bg-white shadow-sm rounded-xl border border-gray-200 p-3 flex items-center justify-between">
-        <span className="text-xs text-gray-500">{activeQuarter} 배치</span>
-        <span className="text-xs font-bold text-gray-900">{currentLineup.filter(p => p !== null).length}/{positions_arr.length}명</span>
+      <div className="mt-3 bg-white rounded-xl border border-[#E5E2DC] p-3 flex items-center justify-between">
+        <span className="text-xs text-[#888]">{activeQuarter} 배치</span>
+        <span className="text-xs font-bold text-[#111]">{currentLineup.filter(p => p !== null).length}/{positions_arr.length}명</span>
       </div>
 
       {isTeamCreator && (
         <div className="mt-3 space-y-2">
           <button onClick={handleAutoLineup} disabled={autoLoading}
-            className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+            className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
             <Zap size={16} />
             {autoLoading ? '배치 중...' : '자동 배치'}
           </button>
           <div className="flex gap-2">
             <button onClick={handleSaveLineup}
-              className="flex-1 bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              className="flex-1 bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
               <Save size={16} /> 라인업 저장
             </button>
             <button onClick={async () => {
@@ -235,7 +235,7 @@ export default function LineupFormation({
                 toast.success('이미지 저장 완료!');
               } catch { toast.error('이미지 저장에 실패했습니다.'); }
             }}
-              className="bg-white text-gray-900 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-gray-200 shadow-sm">
+              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC] shadow-sm">
               <Camera size={16} />
             </button>
           </div>

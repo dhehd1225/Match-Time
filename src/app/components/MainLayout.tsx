@@ -45,37 +45,38 @@ export default function MainLayout() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-[#FAFAF8]">
+    <div className="h-screen flex flex-col bg-[#F7F6F3]">
       <main className="flex-1 overflow-auto hide-scrollbar">
         <div className={hasTeams ? 'pb-28' : 'pb-20'}>
           <Outlet />
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white/95 backdrop-blur-md border-t border-gray-200">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t border-[#E5E2DC]">
         {hasTeams && (
-          <div className="px-3 py-2 border-b border-gray-100 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          <div className="px-3 py-2 border-b border-[#E5E2DC] flex items-center gap-2 overflow-x-auto hide-scrollbar">
             {teams.map(t => (
               <button
                 key={t.id}
                 onClick={() => setCurrentTeamId(t.id)}
-                className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${
+                className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
                   t.id === team?.id
-                    ? 'bg-[#7B2D3B] text-white font-bold'
-                    : 'bg-gray-100 text-gray-500'
+                    ? 'bg-[#111] text-white font-semibold'
+                    : 'bg-[#F0EEE9] text-[#555]'
                 }`}
               >
+                {t.id === team?.id && <span className="w-2 h-2 rounded-full bg-[#C8102E]" />}
                 {t.logo?.startsWith('http') ? (
-                  <img src={t.logo} alt="" className="w-5 h-5 rounded-full object-cover" />
+                  <img src={t.logo} alt="" className="w-4 h-4 rounded-full object-cover" />
                 ) : (
-                  <span className="text-sm">{t.logo}</span>
+                  <span className="text-xs">{t.logo}</span>
                 )}
                 <span className="text-xs truncate max-w-[80px]">{t.name}</span>
               </button>
             ))}
           </div>
         )}
-        <div className="flex justify-around items-center h-16 pb-1">
+        <div className="flex justify-around items-center h-14">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
@@ -83,17 +84,15 @@ export default function MainLayout() {
               <button
                 key={item.path}
                 onClick={() => { trackEvent('tab_click', { tab: item.label, path: item.path }); navigate(item.path); }}
-                className={`relative flex flex-col items-center justify-center gap-1 px-5 py-2 transition-colors ${
-                  isActive ? 'text-[#7B2D3B]' : 'text-gray-400'
+                className={`relative flex flex-col items-center justify-center gap-0.5 px-4 py-1 transition-colors ${
+                  isActive ? 'text-[#111]' : 'text-[#CCC]'
                 }`}
               >
-                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-[#7B2D3B]/10' : ''}`}>
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 1.5} />
-                </div>
+                <Icon size={20} strokeWidth={isActive ? 2.2 : 1.5} />
                 {item.path === '/mypage' && pendingCount > 0 && (
-                  <span className="absolute top-1.5 right-3 w-2 h-2 bg-[#7B2D3B] rounded-full" />
+                  <span className="absolute top-0.5 right-2 w-2 h-2 bg-[#C8102E] rounded-full" />
                 )}
-                <span className={`text-[10px] ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
+                <span className={`text-[10px] ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
               </button>
             );
           })}

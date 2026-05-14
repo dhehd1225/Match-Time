@@ -144,13 +144,13 @@ export default function MatchCard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8]">
-        <div className="px-4 pt-5 pb-3"><div className="w-24 h-6 bg-gray-200 rounded animate-pulse" /></div>
+      <div className="min-h-screen bg-[#F7F6F3]">
+        <div className="px-4 pt-5 pb-3"><div className="w-24 h-6 bg-[#E5E2DC] rounded animate-pulse" /></div>
         <div className="px-4 space-y-2">
           {[1,2].map(i => (
-            <div key={i} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 space-y-3">
-              <div className="flex justify-between"><div className="w-28 h-4 bg-gray-200 rounded animate-pulse" /><div className="w-12 h-4 bg-gray-200 rounded animate-pulse" /></div>
-              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" /><div className="w-32 h-4 bg-gray-200 rounded animate-pulse" /></div>
+            <div key={i} className="bg-white rounded-2xl border border-[#E5E2DC] p-4 space-y-3">
+              <div className="flex justify-between"><div className="w-28 h-4 bg-[#E5E2DC] rounded animate-pulse" /><div className="w-12 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-[#E5E2DC] rounded-full animate-pulse" /><div className="w-32 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
             </div>
           ))}
         </div>
@@ -165,21 +165,21 @@ export default function MatchCard() {
     const opponentTeam = isHome ? selectedMatch.away_team : selectedMatch.home_team;
 
     return (
-      <div className="min-h-screen bg-[#FAFAF8] pb-20">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 sticky top-0 z-10 bg-[#FAFAF8]">
-          <button onClick={() => setSelectedMatch(null)} className="p-1 text-gray-400"><ArrowLeft size={22} /></button>
-          <h1 className="text-lg font-bold text-gray-900">매치 카드</h1>
+      <div className="min-h-screen bg-[#F7F6F3] pb-20">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-[#E5E2DC] sticky top-0 z-10 bg-white">
+          <button onClick={() => setSelectedMatch(null)} className="p-1 text-[#888]"><ArrowLeft size={22} /></button>
+          <h1 className="text-lg font-bold text-[#111]">매치 카드</h1>
         </div>
 
         {/* 카드 타입 토글 */}
         <div className="px-4 pt-4">
-          <div className="flex gap-1 bg-[#F5F3F0] p-1 rounded-xl mb-4">
+          <div className="flex gap-1 bg-[#F0EEE9] p-1 rounded-xl mb-4">
             <button onClick={() => setCardType('pre')}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${cardType === 'pre' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${cardType === 'pre' ? 'bg-[#111] text-white' : 'text-[#555]'}`}>
               시합 전
             </button>
             <button onClick={() => setCardType('post')}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${cardType === 'post' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${cardType === 'post' ? 'bg-[#111] text-white' : 'text-[#555]'}`}>
               시합 후
             </button>
           </div>
@@ -287,7 +287,7 @@ export default function MatchCard() {
         {/* 다운로드 버튼 */}
         <div className="px-4">
           <button onClick={handleDownload} disabled={downloading}
-            className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+            className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
             <Download size={16} />
             {downloading ? '생성 중...' : '카드 저장하기'}
           </button>
@@ -298,15 +298,14 @@ export default function MatchCard() {
 
   // 매치 목록
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
-      <div className="px-4 pt-5 pb-4 bg-gradient-to-b from-[#7B2D3B] to-[#5a1f2c] rounded-b-2xl">
-        <h1 className="text-2xl font-black text-white mb-1">매치 카드</h1>
-        <p className="text-xs text-white/60">시합 정보를 카드로 만들어 공유하세요</p>
+    <div className="min-h-screen bg-[#F7F6F3]">
+      <div className="px-4 pt-4 pb-3 bg-white border-b border-[#E5E2DC]">
+        <h1 className="font-title text-[30px] text-[#111] leading-none">MATCH CARD</h1>
       </div>
 
       <div className="px-4 pb-28 space-y-2">
         {matches.length === 0 && (
-          <p className="text-center text-gray-400 py-12 text-sm">매치가 없습니다</p>
+          <p className="text-center text-[#CCC] py-12 text-sm">매치가 없습니다</p>
         )}
         {matches.map(match => {
           const isHome = match.home_team_id === team?.id;
@@ -314,14 +313,14 @@ export default function MatchCard() {
           const isPast = new Date(match.date + 'T00:00:00') < new Date();
           return (
             <div key={match.id} onClick={() => setSelectedMatch(match)}
-              className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 active:scale-[0.98] transition-transform cursor-pointer">
+              className="bg-white rounded-xl border border-[#E5E2DC] p-4 active:scale-[0.98] transition-transform cursor-pointer">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-900">{formatDate(match.date)}</span>
-                  <span className="text-sm text-gray-500">{match.time?.slice(0, 5)}</span>
+                  <span className="text-sm font-bold text-[#111]">{formatDate(match.date)}</span>
+                  <span className="text-sm text-[#888]">{match.time?.slice(0, 5)}</span>
                 </div>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  isPast ? 'text-gray-400 bg-gray-100' : 'text-emerald-400 bg-emerald-500/10'
+                  isPast ? 'text-[#888] bg-[#F0EEE9]' : 'text-[#166534] bg-[#ECFDF4]'
                 }`}>
                   {isPast ? '시합 후' : '시합 전'}
                 </span>
@@ -329,10 +328,10 @@ export default function MatchCard() {
               <div className="flex items-center gap-3">
                 <div className="text-2xl">{opponent?.logo || '⚽'}</div>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-sm">vs {opponent?.name || '상대 미정'}</p>
-                  <p className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin size={11} />{match.stadium}</p>
+                  <p className="font-bold text-[#111] text-sm">vs {opponent?.name || '상대 미정'}</p>
+                  <p className="text-[11px] text-[#888] flex items-center gap-1"><MapPin size={11} />{match.stadium}</p>
                 </div>
-                <div className="flex items-center gap-1 text-[#7B2D3B]">
+                <div className="flex items-center gap-1 text-[#111]">
                   <Sparkles size={14} />
                   <ChevronRight size={14} />
                 </div>

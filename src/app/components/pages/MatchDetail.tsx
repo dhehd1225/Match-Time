@@ -252,8 +252,8 @@ export default function MatchDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8]">
-        <div className="px-4 py-3 border-b border-gray-200"><div className="bg-gray-200 rounded w-32 h-5 animate-pulse" /></div>
+      <div className="min-h-screen bg-[#F7F6F3]">
+        <div className="px-4 py-3 border-b border-[#E5E2DC]"><div className="bg-gray-200 rounded w-32 h-5 animate-pulse" /></div>
         <MatchDetailSkeleton />
       </div>
     );
@@ -261,8 +261,8 @@ export default function MatchDetail() {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">매치를 찾을 수 없습니다</div>
+      <div className="min-h-screen bg-[#F7F6F3] flex items-center justify-center">
+        <div className="text-[#888] text-sm">매치를 찾을 수 없습니다</div>
       </div>
     );
   }
@@ -280,33 +280,33 @@ export default function MatchDetail() {
   const canApply = team && isTeamCreator && !isMyTeamHome && match.status === 'open' && !hasPendingApp;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pb-8">
+    <div className="min-h-screen bg-[#F7F6F3] pb-8">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 sticky top-0 z-10 bg-[#FAFAF8]">
-        <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-[#E5E2DC] sticky top-0 z-10 bg-[#F7F6F3]">
+        <button onClick={() => navigate(-1)} className="p-1 text-[#CCC]">
           <ArrowLeft size={22} />
         </button>
-        <span className="text-sm text-gray-500">{formatDate(match.date)} {match.time?.slice(0, 5)}</span>
+        <span className="text-sm text-[#888]">{formatDate(match.date)} {match.time?.slice(0, 5)}</span>
       </div>
 
       {/* VS */}
       <div className="px-4 py-6">
-        <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-[#E5E2DC] p-6">
           <div className="flex items-center justify-between">
             {/* Home */}
             <div className="flex-1 text-center">
-              <div className="w-16 h-16 mx-auto mb-2 bg-[#7B2D3B]/20 rounded-2xl flex items-center justify-center overflow-hidden">
+              <div className="w-16 h-16 mx-auto mb-2 bg-[#111]/20 rounded-2xl flex items-center justify-center overflow-hidden">
                 {match.home_team?.logo?.startsWith('http') ? (
                   <img src={match.home_team.logo} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-3xl">{match.home_team?.logo || '⚽'}</span>
                 )}
               </div>
-              <p className="font-bold text-gray-900 text-sm">{match.home_team?.name || '홈팀'}</p>
+              <p className="font-bold text-[#111] text-sm">{match.home_team?.name || '홈팀'}</p>
             </div>
 
             <div className="px-4">
-              <p className="text-2xl font-black text-gray-400">VS</p>
+              <p className="text-2xl font-black text-[#CCC]">VS</p>
             </div>
 
             {/* Away */}
@@ -320,22 +320,22 @@ export default function MatchDetail() {
                       <span className="text-3xl">{match.away_team.logo || '⚽'}</span>
                     )}
                   </div>
-                  <p className="font-bold text-gray-900 text-sm">{match.away_team.name}</p>
+                  <p className="font-bold text-[#111] text-sm">{match.away_team.name}</p>
                 </>
               ) : (
                 <>
                   <div className="w-16 h-16 mx-auto mb-2 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center">
-                    <span className="text-2xl text-gray-400">?</span>
+                    <span className="text-2xl text-[#CCC]">?</span>
                   </div>
-                  <p className="text-sm text-gray-500">상대 모집중</p>
+                  <p className="text-sm text-[#888]">상대 모집중</p>
                 </>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center gap-1 text-gray-500 text-xs"><MapPin size={12} />{match.stadium}</div>
-            <div className="flex items-center gap-1 text-gray-500 text-xs"><Users size={12} />{match.format}</div>
+          <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-[#E5E2DC]">
+            <div className="flex items-center gap-1 text-[#888] text-xs"><MapPin size={12} />{match.stadium}</div>
+            <div className="flex items-center gap-1 text-[#888] text-xs"><Users size={12} />{match.format}</div>
           </div>
         </div>
 
@@ -343,7 +343,7 @@ export default function MatchDetail() {
         {canApply && (
           <div className="mt-3">
             <button onClick={handleApply} disabled={applying}
-              className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+              className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
               <Send size={16} /> {applying ? '신청 중...' : '시합 신청하기'}
             </button>
           </div>
@@ -368,13 +368,13 @@ export default function MatchDetail() {
         {/* 완료된 매치 - 결과 표시 */}
         {match.status === 'completed' && match.home_score !== null && (
           <div className="mt-3 space-y-2">
-            <div className="bg-white shadow-sm rounded-xl border border-gray-200 p-4 text-center">
-              <p className="text-[10px] text-gray-500 font-bold mb-2">최종 결과</p>
-              <p className="text-3xl font-black text-gray-900">{match.home_score} : {match.away_score}</p>
+            <div className="bg-white rounded-xl border border-[#E5E2DC] p-4 text-center">
+              <p className="text-[10px] text-[#888] font-bold mb-2">최종 결과</p>
+              <p className="text-3xl font-black text-[#111]">{match.home_score} : {match.away_score}</p>
             </div>
             {(isMyTeamHome || isMyTeamAway) && (
               <button onClick={() => navigate(`/lineup/${match.id}`)}
-                className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <Users size={16} /> 경기 상세 보기
               </button>
             )}
@@ -391,7 +391,7 @@ export default function MatchDetail() {
             {(isMyTeamHome || isMyTeamAway) && (
               <>
                 <button onClick={() => navigate(`/lineup/${match.id}`)}
-                  className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                  className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                   <Users size={16} /> 라인업 관리
                 </button>
                 {isTeamCreator && (
@@ -409,12 +409,12 @@ export default function MatchDetail() {
       {/* 신청 팀 목록 - 매치 생성자만 */}
       {isMyTeamHome && isTeamCreator && match.status === 'open' && (
         <div className="px-4 mb-4">
-          <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4">
-            <h3 className="font-bold text-gray-900 text-sm mb-3">
-              신청 팀 <span className="text-gray-500 font-normal">({pendingApps.length})</span>
+          <div className="bg-white rounded-2xl border border-[#E5E2DC] p-4">
+            <h3 className="font-bold text-[#111] text-sm mb-3">
+              신청 팀 <span className="text-[#888] font-normal">({pendingApps.length})</span>
             </h3>
             {pendingApps.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">아직 신청한 팀이 없습니다</p>
+              <p className="text-xs text-[#CCC] text-center py-4">아직 신청한 팀이 없습니다</p>
             ) : (
               <div className="space-y-2">
                 {pendingApps.map(app => (
@@ -425,7 +425,7 @@ export default function MatchDetail() {
                       ) : (
                         <span className="text-xl">{app.team?.logo || '⚽'}</span>
                       )}
-                      <span className="text-sm font-bold text-gray-900">{app.team?.name || '팀'}</span>
+                      <span className="text-sm font-bold text-[#111]">{app.team?.name || '팀'}</span>
                     </div>
                     <div className="flex gap-1.5">
                       <button onClick={() => handleAcceptApp(app)}
@@ -433,7 +433,7 @@ export default function MatchDetail() {
                         <Check size={13} /> 수락
                       </button>
                       <button onClick={() => handleRejectApp(app)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-[#7B2D3B]/20 text-red-400 rounded-lg text-xs font-bold active:scale-95 transition-transform">
+                        className="flex items-center gap-1 px-3 py-1.5 bg-[#111]/20 text-red-400 rounded-lg text-xs font-bold active:scale-95 transition-transform">
                         <X size={13} /> 거절
                       </button>
                     </div>
@@ -447,36 +447,36 @@ export default function MatchDetail() {
 
       {/* Match Info */}
       <div className="px-4 mb-4">
-        <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4">
-          <h3 className="font-bold text-gray-900 text-sm mb-3">매치 정보</h3>
+        <div className="bg-white rounded-2xl border border-[#E5E2DC] p-4">
+          <h3 className="font-bold text-[#111] text-sm mb-3">매치 정보</h3>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">날짜</span>
-              <span className="text-xs text-gray-900">{formatDate(match.date)}</span>
+              <span className="text-xs text-[#888]">날짜</span>
+              <span className="text-xs text-[#111]">{formatDate(match.date)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">시간</span>
-              <span className="text-xs text-gray-900">{match.time?.slice(0, 5)}</span>
+              <span className="text-xs text-[#888]">시간</span>
+              <span className="text-xs text-[#111]">{match.time?.slice(0, 5)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">구장</span>
-              <span className="text-xs text-gray-900">{match.stadium}</span>
+              <span className="text-xs text-[#888]">구장</span>
+              <span className="text-xs text-[#111]">{match.stadium}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">지역</span>
-              <span className="text-xs text-gray-900">{match.region || '-'}</span>
+              <span className="text-xs text-[#888]">지역</span>
+              <span className="text-xs text-[#111]">{match.region || '-'}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">실력</span>
-              <span className="text-xs text-gray-900">{match.level}</span>
+              <span className="text-xs text-[#888]">실력</span>
+              <span className="text-xs text-[#111]">{match.level}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">포맷</span>
-              <span className="text-xs text-gray-900">{match.format}</span>
+              <span className="text-xs text-[#888]">포맷</span>
+              <span className="text-xs text-[#111]">{match.format}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-gray-500">상태</span>
-              <span className="text-xs text-gray-900">
+              <span className="text-xs text-[#888]">상태</span>
+              <span className="text-xs text-[#111]">
                 {match.status === 'open' ? '모집중' : match.status === 'confirmed' ? '확정' : match.status === 'completed' ? '완료' : '모집중'}
               </span>
             </div>

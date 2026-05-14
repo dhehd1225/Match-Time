@@ -464,14 +464,14 @@ export default function LineupDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8]">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200">
+      <div className="min-h-screen bg-[#F7F6F3]">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-[#E5E2DC]">
           <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
           <div className="flex items-center gap-2"><div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" /><div className="space-y-1"><div className="w-24 h-4 bg-gray-200 rounded animate-pulse" /><div className="w-32 h-3 bg-gray-200 rounded animate-pulse" /></div></div>
         </div>
         <div className="px-4 pt-4 space-y-2">
           {[1,2,3,4].map(i => (
-            <div key={i} className="flex items-center gap-3 bg-white shadow-sm rounded-xl border border-gray-200 p-3">
+            <div key={i} className="flex items-center gap-3 bg-white rounded-xl border border-[#E5E2DC] p-3">
               <div className="w-5 h-4 bg-gray-200 rounded animate-pulse" />
               <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
               <div className="w-8 h-3 bg-gray-200 rounded animate-pulse" />
@@ -717,21 +717,21 @@ export default function LineupDetail() {
   };
 
   return (
-    <div className={`bg-[#FAFAF8] ${activeTab === 'chat' ? 'min-h-screen pb-36' : 'min-h-screen pb-8'}`}>
+    <div className={`bg-[#F7F6F3] ${activeTab === 'chat' ? 'min-h-screen pb-36' : 'min-h-screen pb-8'}`}>
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 sticky top-0 z-10 bg-[#FAFAF8]">
-        <button onClick={() => navigate('/lineup')} className="p-1 text-gray-400"><ArrowLeft size={22} /></button>
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-[#E5E2DC] sticky top-0 z-10 bg-[#F7F6F3]">
+        <button onClick={() => navigate('/lineup')} className="p-1 text-[#CCC]"><ArrowLeft size={22} /></button>
         <div className="flex items-center gap-2">
           <span className="text-xl">{opponent?.logo || '⚽'}</span>
           <div>
-            <p className="font-bold text-gray-900 text-sm">vs {opponent?.name || '상대 미정'}</p>
-            <p className="text-[11px] text-gray-500">{formatDate(match.date)} {match.time?.slice(0, 5)}</p>
+            <p className="font-bold text-[#111] text-sm">vs {opponent?.name || '상대 미정'}</p>
+            <p className="text-[11px] text-[#888]">{formatDate(match.date)} {match.time?.slice(0, 5)}</p>
           </div>
         </div>
       </div>
 
       {/* Info */}
-      <div className="px-4 py-2 flex items-center gap-4 text-xs text-gray-500 border-b border-gray-200">
+      <div className="px-4 py-2 flex items-center gap-4 text-xs text-[#888] border-b border-[#E5E2DC]">
         <span className="flex items-center gap-1"><MapPin size={11} />{match.stadium}</span>
         <span className="flex items-center gap-1"><Users size={11} />{match.format}</span>
       </div>
@@ -739,7 +739,7 @@ export default function LineupDetail() {
       {/* My Attendance - 상태 표시 + 변경 토글 (과거 시합에는 숨김) */}
       {user && !isPast && match.status !== 'completed' && (
         <div className="px-4 pt-3">
-          <div className="flex items-center justify-between bg-white shadow-sm rounded-xl border border-gray-200 px-4 py-2.5">
+          <div className="flex items-center justify-between bg-white rounded-xl border border-[#E5E2DC] px-4 py-2.5">
             <div className="flex items-center gap-2">
               {myAttendance === 'attending' ? (
                 <>
@@ -754,13 +754,13 @@ export default function LineupDetail() {
               ) : (
                 <>
                   <div className="w-2 h-2 rounded-full bg-gray-500" />
-                  <span className="text-sm font-medium text-gray-400">미응답</span>
+                  <span className="text-sm font-medium text-[#CCC]">미응답</span>
                 </>
               )}
             </div>
             <button
               onClick={() => handleAttendance(myAttendance === 'attending' ? 'not-attending' : 'attending')}
-              className="text-xs text-gray-500 px-3 py-1.5 rounded-lg bg-gray-100 active:scale-95 transition-all"
+              className="text-xs text-[#888] px-3 py-1.5 rounded-lg bg-gray-100 active:scale-95 transition-all"
             >
               {myAttendance === 'attending' ? '불참으로 변경' : '참여로 변경'}
             </button>
@@ -769,16 +769,16 @@ export default function LineupDetail() {
       )}
 
       {/* Tabs */}
-      <div className="px-4 pt-3 flex gap-1 bg-white shadow-sm mx-4 mt-3 p-1 rounded-xl">
+      <div className="px-4 pt-3 flex gap-1 bg-white mx-4 mt-3 p-1 rounded-xl">
         <button onClick={() => setActiveTab('members')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold ${activeTab === 'members' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>팀원</button>
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold ${activeTab === 'members' ? 'bg-[#111] text-white' : 'text-[#888]'}`}>팀원</button>
         <button onClick={() => setActiveTab('formation')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold ${activeTab === 'formation' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>포메이션</button>
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold ${activeTab === 'formation' ? 'bg-[#111] text-white' : 'text-[#888]'}`}>포메이션</button>
         <button onClick={() => setActiveTab('result')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${activeTab === 'result' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${activeTab === 'result' ? 'bg-[#111] text-white' : 'text-[#888]'}`}>
           <ClipboardCheck size={12} />결과</button>
         <button onClick={() => setActiveTab('chat')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${activeTab === 'chat' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${activeTab === 'chat' ? 'bg-[#111] text-white' : 'text-[#888]'}`}>
           <MessageCircle size={12} />채팅</button>
       </div>
 
@@ -827,30 +827,30 @@ export default function LineupDetail() {
         <>
           <div className="px-4 pt-3 space-y-3 pb-2">
             {chatMsgs.length === 0 && (
-              <p className="text-center text-gray-400 py-8 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
+              <p className="text-center text-[#CCC] py-8 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
             )}
             {chatMsgs.map(msg => (
               <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className="max-w-[75%]">
-                  {!msg.isMe && <p className="text-[10px] text-gray-500 mb-0.5 ml-1">{msg.sender}</p>}
-                  <div className={`px-3 py-2 rounded-2xl ${msg.isMe ? 'bg-[#7B2D3B] text-white rounded-br-md' : 'bg-[#F5F3F0] text-gray-700 rounded-bl-md'}`}>
+                  {!msg.isMe && <p className="text-[10px] text-[#888] mb-0.5 ml-1">{msg.sender}</p>}
+                  <div className={`px-3 py-2 rounded-2xl ${msg.isMe ? 'bg-[#111] text-white rounded-br-md' : 'bg-[#F0EEE9] text-gray-700 rounded-bl-md'}`}>
                     <p className="text-sm">{msg.text}</p>
                   </div>
-                  <p className={`text-[9px] text-gray-400 mt-0.5 ${msg.isMe ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
+                  <p className={`text-[9px] text-[#CCC] mt-0.5 ${msg.isMe ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
                 </div>
               </div>
             ))}
             <div ref={chatEndRef} />
           </div>
 
-          <div className="fixed left-0 right-0 max-w-[430px] mx-auto p-3 border-t border-gray-200 bg-white/95 backdrop-blur-md z-20" style={{ bottom: '7.5rem' }}>
+          <div className="fixed left-0 right-0 max-w-[430px] mx-auto p-3 border-t border-[#E5E2DC] bg-white/95 backdrop-blur-md z-20" style={{ bottom: '7.5rem' }}>
             <div className="flex gap-2">
               <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChat()}
                 placeholder="메시지 입력..."
-                className="flex-1 bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none" />
+                className="flex-1 bg-[#F0EEE9] border border-[#E5E2DC] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] focus:outline-none" />
               <button onClick={sendChat}
-                className="bg-[#7B2D3B] text-white p-2.5 rounded-xl active:scale-95 transition-transform">
+                className="bg-[#111] text-white p-2.5 rounded-xl active:scale-95 transition-transform">
                 <Send size={18} />
               </button>
             </div>
@@ -861,14 +861,14 @@ export default function LineupDetail() {
       {/* Preference Modal */}
       {showPrefModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setShowPrefModal(false)}>
-          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-gray-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-[#E5E2DC]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-gray-900">참여 선호도 설정</h3>
-              <button onClick={() => setShowPrefModal(false)} className="text-gray-500"><X size={18} /></button>
+              <h3 className="text-base font-bold text-[#111]">참여 선호도 설정</h3>
+              <button onClick={() => setShowPrefModal(false)} className="text-[#888]"><X size={18} /></button>
             </div>
 
             <div className="mb-4">
-              <p className="text-xs text-gray-400 mb-2">희망 포지션 <span className="text-violet-400">(순서대로 우선순위, 최대 3개)</span></p>
+              <p className="text-xs text-[#CCC] mb-2">희망 포지션 <span className="text-violet-400">(순서대로 우선순위, 최대 3개)</span></p>
               <div className="flex gap-2">
                 {ALL_POSITIONS.map(pos => {
                   const idx = prefPositions.indexOf(pos);
@@ -877,7 +877,7 @@ export default function LineupDetail() {
                   return (
                     <button key={pos} onClick={() => togglePrefPosition(pos)}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-bold relative ${
-                        selected ? 'bg-violet-500 text-white' : 'bg-gray-100 text-gray-500'
+                        selected ? 'bg-violet-500 text-white' : 'bg-gray-100 text-[#888]'
                       }`}>
                       {labels[pos]}
                       {selected && (
@@ -900,7 +900,7 @@ export default function LineupDetail() {
             </div>
 
             <div className="mb-5">
-              <p className="text-xs text-gray-400 mb-2">뛰고 싶은 쿼터 <span className="text-blue-400">(복수 선택 가능)</span></p>
+              <p className="text-xs text-[#CCC] mb-2">뛰고 싶은 쿼터 <span className="text-blue-400">(복수 선택 가능)</span></p>
               <div className="flex gap-2">
                 {quarters.map(q => {
                   const selected = prefQuarters.includes(q);
@@ -909,7 +909,7 @@ export default function LineupDetail() {
                       selected ? prev.filter(p => p !== q) : [...prev, q]
                     )}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${
-                        selected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
+                        selected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-[#888]'
                       }`}>
                       {q}
                     </button>
@@ -919,7 +919,7 @@ export default function LineupDetail() {
             </div>
 
             <button onClick={handleSubmitPreference}
-              className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform">
+              className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform">
               참여 등록
             </button>
           </div>
@@ -929,23 +929,23 @@ export default function LineupDetail() {
       {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-gray-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-[#E5E2DC]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-gray-900">선수 추가</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-500"><X size={18} /></button>
+              <h3 className="text-base font-bold text-[#111]">선수 추가</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-[#888]"><X size={18} /></button>
             </div>
             <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="이름"
-              className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 mb-3 focus:outline-none" />
+              className="w-full bg-[#F0EEE9] border border-[#E5E2DC] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
             <input value={newNumber} onChange={e => setNewNumber(e.target.value)} placeholder="등번호" type="number"
-              className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 mb-3 focus:outline-none" />
+              className="w-full bg-[#F0EEE9] border border-[#E5E2DC] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
             <div className="flex gap-2 mb-4">
               {['GK', 'DF', 'MF', 'FW'].map(p => (
                 <button key={p} onClick={() => setNewPos(p)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${newPos === p ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}>{p}</button>
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${newPos === p ? 'bg-[#111] text-white' : 'bg-gray-100 text-[#888]'}`}>{p}</button>
               ))}
             </div>
             <button onClick={handleAddPlayer} disabled={!newName.trim() || !newNumber.trim()}
-              className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-30">추가하기</button>
+              className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-30">추가하기</button>
           </div>
         </div>
       )}

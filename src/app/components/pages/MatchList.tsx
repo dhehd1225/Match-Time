@@ -265,39 +265,38 @@ export default function MatchList() {
   const isFormValid = form.date && form.time && form.stadium && form.level;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
-      {/* Header */}
-      <div className="px-4 pt-5 pb-3 sticky top-0 z-10 bg-gradient-to-b from-[#7B2D3B] to-[#5a1f2c] rounded-b-2xl">
-        <h1 className="text-2xl font-black text-white mb-3">매치</h1>
-
-        {/* Search + Filter */}
-        <div className="flex gap-2">
+    <div className="min-h-screen bg-[#F7F6F3]">
+      {/* TopBar */}
+      <div className="sticky top-0 z-10 bg-white border-b border-[#E5E2DC]">
+        <div className="px-4 pt-4 pb-3">
+          <h1 className="font-title text-[30px] text-[#111] leading-none">MATCH</h1>
+        </div>
+        <div className="px-4 pb-3 flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#CCC]" size={16} />
             <input
               type="text"
               placeholder="경기장, 팀 검색..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-white/15 border border-white/20 rounded-xl text-white text-sm placeholder:text-white/50 focus:outline-none focus:ring-1 focus:ring-white/30"
+              className="w-full pl-9 pr-4 py-2.5 bg-[#F0EEE9] border-none rounded-lg text-[#111] text-sm placeholder:text-[#BBB] focus:outline-none"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`relative px-3 rounded-xl border transition-colors ${
-              activeFilterCount > 0 ? 'bg-white border-white text-[#7B2D3B]' : 'bg-white/15 border-white/20 text-white'
+            className={`relative px-3 rounded-lg transition-colors ${
+              activeFilterCount > 0 ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#888]'
             }`}
           >
             <SlidersHorizontal size={16} />
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-[#7B2D3B] rounded-full text-[9px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#111] text-white rounded-full text-[9px] font-semibold flex items-center justify-center">
                 {activeFilterCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Filters */}
         {showFilters && (
           <div className="mt-3 bg-white rounded-xl p-3 space-y-3">
             <div>
@@ -305,7 +304,7 @@ export default function MatchList() {
               <div className="flex gap-1.5">
                 {['전체', '오전', '오후', '저녁'].map(f => (
                   <button key={f} onClick={() => setTimeFilter(f)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${timeFilter === f ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${timeFilter === f ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555]'}`}
                   >{f}</button>
                 ))}
               </div>
@@ -327,12 +326,12 @@ export default function MatchList() {
               {showRegionList && (
                 <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
                   <button onClick={() => { setRegionFilter('전체'); setRegionSearch(''); setShowRegionList(false); }}
-                    className={`w-full text-left px-3 py-2 text-sm ${regionFilter === '전체' ? 'text-[#7B2D3B] font-bold bg-[#7B2D3B]/5' : 'text-gray-600'}`}>
+                    className={`w-full text-left px-3 py-2 text-sm ${regionFilter === '전체' ? 'text-[#111] font-bold bg-[#111]/5' : 'text-gray-600'}`}>
                     전체
                   </button>
                   {REGIONS.filter(r => !regionSearch || r.includes(regionSearch)).map(r => (
                     <button key={r} onClick={() => { setRegionFilter(r); setRegionSearch(''); setShowRegionList(false); }}
-                      className={`w-full text-left px-3 py-2 text-sm ${regionFilter === r ? 'text-[#7B2D3B] font-bold bg-[#7B2D3B]/5' : 'text-gray-600'}`}>
+                      className={`w-full text-left px-3 py-2 text-sm ${regionFilter === r ? 'text-[#111] font-bold bg-[#111]/5' : 'text-gray-600'}`}>
                       {r}
                     </button>
                   ))}
@@ -344,7 +343,7 @@ export default function MatchList() {
               <div className="flex gap-1.5">
                 {['전체', ...LEVELS].map(l => (
                   <button key={l} onClick={() => setLevelFilter(l)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${levelFilter === l ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${levelFilter === l ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555]'}`}
                   >{l}</button>
                 ))}
               </div>
@@ -365,11 +364,11 @@ export default function MatchList() {
           <div
             key={match.id}
             onClick={() => navigate(`/matches/${match.id}`)}
-            className="flex items-center gap-4 p-4 mb-2 bg-white rounded-xl border border-[#7B2D3B]/30 active:bg-[#7B2D3B]/5 transition-colors cursor-pointer"
+            className="flex items-center gap-4 p-[14px_16px] mb-2 bg-white rounded-xl border border-[#E5E2DC] active:scale-[0.98] transition-transform cursor-pointer"
           >
             {/* 시간 */}
             <div className="w-14 text-center shrink-0">
-              <p className="text-lg font-black text-[#7B2D3B]">{formatTime(match.time)}</p>
+              <p className="text-lg font-bold text-[#111]">{formatTime(match.time)}</p>
               <p className="text-[11px] text-gray-400">{match.format}</p>
             </div>
 
@@ -393,7 +392,7 @@ export default function MatchList() {
                     <p className="font-bold text-gray-900 text-sm truncate">{match.away_team.name}</p>
                   </>
                 ) : (
-                  <span className="text-xs text-[#7B2D3B] font-medium">상대 모집중</span>
+                  <span className="text-xs text-[#9A3412] font-medium">상대 모집중</span>
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -408,11 +407,11 @@ export default function MatchList() {
             {/* 상태 */}
             <div className="shrink-0 flex items-center gap-1">
               {match.status === 'completed' ? (
-                <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">완료</span>
+                <span className="text-[11px] font-semibold text-[#888] bg-[#F0EEE9] px-2.5 py-1 rounded-full">완료</span>
               ) : match.status === 'confirmed' ? (
-                <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">확정</span>
+                <span className="text-[11px] font-semibold text-[#166534] bg-[#ECFDF4] px-2.5 py-1 rounded-full">확정</span>
               ) : (
-                <span className="text-xs text-[#7B2D3B] bg-[#7B2D3B]/10 px-2.5 py-1 rounded-full">모집중</span>
+                <span className="text-[11px] font-semibold text-[#9A3412] bg-[#FFF7ED] px-2.5 py-1 rounded-full">모집중</span>
               )}
               {match.created_by === user?.id && (
                 <button onClick={(e) => handleDeleteMatch(e, match.id)}
@@ -434,7 +433,7 @@ export default function MatchList() {
         <div className="fixed left-0 right-0 max-w-[430px] mx-auto z-20 pointer-events-none" style={{ bottom: '7.5rem' }}>
           <button
             onClick={() => setShowForm(true)}
-            className="pointer-events-auto absolute right-4 bottom-0 bg-[#7B2D3B] text-white p-4 rounded-full shadow-lg active:scale-95 transition-transform"
+            className="pointer-events-auto absolute right-4 bottom-0 bg-[#111] text-white p-4 rounded-full active:scale-95 transition-transform"
           >
             <Plus size={20} />
           </button>
@@ -481,7 +480,7 @@ export default function MatchList() {
                 <div className="flex gap-2">
                   {['초급', '중급', '고급'].map(l => (
                     <button key={l} onClick={() => setForm({ ...form, level: l })}
-                      className={`flex-1 py-3 rounded-xl text-sm font-semibold border ${form.level === l ? 'border-[#7B2D3B] bg-[#7B2D3B]/10 text-[#7B2D3B]' : 'border-gray-200 text-gray-500'}`}
+                      className={`flex-1 py-3 rounded-xl text-sm font-semibold border ${form.level === l ? 'border-[#111] bg-[#111]/5 text-[#111]' : 'border-gray-200 text-gray-500'}`}
                     >{l}</button>
                   ))}
                 </div>
@@ -491,7 +490,7 @@ export default function MatchList() {
                 <div className="flex gap-2">
                   {['선출', '비선출'].map(t => (
                     <button key={t} onClick={() => setForm({ ...form, playerType: form.playerType === t ? '' : t })}
-                      className={`flex-1 py-3 rounded-xl text-sm font-semibold border ${form.playerType === t ? 'border-[#7B2D3B] bg-[#7B2D3B]/10 text-[#7B2D3B]' : 'border-gray-200 text-gray-500'}`}
+                      className={`flex-1 py-3 rounded-xl text-sm font-semibold border ${form.playerType === t ? 'border-[#111] bg-[#111]/5 text-[#111]' : 'border-gray-200 text-gray-500'}`}
                     >{t}</button>
                   ))}
                 </div>
@@ -499,8 +498,9 @@ export default function MatchList() {
             </div>
 
             <button onClick={handleSubmit} disabled={!isFormValid || submitting}
-              className={`mt-6 w-full py-3.5 rounded-xl font-bold text-sm ${isFormValid && !submitting ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-400'}`}
+              className={`mt-6 w-full py-3.5 rounded-xl font-bold text-sm ${isFormValid && !submitting ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#CCC]'}`}
             >{submitting ? '생성 중...' : '매치 생성하기'}</button>
+
           </div>
         </div>
       )}

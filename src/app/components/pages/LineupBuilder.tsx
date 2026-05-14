@@ -234,13 +234,13 @@ export default function LineupBuilder() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8]">
-        <div className="px-4 pt-5 pb-3"><div className="w-20 h-7 bg-gray-200 rounded animate-pulse mb-3" /><div className="h-10 bg-gray-200 rounded-xl animate-pulse" /></div>
+      <div className="min-h-screen bg-[#F7F6F3]">
+        <div className="px-4 pt-5 pb-3"><div className="w-20 h-7 bg-[#E5E2DC] rounded animate-pulse mb-3" /><div className="h-10 bg-[#E5E2DC] rounded-xl animate-pulse" /></div>
         <div className="px-4 pt-3 space-y-2">
           {[1,2,3].map(i => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-200 p-4 space-y-2">
-              <div className="flex justify-between"><div className="w-28 h-4 bg-gray-200 rounded animate-pulse" /><div className="w-12 h-4 bg-gray-200 rounded animate-pulse" /></div>
-              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" /><div className="w-32 h-4 bg-gray-200 rounded animate-pulse" /></div>
+            <div key={i} className="bg-white rounded-xl border border-[#E5E2DC] p-4 space-y-2">
+              <div className="flex justify-between"><div className="w-28 h-4 bg-[#E5E2DC] rounded animate-pulse" /><div className="w-12 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-[#E5E2DC] rounded-full animate-pulse" /><div className="w-32 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
             </div>
           ))}
         </div>
@@ -249,17 +249,19 @@ export default function LineupBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
+    <div className="min-h-screen bg-[#F7F6F3]">
       {/* Header */}
-      <div className="px-4 pt-5 pb-0 sticky top-0 z-10 bg-[#FAFAF8]">
-        <h1 className="text-2xl font-black text-gray-900 mb-3">라인업</h1>
-        <div className="flex gap-1 bg-[#F5F3F0] p-1 rounded-xl mb-3">
+      <div className="sticky top-0 z-10 bg-white border-b border-[#E5E2DC] px-4 pt-5 pb-3">
+        <h1 className="font-title text-[30px] text-[#111] leading-none">LINEUP</h1>
+      </div>
+      <div className="px-4 pt-3">
+        <div className="flex gap-1 bg-[#F0EEE9] p-1 rounded-xl">
           <button onClick={() => setMainTab('mymatches')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'mymatches' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'mymatches' ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555]'}`}>
             내 경기
           </button>
           <button onClick={() => setMainTab('scrimmage')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'scrimmage' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold ${mainTab === 'scrimmage' ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555]'}`}>
             자체전
           </button>
         </div>
@@ -269,7 +271,7 @@ export default function LineupBuilder() {
       {mainTab === 'mymatches' && (
         <div className="px-4 pb-28 space-y-2">
           {myMatches.length === 0 && (
-            <p className="text-center text-gray-400 py-12 text-sm">예정된 경기가 없습니다</p>
+            <p className="text-center text-[#CCC] py-12 text-sm">예정된 경기가 없습니다</p>
           )}
           {myMatches.map(match => {
             const opponent = match.home_team_id === team?.id ? match.away_team : match.home_team;
@@ -277,26 +279,26 @@ export default function LineupBuilder() {
             const full = counts.attending >= counts.total;
             return (
               <div key={match.id} onClick={() => navigate(`/lineup/${match.id}`)}
-                className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 active:scale-[0.98] transition-transform cursor-pointer">
+                className="bg-white rounded-xl border border-[#E5E2DC] p-4 active:scale-[0.98] transition-transform cursor-pointer">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-900">{formatDate(match.date)}</span>
-                    <span className="text-sm text-gray-500">{match.time?.slice(0, 5)}</span>
+                    <span className="text-sm font-bold text-[#111]">{formatDate(match.date)}</span>
+                    <span className="text-sm text-[#888]">{match.time?.slice(0, 5)}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-gray-500">{match.format}</span>
+                  <span className="text-[10px] font-bold text-[#888]">{match.format}</span>
                 </div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="text-2xl">{opponent?.logo || '⚽'}</div>
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-sm">vs {opponent?.name || '상대 미정'}</p>
-                    <p className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin size={11} />{match.stadium}</p>
+                    <p className="font-bold text-[#111] text-sm">vs {opponent?.name || '상대 미정'}</p>
+                    <p className="text-[11px] text-[#888] flex items-center gap-1"><MapPin size={11} />{match.stadium}</p>
                   </div>
-                  <ChevronRight size={16} className="text-gray-400" />
+                  <ChevronRight size={16} className="text-[#CCC]" />
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <span className="text-[11px] text-gray-500">참여 {counts.attending}/{counts.total}명</span>
-                  {full ? <span className="text-[10px] text-emerald-400 font-medium">완료</span>
-                    : <span className="text-[10px] text-red-400 font-medium">{counts.total - counts.attending}명 부족</span>}
+                <div className="flex items-center justify-between pt-2 border-t border-[#E5E2DC]">
+                  <span className="text-[11px] text-[#888]">참여 {counts.attending}/{counts.total}명</span>
+                  {full ? <span className="text-[10px] text-[#166534] font-medium">완료</span>
+                    : <span className="text-[10px] text-[#991B1B] font-medium">{counts.total - counts.attending}명 부족</span>}
                 </div>
               </div>
             );
@@ -310,7 +312,7 @@ export default function LineupBuilder() {
           <div className="flex gap-2 mb-3">
             {quartersArr.map(q => (
               <button key={q} onClick={() => { setActiveQuarter(q); setSelectedSlot(null); }}
-                className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#7B2D3B] text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555] border border-[#E5E2DC]'}`}>
                 {q}
               </button>
             ))}
@@ -320,7 +322,7 @@ export default function LineupBuilder() {
             <div className="flex gap-2 mb-3">
               {quartersArr.filter(q => q !== activeQuarter).map(q => (
                 <button key={q} onClick={() => setQuarterLineups(prev => ({ ...prev, [activeQuarter]: [...prev[q]] }))}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-[11px] text-gray-500">
+                  className="flex items-center gap-1 px-2.5 py-1 bg-[#F0EEE9] rounded-lg text-[11px] text-[#888]">
                   <Copy size={10} />{q} 복사
                 </button>
               ))}
@@ -329,11 +331,11 @@ export default function LineupBuilder() {
 
           {/* 유니폼 색상 */}
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
+            <span className="text-[10px] text-[#888] font-bold">유니폼</span>
             <div className="flex gap-1.5">
               {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
                 <button key={c} onClick={() => setJerseyPrimary(c)}
-                  className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-gray-900 scale-110' : 'border-gray-300'}`}
+                  className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-[#111] scale-110' : 'border-[#E5E2DC]'}`}
                   style={{ backgroundColor: c }} />
               ))}
             </div>
@@ -343,15 +345,15 @@ export default function LineupBuilder() {
             <div className="flex gap-2 mb-3">
               {Object.keys(formations).map(f => (
                 <button key={f} onClick={() => handleFormationChange(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555]'}`}>
                   {f}
                 </button>
               ))}
             </div>
           ) : (
-            <div className="mb-3 bg-white shadow-sm rounded-xl border border-gray-200 px-3 py-2">
-              <span className="text-xs text-gray-500">포메이션: </span>
-              <span className="text-xs font-bold text-gray-900">{formation}</span>
+            <div className="mb-3 bg-white rounded-xl border border-[#E5E2DC] px-3 py-2">
+              <span className="text-xs text-[#888]">포메이션: </span>
+              <span className="text-xs font-bold text-[#111]">{formation}</span>
             </div>
           )}
 
@@ -388,7 +390,7 @@ export default function LineupBuilder() {
                       <div className={`${isSel ? 'ring-2 ring-yellow-400 rounded-xl' : ''}`}>
                         <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor={jerseySecondary} size="md" />
                       </div>
-                      <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-gray-900'}`}>
+                      <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-[#111]'}`}>
                         {player.name}
                       </div>
                       {player.type !== 'regular' && (
@@ -412,10 +414,10 @@ export default function LineupBuilder() {
           {/* Bench */}
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-gray-900">교체 <span className="text-gray-500 font-normal">{benchPlayers.length}명</span></span>
+              <span className="text-sm font-bold text-[#111]">교체 <span className="text-[#888] font-normal">{benchPlayers.length}명</span></span>
               {canEdit && (
                 <button onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
+                  className="flex items-center gap-1 bg-[#111] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
                   <UserPlus size={12} /> 추가
                 </button>
               )}
@@ -426,27 +428,27 @@ export default function LineupBuilder() {
                   const isSel = selectedSlot?.type === 'bench' && selectedSlot.index === i;
                   return (
                     <div key={p.id} onClick={() => handleBenchTap(i)}
-                      className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-gray-200 bg-white shadow-sm'}`}>
+                      className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-[#E5E2DC] bg-white'}`}>
                       <JerseyIcon number={p.number} primaryColor={jerseyColor(p)} secondaryColor={jerseySecondary} size="sm" />
-                      <span className="text-[10px] font-medium mt-1 text-gray-600 truncate w-full text-center">{p.name}</span>
+                      <span className="text-[10px] font-medium mt-1 text-[#555] truncate w-full text-center">{p.name}</span>
                       <span className={`text-[9px] font-bold ${posColors[p.position]}`}>{p.position}</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="text-xs text-gray-400 text-center py-4">모든 선수 배치 완료</p>
+              <p className="text-xs text-[#CCC] text-center py-4">모든 선수 배치 완료</p>
             )}
           </div>
 
-          <div className="mt-3 bg-white shadow-sm rounded-xl border border-gray-200 p-3 flex items-center justify-between">
-            <span className="text-xs text-gray-500">{activeQuarter} 배치</span>
-            <span className="text-xs font-bold text-gray-900">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
+          <div className="mt-3 bg-white rounded-xl border border-[#E5E2DC] p-3 flex items-center justify-between">
+            <span className="text-xs text-[#888]">{activeQuarter} 배치</span>
+            <span className="text-xs font-bold text-[#111]">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
           </div>
 
           <div className="mt-3 flex gap-2">
             <button onClick={handleSave}
-              className="flex-1 bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              className="flex-1 bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
               <Save size={16} /> 라인업 저장
             </button>
             <button onClick={async () => {
@@ -463,7 +465,7 @@ export default function LineupBuilder() {
                 toast.error('이미지 저장에 실패했습니다.');
               }
             }}
-              className="bg-white text-gray-900 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-gray-200 shadow-sm">
+              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC]">
               <Camera size={16} />
             </button>
           </div>
@@ -473,29 +475,29 @@ export default function LineupBuilder() {
       {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-gray-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-[#E5E2DC]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-gray-900">선수 추가</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-500"><X size={18} /></button>
+              <h3 className="text-base font-bold text-[#111]">선수 추가</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-[#888]"><X size={18} /></button>
             </div>
             <div className="flex gap-2 mb-3">
               <button onClick={() => setNewType('mercenary')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold ${newType === 'mercenary' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500'}`}>용병</button>
+                className={`flex-1 py-2 rounded-xl text-xs font-bold ${newType === 'mercenary' ? 'bg-amber-500 text-white' : 'bg-[#F0EEE9] text-[#555]'}`}>용병</button>
               <button onClick={() => setNewType('rookie')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold ${newType === 'rookie' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>신입</button>
+                className={`flex-1 py-2 rounded-xl text-xs font-bold ${newType === 'rookie' ? 'bg-blue-500 text-white' : 'bg-[#F0EEE9] text-[#555]'}`}>신입</button>
             </div>
             <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="이름"
-              className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 mb-3 focus:outline-none" />
+              className="w-full bg-[#F0EEE9] border-none rounded-lg px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
             <input value={newNumber} onChange={e => setNewNumber(e.target.value)} placeholder="등번호" type="number"
-              className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 mb-3 focus:outline-none" />
+              className="w-full bg-[#F0EEE9] border-none rounded-lg px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
             <div className="flex gap-2 mb-4">
               {['GK', 'DF', 'MF', 'FW'].map(p => (
                 <button key={p} onClick={() => setNewPos(p)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${newPos === p ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}>{p}</button>
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${newPos === p ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555]'}`}>{p}</button>
               ))}
             </div>
             <button onClick={handleAddPlayer} disabled={!newName.trim() || !newNumber.trim()}
-              className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-30">추가하기</button>
+              className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-30">추가하기</button>
           </div>
         </div>
       )}
