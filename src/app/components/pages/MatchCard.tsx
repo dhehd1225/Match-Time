@@ -39,7 +39,8 @@ export default function MatchCard() {
         .from('matches')
         .select('*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)')
         .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
-        .order('date', { ascending: false });
+        .order('date', { ascending: true })
+        .order('time', { ascending: true });
       if (data) setMatches(data);
       setLoading(false);
     };

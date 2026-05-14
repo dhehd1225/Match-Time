@@ -717,7 +717,7 @@ export default function LineupDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pb-8">
+    <div className={`bg-[#FAFAF8] ${activeTab === 'chat' ? 'min-h-screen pb-36' : 'min-h-screen pb-8'}`}>
       {/* Header */}
       <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 sticky top-0 z-10 bg-[#FAFAF8]">
         <button onClick={() => navigate('/lineup')} className="p-1 text-gray-400"><ArrowLeft size={22} /></button>
@@ -824,8 +824,8 @@ export default function LineupDetail() {
 
       {/* Chat Tab */}
       {activeTab === 'chat' && (
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
-          <div className="flex-1 overflow-auto px-4 pt-3 space-y-3 pb-2">
+        <>
+          <div className="px-4 pt-3 space-y-3 pb-2">
             {chatMsgs.length === 0 && (
               <p className="text-center text-gray-400 py-8 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
             )}
@@ -843,7 +843,7 @@ export default function LineupDetail() {
             <div ref={chatEndRef} />
           </div>
 
-          <div className="p-3 border-t border-gray-200 bg-[#FAFAF8]">
+          <div className="fixed left-0 right-0 max-w-[430px] mx-auto p-3 border-t border-gray-200 bg-white/95 backdrop-blur-md z-20" style={{ bottom: '7.5rem' }}>
             <div className="flex gap-2">
               <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChat()}
@@ -855,7 +855,7 @@ export default function LineupDetail() {
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Preference Modal */}

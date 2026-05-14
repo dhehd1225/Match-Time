@@ -90,17 +90,19 @@ export default function LineupFormation({
         </div>
       )}
 
-      {/* 유니폼 색상 */}
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
-        <div className="flex gap-1.5">
-          {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
-            <button key={c} onClick={() => setJerseyPrimary(c)}
-              className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-gray-900 scale-110' : 'border-gray-300'}`}
-              style={{ backgroundColor: c }} />
-          ))}
+      {/* 유니폼 색상 - 팀장만 변경 가능 */}
+      {isTeamCreator && (
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
+          <div className="flex gap-1.5">
+            {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
+              <button key={c} onClick={() => setJerseyPrimary(c)}
+                className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-gray-900 scale-110' : 'border-gray-300'}`}
+                style={{ backgroundColor: c }} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {isTeamCreator ? (
         <div className="flex gap-2 mb-3">

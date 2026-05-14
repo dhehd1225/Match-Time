@@ -196,6 +196,7 @@ export default function MatchList() {
       region: form.region || detectRegion(form.stadium) || null,
       stadium: form.stadium,
       level: form.level,
+      player_type: form.playerType || null,
       format: form.format,
       home_team_id: team.id,
       created_by: user.id,
@@ -399,6 +400,8 @@ export default function MatchList() {
                 <span className="flex items-center gap-1"><MapPin size={11} />{match.stadium}</span>
                 <span>·</span>
                 <span>{formatDate(match.date)}</span>
+                {match.level && <span className={`font-bold ${levelStyle[match.level] || 'text-gray-400'}`}>{match.level}</span>}
+                {match.player_type && <span className={`font-bold ${levelStyle[match.player_type] || 'text-gray-400'}`}>{match.player_type}</span>}
               </div>
             </div>
 

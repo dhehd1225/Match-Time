@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, UserMinus, X, Camera, Save } from 'lucide-react';
+import { Search, UserMinus, X, Camera, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import type { Match } from '../../../lib/types';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -22,7 +24,11 @@ export default function TeamManagement() {
   const [selectedPosition, setSelectedPosition] = useState<string>('전체');
   const positions = ['전체', 'GK', 'DF', 'MF', 'FW'];
 
+  const navigate = useNavigate();
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [teamRecord, setTeamRecord] = useState({ win: 0, draw: 0, lose: 0 });
+  const [matchHistory, setMatchHistory] = useState<Match[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   // 팀 편집
   const [showEditModal, setShowEditModal] = useState(false);
@@ -122,6 +128,32 @@ export default function TeamManagement() {
     fetchMembers();
 
     if (!team) return;
+
+    // 팀 전적 계산 + 매치 히스토리
+    const fetchRecord = async () => {
+      const { data: matches } = await supabase
+        .from('matches')
+        .select('*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)')
+        .eq('status', 'completed')
+        .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
+        .order('date', { ascending: false });
+      if (matches) {
+        let win = 0, draw = 0, lose = 0;
+        for (const m of matches) {
+          if (m.home_score === null || m.away_score === null) continue;
+          const isHome = m.home_team_id === team.id;
+          const my = isHome ? m.home_score : m.away_score;
+          const opp = isHome ? m.away_score : m.home_score;
+          if (my > opp) win++;
+          else if (my === opp) draw++;
+          else lose++;
+        }
+        setTeamRecord({ win, draw, lose });
+        setMatchHistory(matches);
+      }
+    };
+    fetchRecord();
+
     const channel = supabase
       .channel('team-members-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `team_id=eq.${team.id}` }, () => {
@@ -163,20 +195,76 @@ export default function TeamManagement() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Header */}
-      <div onClick={isTeamCreator ? openEditModal : undefined}
-        className={`px-4 pt-5 pb-3 flex items-center gap-3 ${isTeamCreator ? 'cursor-pointer active:opacity-70' : ''}`}>
-        {team?.logo?.startsWith('http') ? (
-          <img src={team.logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-[#F5F3F0] flex items-center justify-center text-2xl border-2 border-gray-200">
-            {team?.logo || '⚽'}
+      <div className="px-4 pt-5 pb-3 flex items-center gap-3">
+        <div onClick={isTeamCreator ? openEditModal : undefined}
+          className={`flex items-center gap-3 ${isTeamCreator ? 'cursor-pointer active:opacity-70' : ''}`}>
+          {team?.logo?.startsWith('http') ? (
+            <img src={team.logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-[#F5F3F0] flex items-center justify-center text-2xl border-2 border-gray-200">
+              {team?.logo || '⚽'}
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">{team?.name || '팀'}</h1>
+            <p className="text-xs text-gray-500">선수 {members.length}명{isTeamCreator ? ' · 탭하여 수정' : ''}</p>
           </div>
-        )}
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">{team?.name || '팀'}</h1>
-          <p className="text-xs text-gray-500">선수 {members.length}명{isTeamCreator ? ' · 탭하여 수정' : ''}</p>
         </div>
       </div>
+
+      {/* Team Record */}
+      <div className="grid grid-cols-3 gap-3 px-4 pb-3">
+        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
+          <p className="text-[10px] text-gray-400 mb-1">승</p>
+          <p className="text-xl font-black text-[#7B2D3B]">{teamRecord.win}</p>
+        </div>
+        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
+          <p className="text-[10px] text-gray-400 mb-1">무</p>
+          <p className="text-xl font-black text-gray-500">{teamRecord.draw}</p>
+        </div>
+        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
+          <p className="text-[10px] text-gray-400 mb-1">패</p>
+          <p className="text-xl font-black text-blue-500">{teamRecord.lose}</p>
+        </div>
+      </div>
+
+      {/* Match History */}
+      {matchHistory.length > 0 && (
+        <div className="px-4 pb-3">
+          <button onClick={() => setShowHistory(!showHistory)}
+            className="w-full flex items-center justify-between bg-white shadow-sm rounded-xl border border-gray-200 px-4 py-2.5">
+            <span className="text-sm font-bold text-gray-900">경기 기록 ({matchHistory.length})</span>
+            {showHistory ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+          </button>
+          {showHistory && (
+            <div className="mt-2 space-y-2">
+              {matchHistory.map(m => {
+                const isHome = m.home_team_id === team?.id;
+                const my = isHome ? m.home_score : m.away_score;
+                const opp = isHome ? m.away_score : m.home_score;
+                const opponent = isHome ? m.away_team : m.home_team;
+                const result = my > opp ? '승' : my === opp ? '무' : '패';
+                const resultColor = my > opp ? 'text-[#7B2D3B]' : my === opp ? 'text-gray-500' : 'text-blue-500';
+                const formatDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+                return (
+                  <div key={m.id} onClick={() => navigate(`/matches/${m.id}`)}
+                    className="bg-white shadow-sm rounded-xl border border-gray-200 p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+                    <span className={`text-sm font-black w-6 text-center ${resultColor}`}>{result}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{opponent?.logo || '⚽'}</span>
+                        <span className="text-sm font-bold text-gray-900 truncate">{opponent?.name || '상대'}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">{formatDate(m.date)} · {m.stadium}</p>
+                    </div>
+                    <span className="text-lg font-black text-gray-900">{my} : {opp}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top Stats */}
       <div className="grid grid-cols-2 gap-3 px-4 pb-4">
@@ -227,9 +315,13 @@ export default function TeamManagement() {
           const profile = member.profile;
           return (
             <div key={member.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-3 flex items-center gap-3">
-              <div className="w-9 h-9 bg-[#F5F3F0] rounded-full flex items-center justify-center text-gray-900 font-bold text-sm">
-                {profile?.back_number || '-'}
-              </div>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-9 h-9 bg-[#F5F3F0] rounded-full flex items-center justify-center text-gray-500 font-bold text-sm shrink-0">
+                  {profile?.name?.charAt(0) || '?'}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm text-gray-900">{profile?.name || '이름 없음'}</p>
@@ -242,7 +334,7 @@ export default function TeamManagement() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-gray-900">{member.rating}</p>
+                <span className="text-sm font-bold text-gray-400">#{profile?.back_number || '-'}</span>
                 {isTeamCreator && member.user_id !== user?.id && (
                   <button
                     onClick={() => handleRemoveMember(member.id, member.user_id)}
