@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 280" fill="#111111">
+  <!-- Wing Symbol - Left Side -->
+  <g transform="translate(120, 80)">
+    <!-- Left wing outer -->
+    <path d="M-8,-68 C-12,-60 -20,-48 -32,-38 C-44,-28 -52,-22 -56,-20 C-48,-30 -42,-42 -38,-52 C-34,-62 -30,-68 -28,-72 C-24,-68 -18,-66 -8,-68 Z" />
+    <!-- Left wing middle feather -->
+    <path d="M-10,-58 C-14,-48 -24,-34 -40,-22 C-50,-14 -58,-10 -62,-8 C-52,-18 -44,-30 -38,-40 C-32,-50 -26,-56 -22,-60 C-18,-58 -14,-57 -10,-58 Z" />
+    <!-- Left wing inner feather -->
+    <path d="M-12,-46 C-16,-36 -28,-22 -46,-10 C-54,-4 -60,0 -64,2 C-54,-8 -44,-20 -36,-32 C-28,-42 -22,-48 -18,-52 C-16,-50 -14,-48 -12,-46 Z" />
+    <!-- Left wing lower sweep -->
+    <path d="M-6,-34 C-10,-24 -22,-12 -38,0 C-48,8 -56,12 -60,14 C-50,4 -40,-8 -32,-20 C-24,-30 -16,-36 -12,-40 C-10,-38 -8,-36 -6,-34 Z" />
+    <!-- Left decorative curl top -->
+    <path d="M-4,-72 C-6,-76 -10,-78 -16,-76 C-20,-74 -22,-70 -22,-66 C-22,-62 -20,-58 -16,-56 C-12,-54 -8,-56 -6,-60 C-4,-64 -4,-68 -4,-72 Z" />
+
+    <!-- Right wing outer (mirrored) -->
+    <path d="M8,-68 C12,-60 20,-48 32,-38 C44,-28 52,-22 56,-20 C48,-30 42,-42 38,-52 C34,-62 30,-68 28,-72 C24,-68 18,-66 8,-68 Z" />
+    <!-- Right wing middle feather -->
+    <path d="M10,-58 C14,-48 24,-34 40,-22 C50,-14 58,-10 62,-8 C52,-18 44,-30 38,-40 C32,-50 26,-56 22,-60 C18,-58 14,-57 10,-58 Z" />
+    <!-- Right wing inner feather -->
+    <path d="M12,-46 C16,-36 28,-22 46,-10 C54,-4 60,0 64,2 C54,-8 44,-20 36,-32 C28,-42 22,-48 18,-52 C16,-50 14,-48 12,-46 Z" />
+    <!-- Right wing lower sweep -->
+    <path d="M6,-34 C10,-24 22,-12 38,0 C48,8 56,12 60,14 C50,4 40,-8 32,-20 C24,-30 16,-36 12,-40 C10,-38 8,-36 6,-34 Z" />
+    <!-- Right decorative curl top -->
+    <path d="M4,-72 C6,-76 10,-78 16,-76 C20,-74 22,-70 22,-66 C22,-62 20,-58 16,-56 C12,-54 8,-56 6,-60 C4,-64 4,-68 4,-72 Z" />
+
+    <!-- Center stem -->
+    <path d="M-3,-70 L-3,10 C-3,16 -1,20 0,24 C1,20 3,16 3,10 L3,-70 C2,-68 1,-67 0,-66 C-1,-67 -2,-68 -3,-70 Z" />
+    <!-- Center diamond accent -->
+    <path d="M0,-30 L-6,-22 L0,-14 L6,-22 Z" />
+  </g>
+
+  <!-- "Match Time" text -->
+  <text x="120" y="195" text-anchor="middle" font-family="'Bebas Neue', 'Georgia', serif" font-size="38" font-weight="400" letter-spacing="3" fill="#111111">Match Time</text>
+
+  <!-- "우리의 시간" subtext -->
+  <text x="120" y="222" text-anchor="middle" font-family="'Noto Sans KR', serif" font-size="13" font-weight="300" letter-spacing="6" fill="#111111">"우리의 시간"</text>
+</svg>

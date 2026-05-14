@@ -2,25 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { MessageCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-
-function MatchTimeLogo() {
-  return (
-    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Left wing */}
-      <path d="M60 35 Q45 20 30 15 Q35 30 38 45 Q40 55 45 60 Q50 52 55 45 Z" fill="#C4697A" opacity="0.7"/>
-      <path d="M60 35 Q48 25 35 22 Q38 35 42 48 Q45 55 50 60 Q54 50 57 42 Z" fill="#7B2D3B"/>
-      <path d="M60 55 Q50 45 40 40 Q42 50 46 58 Q48 62 52 65 Q55 60 58 55 Z" fill="#7B2D3B" opacity="0.8"/>
-      {/* Right wing */}
-      <path d="M60 35 Q75 20 90 15 Q85 30 82 45 Q80 55 75 60 Q70 52 65 45 Z" fill="#C4697A" opacity="0.7"/>
-      <path d="M60 35 Q72 25 85 22 Q82 35 78 48 Q75 55 70 60 Q66 50 63 42 Z" fill="#7B2D3B"/>
-      <path d="M60 55 Q70 45 80 40 Q78 50 74 58 Q72 62 68 65 Q65 60 62 55 Z" fill="#7B2D3B" opacity="0.8"/>
-      {/* Center stem */}
-      <path d="M57 60 L60 95 L63 60 Q62 55 60 50 Q58 55 57 60 Z" fill="#7B2D3B"/>
-      {/* Small detail at top */}
-      <circle cx="60" cy="30" r="3" fill="#C4697A"/>
-    </svg>
-  );
-}
+import logoSvg from '../../../assets/logo.svg';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -80,17 +62,15 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#F7F6F3] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm text-center">
         <div className="mb-8">
-          <div className="flex justify-center mb-4">
-            <MatchTimeLogo />
+          <div className="flex justify-center mb-2">
+            <img src={logoSvg} alt="Match Time" className="w-48 h-auto" />
           </div>
-          <h1 className="text-4xl font-black text-gray-900 mb-1 tracking-tight">Match Time</h1>
-          <p className="text-[#C4697A] font-medium text-sm">"우리의 시간"</p>
         </div>
 
-        <p className="text-gray-500 mb-12 text-sm">
+        <p className="text-[#888] mb-12 text-sm">
           우리 팀의 모든 경기, 기록, 라인업을 한곳에서
         </p>
 
