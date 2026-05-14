@@ -8,7 +8,6 @@ import LineupResult from './LineupResult';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Match, MatchEvent } from '../../../lib/types';
-import { recommendFormation } from '../../../lib/gemini';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface PlayerInfo {
@@ -20,6 +19,8 @@ interface PlayerInfo {
   type?: 'regular' | 'mercenary' | 'rookie';
   preferredPositions?: string[];
   desiredQuarters?: string[];
+  goals?: number;
+  assists?: number;
 }
 
 const ALL_POSITIONS = ['FW', 'MF', 'DF', 'GK'];
@@ -42,7 +43,15 @@ export default function LineupDetail() {
   const [match, setMatch] = useState<Match | null>(null);
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'members' | 'formation' | 'chat' | 'result'>('members');
+  const validTabs = ['members', 'formation', 'chat', 'result'] as const;
+  const hashTab = window.location.hash.replace('#', '') as typeof validTabs[number];
+  const [activeTab, setActiveTabState] = useState<'members' | 'formation' | 'chat' | 'result'>(
+    validTabs.includes(hashTab) ? hashTab : 'members'
+  );
+  const setActiveTab = (tab: 'members' | 'formation' | 'chat' | 'result') => {
+    setActiveTabState(tab);
+    window.location.hash = tab;
+  };
   const [formation, setFormation] = useState('4-3-3');
   const [activeQuarter, setActiveQuarter] = useState<Quarter>('1Q');
   const [myAttendance, setMyAttendance] = useState<'attending' | 'not-attending' | null>(null);
@@ -59,8 +68,7 @@ export default function LineupDetail() {
   const [newNumber, setNewNumber] = useState('');
   const [newPos, setNewPos] = useState('MF');
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiReason, setAiReason] = useState<string | null>(null);
+  const [autoLoading, setAutoLoading] = useState(false);
 
   // 참여 선호도 모달
   const [showPrefModal, setShowPrefModal] = useState(false);
@@ -82,6 +90,7 @@ export default function LineupDetail() {
   const [chatRoomId, setChatRoomId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const lineupChannelRef = useRef<RealtimeChannel | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
 
   // 선수 포지션에 맞는 슬롯에 배치
@@ -163,6 +172,8 @@ export default function LineupDetail() {
             type: 'regular' as const,
             preferredPositions: att?.preferred_positions || [],
             desiredQuarters: att?.desired_quarters ?? ['1Q', '2Q', '3Q', '4Q'],
+            goals: m.goals || 0,
+            assists: m.assists || 0,
           };
         });
         setPlayers(playersList);
@@ -204,8 +215,15 @@ export default function LineupDetail() {
           const f = matchData?.format?.includes('8') ? '3-3-1' : '4-3-3';
           setFormation(f);
           const pos = formations[f];
-          const init = smartPlace(attending, f, pos.length);
-          setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+          if (isTeamCreator) {
+            // 팀장만 자동 배치
+            const init = smartPlace(attending, f, pos.length);
+            setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
+          } else {
+            // 팀원은 빈 슬롯
+            const empty = pos.map(() => null);
+            setQuarterLineups({ '1Q': [...empty], '2Q': [...empty], '3Q': [...empty], '4Q': [...empty] });
+          }
         }
 
         // My attendance + preferences
@@ -310,10 +328,39 @@ export default function LineupDetail() {
 
     fetchAll();
 
+    // 라인업 실시간 구독 (팀장이 저장하면 팀원에게 즉시 반영)
+    const lineupChannel = supabase
+      .channel(`lineup-${id}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lineups', filter: `match_id=eq.${id}` }, async () => {
+        const { data: savedLineups } = await supabase
+          .from('lineups')
+          .select('*')
+          .eq('match_id', id);
+        if (savedLineups && savedLineups.length > 0) {
+          const savedFormation = savedLineups[0].formation || '4-3-3';
+          setFormation(savedFormation);
+          const newQL: Record<Quarter, (string | null)[]> = { '1Q': [], '2Q': [], '3Q': [], '4Q': [] };
+          for (const sl of savedLineups) {
+            newQL[sl.quarter as Quarter] = sl.positions as (string | null)[];
+          }
+          const pos = formations[savedFormation];
+          for (const q of quarters) {
+            if (newQL[q].length === 0) newQL[q] = Array(pos.length).fill(null);
+          }
+          setQuarterLineups(newQL);
+        }
+      })
+      .subscribe();
+    lineupChannelRef.current = lineupChannel;
+
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+      }
+      if (lineupChannelRef.current) {
+        supabase.removeChannel(lineupChannelRef.current);
+        lineupChannelRef.current = null;
       }
     };
   }, [id, team, user]);
@@ -550,80 +597,84 @@ export default function LineupDetail() {
     toast.success('경기 결과가 저장되었습니다!');
   };
 
-  const handleAIRecommend = async () => {
+  const handleAutoLineup = () => {
     if (allPlayers.length === 0) { toast.error('참여 선수가 없습니다.'); return; }
-    setAiLoading(true);
-    setAiReason(null);
-    try {
-      const playersWithPrefs = allPlayers.map(p => ({
-        name: p.name,
-        position: p.position,
-        number: p.number,
-        preferredPositions: p.preferredPositions,
-        desiredQuarters: p.desiredQuarters,
-      }));
-      const result = await recommendFormation(playersWithPrefs, match?.format || '11v11');
+    setAutoLoading(true);
 
-      // 추천 포메이션 적용
-      const newFormation = result.formation;
-      if (formations[newFormation]) {
-        setFormation(newFormation);
-      }
+    const posArr = formations[formation] || formations['4-3-3'];
+    const isFirstQuarter = activeQuarter === '1Q';
 
-      // 추천 라인업 적용 - 포지션 기반 매칭
-      const posArr = formations[newFormation] || formations[formation];
-      const newLineup: (string | null)[] = posArr.map(() => null);
-      const used = new Set<string>();
+    // 해당 쿼터를 희망하는 선수 우선 필터
+    const wantsThisQ = allPlayers.filter(p =>
+      !p.desiredQuarters || p.desiredQuarters.length === 0 || p.desiredQuarters.includes(activeQuarter)
+    );
+    const others = allPlayers.filter(p =>
+      p.desiredQuarters && p.desiredQuarters.length > 0 && !p.desiredQuarters.includes(activeQuarter)
+    );
 
-      // 포메이션 슬롯별 포지션 매핑 (GK → DF → MF → FW 순서)
-      const getSlotPosition = (idx: number, total: number): string => {
-        if (idx === 0) return 'GK';
-        const f = newFormation || formation;
-        const parts = f.split('-').map(Number); // e.g. [4,3,3]
-        let count = 1; // GK
-        if (idx < count + parts[0]) return 'DF';
-        count += parts[0];
-        if (idx < count + parts[1]) return 'MF';
-        return 'FW';
-      };
+    // 1Q는 스탯(골+도움) 높은 순, 나머지는 그냥 순서대로
+    const sorted = isFirstQuarter
+      ? [...wantsThisQ].sort((a, b) => ((b.goals || 0) + (b.assists || 0)) - ((a.goals || 0) + (a.assists || 0)))
+      : [...wantsThisQ];
+    const pool = [...sorted, ...others];
 
-      // AI 결과 → 슬롯 순서대로 매칭 (lineup[0]=GK, [1..]=DF, MF, FW)
-      result.lineup.forEach((rawName, slotIdx) => {
-        if (slotIdx >= posArr.length) return; // 슬롯 초과 무시
-        const name = rawName.replace(/\s*\(.*\)\s*$/, '').trim();
-        // 정확한 이름 매칭 → 부분 매칭 → 공백 제거 매칭
-        const player = allPlayers.find(p => p.name === name && !used.has(p.id))
-          || allPlayers.find(p => rawName.includes(p.name) && !used.has(p.id))
-          || allPlayers.find(p => p.name.replace(/\s/g, '') === name.replace(/\s/g, '') && !used.has(p.id));
-        if (!player) return;
-        newLineup[slotIdx] = player.id;
-        used.add(player.id);
-      });
+    // 슬롯별 포지션 매핑
+    const getSlotPos = (idx: number): string => {
+      if (idx === 0) return 'GK';
+      const parts = formation.split('-').map(Number);
+      let count = 1;
+      if (idx < count + parts[0]) return 'DF';
+      count += parts[0];
+      if (idx < count + parts[1]) return 'MF';
+      return 'FW';
+    };
 
-      // 매칭 안 된 선수는 포지션에 맞는 슬롯에 채우기
-      const remaining = allPlayers.filter(p => !used.has(p.id));
-      for (const p of remaining) {
-        // 1차: 포지션 맞는 빈 슬롯
-        let placed = false;
-        for (let i = 0; i < newLineup.length; i++) {
-          if (newLineup[i] === null && getSlotPosition(i, posArr.length) === p.position) {
-            newLineup[i] = p.id; placed = true; break;
-          }
-        }
-        // 2차: 아무 빈 슬롯
-        if (!placed) {
-          const emptyIdx = newLineup.findIndex(s => s === null);
-          if (emptyIdx !== -1) newLineup[emptyIdx] = p.id;
+    const newLineup: (string | null)[] = posArr.map(() => null);
+    const used = new Set<string>();
+
+    // 1차: 1순위 희망 포지션으로 배치
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      const pref1 = p.preferredPositions?.[0] || p.position;
+      for (let i = 0; i < posArr.length; i++) {
+        if (newLineup[i] === null && getSlotPos(i) === pref1) {
+          newLineup[i] = p.id; used.add(p.id); break;
         }
       }
-
-      setQuarterLineups(prev => ({ ...prev, [activeQuarter]: newLineup }));
-      setAiReason(result.reason);
-      toast.success('AI 추천 라인업이 적용되었습니다!');
-    } catch (e: any) {
-      toast.error(e?.message || 'AI 추천에 실패했습니다.');
     }
-    setAiLoading(false);
+
+    // 2차: 2순위 희망 포지션
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      const pref2 = p.preferredPositions?.[1];
+      if (!pref2) continue;
+      for (let i = 0; i < posArr.length; i++) {
+        if (newLineup[i] === null && getSlotPos(i) === pref2) {
+          newLineup[i] = p.id; used.add(p.id); break;
+        }
+      }
+    }
+
+    // 3차: 기본 포지션으로 배치
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      for (let i = 0; i < posArr.length; i++) {
+        if (newLineup[i] === null && getSlotPos(i) === p.position) {
+          newLineup[i] = p.id; used.add(p.id); break;
+        }
+      }
+    }
+
+    // 4차: 남은 선수 아무 빈 슬롯
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      const emptyIdx = newLineup.findIndex(s => s === null);
+      if (emptyIdx !== -1) { newLineup[emptyIdx] = p.id; used.add(p.id); }
+    }
+
+    setQuarterLineups(prev => ({ ...prev, [activeQuarter]: newLineup }));
+    toast.success('자동 배치 완료!');
+    setAutoLoading(false);
   };
 
   const handleAddPlayer = () => {
@@ -750,10 +801,10 @@ export default function LineupDetail() {
           formation={formation} selectedSlot={selectedSlot} setSelectedSlot={setSelectedSlot}
           jerseyPrimary={jerseyPrimary} setJerseyPrimary={setJerseyPrimary} jerseySecondary={jerseySecondary}
           allPlayers={allPlayers} isTeamCreator={isTeamCreator}
-          aiLoading={aiLoading} aiReason={aiReason} fieldRef={fieldRef}
+          autoLoading={autoLoading} fieldRef={fieldRef}
           handleFieldTap={handleFieldTap} handleBenchTap={handleBenchTap}
           handleFormationChange={handleFormationChange} handleSaveLineup={handleSaveLineup}
-          handleAIRecommend={handleAIRecommend} onShowAddModal={() => setShowAddModal(true)}
+          handleAutoLineup={handleAutoLineup} onShowAddModal={() => setShowAddModal(true)}
         />
       )}
 

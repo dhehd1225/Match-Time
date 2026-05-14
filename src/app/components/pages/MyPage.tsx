@@ -44,6 +44,29 @@ export function MyPage() {
   const [creating, setCreating] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setAvatarUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file);
+    if (uploadError) {
+      toast.error('이미지 업로드에 실패했습니다.');
+      setAvatarUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', user.id);
+    await refreshProfile();
+    setAvatarUploading(false);
+    toast.success('프로필 사진이 변경되었습니다.');
+  };
 
   // 팀 가입 폼
   const [showJoinForm, setShowJoinForm] = useState(false);
@@ -415,13 +438,24 @@ export function MyPage() {
       <div className="bg-gradient-to-br from-[#7B2D3B] to-[#5a1f2c] px-5 pt-5 pb-8 rounded-b-3xl">
         <h1 className="text-sm font-bold text-white/60 mb-3">마이 페이지</h1>
         <div className="flex items-center gap-4">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30" />
-          ) : (
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold ring-2 ring-white/30">
-              {name?.charAt(0) || '?'}
+          <div className="relative cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30" />
+            ) : (
+              <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold ring-2 ring-white/30">
+                {name?.charAt(0) || '?'}
+              </div>
+            )}
+            <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow">
+              <Camera size={11} className="text-[#7B2D3B]" />
             </div>
-          )}
+            <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+            {avatarUploading && (
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
           <div className="flex-1">
             <h2 className="text-lg font-bold text-white">{name || '이름 없음'}</h2>
             <p className="text-sm text-white/60">{position} {backNumber ? `· #${backNumber}` : ''}</p>
@@ -543,10 +577,16 @@ export function MyPage() {
         ) : (
           <div className="space-y-2">
             {notifications.map(notif => (
-              <div key={notif.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 transition-all">
+              <div key={notif.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 transition-all relative">
+                <button onClick={async () => {
+                  setNotifications(prev => prev.filter(n => n.id !== notif.id));
+                  await supabase.from('notifications').delete().eq('id', notif.id);
+                }} className="absolute top-3 right-3 text-gray-300 hover:text-gray-500 p-0.5">
+                  <X size={14} />
+                </button>
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{getIcon(notif.type)}</div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-xs font-bold text-gray-900">{notif.title}</span>
                       <span className="text-[10px] text-gray-400">{formatTime(notif.created_at)}</span>

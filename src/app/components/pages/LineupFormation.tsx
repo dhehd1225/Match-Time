@@ -1,5 +1,5 @@
 import type { RefObject, Dispatch, SetStateAction } from 'react';
-import { X, Plus, UserPlus, ArrowLeftRight, Copy, Save, Sparkles, Camera } from 'lucide-react';
+import { X, Plus, UserPlus, ArrowLeftRight, Copy, Save, Zap, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { toPng } from 'html-to-image';
 import JerseyIcon from '../JerseyIcon';
@@ -36,14 +36,13 @@ interface Props {
   jerseySecondary: string;
   allPlayers: PlayerInfo[];
   isTeamCreator: boolean;
-  aiLoading: boolean;
-  aiReason: string | null;
+  autoLoading: boolean;
   fieldRef: RefObject<HTMLDivElement | null>;
   handleFieldTap: (i: number) => void;
   handleBenchTap: (i: number) => void;
   handleFormationChange: (f: string) => void;
   handleSaveLineup: () => void;
-  handleAIRecommend: () => void;
+  handleAutoLineup: () => void;
   onShowAddModal: () => void;
 }
 
@@ -51,9 +50,9 @@ export default function LineupFormation({
   activeQuarter, setActiveQuarter, quarterLineups, setQuarterLineups,
   formation, selectedSlot, setSelectedSlot,
   jerseyPrimary, setJerseyPrimary, jerseySecondary,
-  allPlayers, isTeamCreator, aiLoading, aiReason,
+  allPlayers, isTeamCreator, autoLoading,
   fieldRef, handleFieldTap, handleBenchTap, handleFormationChange,
-  handleSaveLineup, handleAIRecommend, onShowAddModal,
+  handleSaveLineup, handleAutoLineup, onShowAddModal,
 }: Props) {
   const positions_arr = formations[formation] || formations['4-3-3'];
   const currentLineup = quarterLineups[activeQuarter];
@@ -212,20 +211,11 @@ export default function LineupFormation({
 
       {isTeamCreator && (
         <div className="mt-3 space-y-2">
-          <button onClick={handleAIRecommend} disabled={aiLoading}
-            className="w-full bg-gradient-to-r from-violet-600 to-blue-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
-            <Sparkles size={16} className={aiLoading ? 'animate-spin' : ''} />
-            {aiLoading ? 'AI 분석 중...' : 'AI 포메이션 추천'}
+          <button onClick={handleAutoLineup} disabled={autoLoading}
+            className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+            <Zap size={16} />
+            {autoLoading ? '배치 중...' : '자동 배치'}
           </button>
-          {aiReason && (
-            <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Sparkles size={12} className="text-violet-400" />
-                <span className="text-[11px] font-bold text-violet-400">AI 추천 이유</span>
-              </div>
-              <p className="text-xs text-gray-500">{aiReason}</p>
-            </div>
-          )}
           <div className="flex gap-2">
             <button onClick={handleSaveLineup}
               className="flex-1 bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, ArrowLeft, UserMinus, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { useState, useEffect, useRef } from 'react';
+import { Search, UserMinus, X, Camera, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -13,9 +12,10 @@ const positionColors: Record<string, string> = {
   FW: 'text-red-400',
 };
 
+const emojis = ['⚽', '🐆', '🦅', '🐯', '🦁', '💙', '⚡', '🔥', '🐉', '⭐'];
+
 export default function TeamManagement() {
-  const navigate = useNavigate();
-  const { team, user, isTeamCreator } = useAuth();
+  const { team, user, isTeamCreator, refreshProfile } = useAuth();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,6 +23,74 @@ export default function TeamManagement() {
   const positions = ['전체', 'GK', 'DF', 'MF', 'FW'];
 
   const [removingId, setRemovingId] = useState<string | null>(null);
+
+  // 팀 편집
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editLogo, setEditLogo] = useState('');
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const openEditModal = () => {
+    if (!team) return;
+    setEditName(team.name || '');
+    setEditLogo(team.logo?.startsWith('http') ? '' : (team.logo || '⚽'));
+    setEditLogoFile(null);
+    setEditLogoPreview(team.logo?.startsWith('http') ? team.logo : null);
+    setShowEditModal(true);
+  };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditLogoFile(file);
+    setEditLogo('');
+    const reader = new FileReader();
+    reader.onload = () => setEditLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveTeam = async () => {
+    if (!team || !user || !editName.trim()) return;
+    setEditSaving(true);
+
+    let logoValue = editLogo || '⚽';
+
+    if (editLogoFile) {
+      const fileExt = editLogoFile.name.split('.').pop();
+      const fileName = `${team.id}_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('team-logos')
+        .upload(fileName, editLogoFile);
+      if (uploadError) {
+        toast.error('로고 업로드에 실패했습니다.');
+        setEditSaving(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage
+        .from('team-logos')
+        .getPublicUrl(fileName);
+      logoValue = urlData.publicUrl;
+    } else if (editLogoPreview?.startsWith('http')) {
+      logoValue = editLogoPreview;
+    }
+
+    const { error } = await supabase.from('teams').update({
+      name: editName.trim(),
+      logo: logoValue,
+    }).eq('id', team.id);
+
+    if (error) {
+      toast.error('저장 실패: ' + error.message);
+    } else {
+      await refreshProfile();
+      toast.success('팀 정보가 수정되었습니다.');
+      setShowEditModal(false);
+    }
+    setEditSaving(false);
+  };
 
   const handleRemoveMember = async (memberId: string, memberUserId: string) => {
     if (memberUserId === user?.id) return;
@@ -74,7 +142,6 @@ export default function TeamManagement() {
 
   const topScorer = members.length > 0 ? members.reduce((prev, c) => (prev.goals > c.goals) ? prev : c) : null;
   const topAssist = members.length > 0 ? members.reduce((prev, c) => (prev.assists > c.assists) ? prev : c) : null;
-  const mvp = members.length > 0 ? members.reduce((prev, c) => (prev.rating > c.rating) ? prev : c) : null;
 
   if (loading) {
     return (
@@ -96,26 +163,23 @@ export default function TeamManagement() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200">
-        <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
-          <ArrowLeft size={22} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-bold text-gray-900">{team?.name || '팀'}</h1>
-          <p className="text-xs text-gray-500">선수 {members.length}명</p>
+      <div onClick={isTeamCreator ? openEditModal : undefined}
+        className={`px-4 pt-5 pb-3 flex items-center gap-3 ${isTeamCreator ? 'cursor-pointer active:opacity-70' : ''}`}>
+        {team?.logo?.startsWith('http') ? (
+          <img src={team.logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-[#F5F3F0] flex items-center justify-center text-2xl border-2 border-gray-200">
+            {team?.logo || '⚽'}
+          </div>
+        )}
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">{team?.name || '팀'}</h1>
+          <p className="text-xs text-gray-500">선수 {members.length}명{isTeamCreator ? ' · 탭하여 수정' : ''}</p>
         </div>
-        <button onClick={() => navigate('/rankings')} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
-          <BarChart3 size={20} />
-        </button>
       </div>
 
       {/* Top Stats */}
-      <div className="grid grid-cols-3 gap-3 p-4">
-        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
-          <p className="text-[10px] text-gray-400 mb-1">MVP</p>
-          <p className="font-bold text-sm text-gray-900">{mvp?.profile?.name || '-'}</p>
-          <p className="text-xs text-yellow-500">{mvp?.rating || '-'}</p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 px-4 pb-4">
         <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
           <p className="text-[10px] text-gray-400 mb-1">득점왕</p>
           <p className="font-bold text-sm text-gray-900">{topScorer?.profile?.name || '-'}</p>
@@ -199,6 +263,61 @@ export default function TeamManagement() {
           </p>
         )}
       </div>
+
+      {/* 팀 편집 모달 */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setShowEditModal(false)}>
+          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-gray-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-gray-900">팀 정보 수정</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-500"><X size={18} /></button>
+            </div>
+
+            {/* 로고 */}
+            <div className="flex flex-col items-center mb-5">
+              <div className="relative mb-3">
+                <div className="w-20 h-20 bg-[#F5F3F0] rounded-full flex items-center justify-center border-2 border-gray-200 overflow-hidden">
+                  {editLogoPreview ? (
+                    <img src={editLogoPreview} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-3xl">{editLogo}</span>
+                  )}
+                </div>
+                <button onClick={() => logoInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#7B2D3B] rounded-full flex items-center justify-center">
+                  <Camera size={12} className="text-white" />
+                </button>
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoFileChange} className="hidden" />
+              </div>
+              {editLogoPreview ? (
+                <button onClick={() => { setEditLogoFile(null); setEditLogoPreview(null); setEditLogo('⚽'); }}
+                  className="text-xs text-gray-500 underline mb-3">이모지로 변경</button>
+              ) : (
+                <div className="flex justify-center gap-2 mb-3 flex-wrap">
+                  {emojis.map(e => (
+                    <button key={e} onClick={() => { setEditLogo(e); setEditLogoFile(null); setEditLogoPreview(null); }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-lg ${editLogo === e ? 'bg-[#7B2D3B] ring-2 ring-[#C4697A]' : 'bg-[#F5F3F0] border border-gray-200'}`}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 이름 */}
+            <div className="mb-5">
+              <label className="text-xs font-bold text-gray-400 mb-1.5 block">팀 이름</label>
+              <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                className="w-full p-3 bg-[#F5F3F0] border border-gray-200 rounded-xl text-sm text-gray-900 font-medium focus:ring-1 focus:ring-[#7B2D3B] outline-none" />
+            </div>
+
+            <button onClick={handleSaveTeam} disabled={!editName.trim() || editSaving}
+              className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+              <Save size={16} /> {editSaving ? '저장 중...' : '저장'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
