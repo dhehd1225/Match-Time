@@ -78,14 +78,14 @@ export default function TeamManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <div className="px-4 py-3 border-b border-white/5"><div className="bg-white/5 rounded w-24 h-5 animate-pulse" /></div>
+      <div className="min-h-screen bg-[#FAFAF8]">
+        <div className="px-4 py-3 border-b border-gray-200"><div className="bg-gray-200 rounded w-24 h-5 animate-pulse" /></div>
         <div className="p-4 space-y-3">
           {[1,2,3,4,5].map(i => (
-            <div key={i} className="flex items-center gap-3 bg-[#111] rounded-xl border border-white/5 p-3">
-              <div className="w-5 h-4 bg-white/5 rounded animate-pulse" />
-              <div className="w-20 h-4 bg-white/5 rounded animate-pulse" />
-              <div className="w-8 h-3 bg-white/5 rounded animate-pulse" />
+            <div key={i} className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-3">
+              <div className="w-5 h-4 bg-gray-200 rounded animate-pulse" />
+              <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
+              <div className="w-8 h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
         </div>
@@ -94,36 +94,36 @@ export default function TeamManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-8">
+    <div className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200">
         <button onClick={() => navigate(-1)} className="p-1 text-gray-400">
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-white">{team?.name || '팀'}</h1>
+          <h1 className="text-lg font-bold text-gray-900">{team?.name || '팀'}</h1>
           <p className="text-xs text-gray-500">선수 {members.length}명</p>
         </div>
-        <button onClick={() => navigate('/rankings')} className="p-2 text-gray-400 hover:text-white transition-colors">
+        <button onClick={() => navigate('/rankings')} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
           <BarChart3 size={20} />
         </button>
       </div>
 
       {/* Top Stats */}
       <div className="grid grid-cols-3 gap-3 p-4">
-        <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
-          <p className="text-[10px] text-gray-600 mb-1">MVP</p>
-          <p className="font-bold text-sm text-white">{mvp?.profile?.name || '-'}</p>
+        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
+          <p className="text-[10px] text-gray-400 mb-1">MVP</p>
+          <p className="font-bold text-sm text-gray-900">{mvp?.profile?.name || '-'}</p>
           <p className="text-xs text-yellow-500">{mvp?.rating || '-'}</p>
         </div>
-        <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
-          <p className="text-[10px] text-gray-600 mb-1">득점왕</p>
-          <p className="font-bold text-sm text-white">{topScorer?.profile?.name || '-'}</p>
+        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
+          <p className="text-[10px] text-gray-400 mb-1">득점왕</p>
+          <p className="font-bold text-sm text-gray-900">{topScorer?.profile?.name || '-'}</p>
           <p className="text-xs text-red-400">{topScorer ? `${topScorer.goals}골` : '-'}</p>
         </div>
-        <div className="bg-[#111] p-3 rounded-2xl text-center border border-white/5">
-          <p className="text-[10px] text-gray-600 mb-1">도움왕</p>
-          <p className="font-bold text-sm text-white">{topAssist?.profile?.name || '-'}</p>
+        <div className="bg-white shadow-sm p-3 rounded-2xl text-center border border-gray-100">
+          <p className="text-[10px] text-gray-400 mb-1">도움왕</p>
+          <p className="font-bold text-sm text-gray-900">{topAssist?.profile?.name || '-'}</p>
           <p className="text-xs text-emerald-400">{topAssist ? `${topAssist.assists}개` : '-'}</p>
         </div>
       </div>
@@ -131,13 +131,13 @@ export default function TeamManagement() {
       {/* Search + Filter */}
       <div className="px-4 mb-4">
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
             placeholder="선수 검색"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-[#111] border border-white/10 rounded-xl text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#7B2D3B]/50"
+            className="w-full pl-9 pr-4 py-2.5 bg-[#F5F3F0] border border-gray-200 rounded-xl text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#7B2D3B]/50"
           />
         </div>
         <div className="flex gap-2">
@@ -148,7 +148,7 @@ export default function TeamManagement() {
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 selectedPosition === pos
                   ? 'bg-[#7B2D3B] text-white'
-                  : 'bg-white/5 text-gray-500'
+                  : 'bg-gray-100 text-gray-500'
               }`}
             >
               {pos}
@@ -162,13 +162,13 @@ export default function TeamManagement() {
         {filteredMembers.map(member => {
           const profile = member.profile;
           return (
-            <div key={member.id} className="bg-[#111] rounded-2xl border border-white/5 p-3 flex items-center gap-3">
-              <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div key={member.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 p-3 flex items-center gap-3">
+              <div className="w-9 h-9 bg-[#F5F3F0] rounded-full flex items-center justify-center text-gray-900 font-bold text-sm">
                 {profile?.back_number || '-'}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm text-white">{profile?.name || '이름 없음'}</p>
+                  <p className="font-semibold text-sm text-gray-900">{profile?.name || '이름 없음'}</p>
                   <span className={`text-[10px] font-bold ${positionColors[profile?.position || 'MF']}`}>{profile?.position || 'MF'}</span>
                 </div>
                 <div className="flex items-center gap-3 mt-0.5">
@@ -178,11 +178,11 @@ export default function TeamManagement() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-white">{member.rating}</p>
+                <p className="text-sm font-bold text-gray-900">{member.rating}</p>
                 {isTeamCreator && member.user_id !== user?.id && (
                   <button
                     onClick={() => handleRemoveMember(member.id, member.user_id)}
-                    className={`p-1.5 transition-colors text-xs font-bold ${removingId === member.id ? 'text-red-400' : 'text-gray-600 hover:text-red-400'}`}
+                    className={`p-1.5 transition-colors text-xs font-bold ${removingId === member.id ? 'text-red-400' : 'text-gray-400 hover:text-red-400'}`}
                     title="팀원 제거"
                   >
                     {removingId === member.id ? '제거?' : <UserMinus size={14} />}
@@ -194,7 +194,7 @@ export default function TeamManagement() {
         })}
 
         {filteredMembers.length === 0 && (
-          <p className="text-center text-gray-600 py-8 text-sm">
+          <p className="text-center text-gray-400 py-8 text-sm">
             {members.length === 0 ? '팀원이 없습니다' : '검색 결과가 없습니다'}
           </p>
         )}

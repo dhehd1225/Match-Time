@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, MapPin, Users, X, Plus, UserPlus, ArrowLeftRight, Copy, Send, MessageCircle, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, X, Plus, Send, MessageCircle, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import JerseyIcon from '../JerseyIcon';
+import LineupMembers from './LineupMembers';
+import LineupFormation from './LineupFormation';
+import LineupResult from './LineupResult';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
-import type { Match } from '../../../lib/types';
+import type { Match, MatchEvent } from '../../../lib/types';
 import { recommendFormation } from '../../../lib/gemini';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -32,8 +34,6 @@ const formations: Record<string, { x: number; y: number }[]> = {
   '3-3-1': [{ x: 50, y: 90 },{ x: 25, y: 70 },{ x: 50, y: 70 },{ x: 75, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 50, y: 20 }],
 };
 
-const posColors: Record<string, string> = { GK: 'text-yellow-500', DF: 'text-blue-400', MF: 'text-emerald-400', FW: 'text-red-400' };
-
 export default function LineupDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -42,7 +42,7 @@ export default function LineupDetail() {
   const [match, setMatch] = useState<Match | null>(null);
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'members' | 'formation' | 'chat'>('members');
+  const [activeTab, setActiveTab] = useState<'members' | 'formation' | 'chat' | 'result'>('members');
   const [formation, setFormation] = useState('4-3-3');
   const [activeQuarter, setActiveQuarter] = useState<Quarter>('1Q');
   const [myAttendance, setMyAttendance] = useState<'attending' | 'not-attending' | null>(null);
@@ -67,6 +67,14 @@ export default function LineupDetail() {
   const [prefPositions, setPrefPositions] = useState<string[]>([]);
   const [prefQuarters, setPrefQuarters] = useState<string[]>(['1Q', '2Q', '3Q', '4Q']);
 
+  // 결과 입력
+  const [homeScore, setHomeScore] = useState('0');
+  const [awayScore, setAwayScore] = useState('0');
+  interface GoalEntry { scorer_id: string; assister_id: string; minute: string; }
+  const [goalEntries, setGoalEntries] = useState<GoalEntry[]>([]);
+  const [savedEvents, setSavedEvents] = useState<MatchEvent[]>([]);
+  const [resultSaving, setResultSaving] = useState(false);
+
   // Chat
   interface ChatMsg { id: string; sender: string; text: string; time: string; isMe: boolean; }
   const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
@@ -74,9 +82,51 @@ export default function LineupDetail() {
   const [chatRoomId, setChatRoomId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
+
+  // 선수 포지션에 맞는 슬롯에 배치
+  const smartPlace = (players: PlayerInfo[], fm: string, slotCount: number): (string | null)[] => {
+    const lineup: (string | null)[] = Array(slotCount).fill(null);
+    const parts = fm.split('-').map(Number);
+    const used = new Set<string>();
+
+    const getSlotRange = (pos: string): number[] => {
+      const ranges: number[] = [];
+      let start = 0;
+      if (pos === 'GK') return [0];
+      start = 1;
+      if (pos === 'DF') { for (let i = start; i < start + parts[0]; i++) ranges.push(i); return ranges; }
+      start += parts[0];
+      if (pos === 'MF') { for (let i = start; i < start + parts[1]; i++) ranges.push(i); return ranges; }
+      start += parts[1];
+      for (let i = start; i < slotCount; i++) ranges.push(i);
+      return ranges;
+    };
+
+    // 1차: 포지션 매칭
+    for (const p of players) {
+      if (used.has(p.id)) continue;
+      const slots = getSlotRange(p.position);
+      const emptySlot = slots.find(s => lineup[s] === null);
+      if (emptySlot !== undefined) { lineup[emptySlot] = p.id; used.add(p.id); }
+    }
+    // 2차: 남은 선수 빈 슬롯에
+    for (const p of players) {
+      if (used.has(p.id)) continue;
+      const emptySlot = lineup.findIndex(s => s === null);
+      if (emptySlot !== -1) { lineup[emptySlot] = p.id; used.add(p.id); }
+    }
+    return lineup;
+  };
 
   useEffect(() => {
     if (!id || !team) { setLoading(false); return; }
+
+    // 이전 채널 정리
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
     const fetchAll = async () => {
       // Fetch match
@@ -118,7 +168,13 @@ export default function LineupDetail() {
         setPlayers(playersList);
 
         const attending = playersList.filter(p => p.status === 'attending');
-        setAllPlayers(attending);
+        // localStorage에서 임시 선수 복원
+        let tempPlayers: PlayerInfo[] = [];
+        try {
+          const saved = localStorage.getItem(`temp_players_${id}`);
+          if (saved) tempPlayers = JSON.parse(saved);
+        } catch { /* ignore */ }
+        setAllPlayers([...attending, ...tempPlayers]);
 
         // DB에서 저장된 라인업 불러오기
         const { data: savedLineups } = await supabase
@@ -139,7 +195,7 @@ export default function LineupDetail() {
           const pos = formations[savedFormation];
           for (const q of quarters) {
             if (newQuarterLineups[q].length === 0) {
-              newQuarterLineups[q] = pos.map((_, i) => attending[i]?.id ?? null);
+              newQuarterLineups[q] = smartPlace(attending, savedFormation, pos.length);
             }
           }
           setQuarterLineups(newQuarterLineups);
@@ -148,7 +204,7 @@ export default function LineupDetail() {
           const f = matchData?.format?.includes('8') ? '3-3-1' : '4-3-3';
           setFormation(f);
           const pos = formations[f];
-          const init = pos.map((_, i) => attending[i]?.id ?? null);
+          const init = smartPlace(attending, f, pos.length);
           setQuarterLineups({ '1Q': [...init], '2Q': [...init], '3Q': [...init], '4Q': [...init] });
         }
 
@@ -158,6 +214,35 @@ export default function LineupDetail() {
           setMyAttendance(myAtt?.status || null);
           if (myAtt?.preferred_positions?.length) setPrefPositions(myAtt.preferred_positions);
           if (myAtt?.desired_quarters?.length) setPrefQuarters(myAtt.desired_quarters);
+
+          // 참여 중인데 선호 포지션 미설정 → 자동으로 선호도 모달 띄우기
+          if (myAtt?.status === 'attending' && (!myAtt.preferred_positions || myAtt.preferred_positions.length === 0)) {
+            const isPast = new Date(`${matchData?.date}T${matchData?.time || '00:00'}`) < new Date();
+            if (!isPast && matchData?.status !== 'completed') {
+              setShowPrefModal(true);
+            }
+          }
+        }
+      }
+
+      // 저장된 결과 불러오기
+      if (matchData) {
+        if (matchData.home_score !== null) setHomeScore(String(matchData.home_score));
+        if (matchData.away_score !== null) setAwayScore(String(matchData.away_score));
+
+        const { data: events } = await supabase
+          .from('match_events')
+          .select('*, scorer:profiles!match_events_scorer_id_fkey(id, name), assister:profiles!match_events_assister_id_fkey(id, name)')
+          .eq('match_id', id)
+          .order('minute', { ascending: true });
+
+        if (events && events.length > 0) {
+          setSavedEvents(events);
+          setGoalEntries(events.map(e => ({
+            scorer_id: e.scorer_id || '',
+            assister_id: e.assister_id || '',
+            minute: e.minute ? String(e.minute) : '',
+          })));
         }
       }
 
@@ -199,7 +284,7 @@ export default function LineupDetail() {
 
         // Real-time chat subscription
         const channel = supabase
-          .channel(`match-chat-${room.id}`)
+          .channel(`match-chat-${room.id}-${Date.now()}`)
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${room.id}` }, async (payload) => {
             const msg = payload.new as any;
             if (msg.sender_id === user?.id) return;
@@ -214,6 +299,8 @@ export default function LineupDetail() {
           })
           .subscribe();
 
+
+
         setLoading(false);
         channelRef.current = channel;
       } else {
@@ -224,45 +311,76 @@ export default function LineupDetail() {
     fetchAll();
 
     return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [id, team, user]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMsgs, activeTab]);
 
+  // 골 기록 변경 시 우리팀 스코어 자동 계산
+  useEffect(() => {
+    if (!match || !team) return;
+    const myGoalCount = goalEntries.filter(e => e.scorer_id).length;
+    const isHome = match.home_team_id === team.id;
+    if (isHome) setHomeScore(String(myGoalCount));
+    else setAwayScore(String(myGoalCount));
+  }, [goalEntries, match, team]);
+
+  const saveAttendance = async (matchId: string, userId: string, newStatus: string, prefs?: { preferred_positions: string[]; desired_quarters: string[] }) => {
+    // 기존 레코드 삭제 후 새로 삽입
+    await supabase.from('match_attendance').delete().eq('match_id', matchId).eq('user_id', userId);
+
+    const row: Record<string, any> = { match_id: matchId, user_id: userId, status: newStatus };
+    if (prefs) {
+      row.preferred_positions = prefs.preferred_positions;
+      row.desired_quarters = prefs.desired_quarters;
+    }
+
+    const { error } = await supabase.from('match_attendance').insert(row);
+    if (error) {
+      toast.error('저장 실패: ' + error.message);
+      return false;
+    }
+    return true;
+  };
+
   const handleAttendance = async (status: 'attending' | 'not-attending') => {
     if (!user || !id) return;
     if (status === 'attending') {
-      // 참여 시 선호도 모달 띄우기
       setShowPrefModal(true);
       return;
     }
-    await supabase.from('match_attendance').upsert({
-      match_id: id,
-      user_id: user.id,
-      status,
-      preferred_positions: [],
-      desired_quarters: ['1Q', '2Q', '3Q', '4Q'],
-    }, { onConflict: 'match_id,user_id' });
+    const ok = await saveAttendance(id, user.id, status);
+    if (!ok) return;
     setMyAttendance(status);
     setPrefPositions([]);
     setPrefQuarters(['1Q', '2Q', '3Q', '4Q']);
     setPlayers(prev => prev.map(p => p.id === user.id ? { ...p, status } : p));
+    setAllPlayers(prev => prev.filter(p => p.id !== user.id));
+    toast.success('불참 처리되었습니다.');
   };
 
   const handleSubmitPreference = async () => {
     if (!user || !id) return;
-    await supabase.from('match_attendance').upsert({
-      match_id: id,
-      user_id: user.id,
-      status: 'attending',
+    const ok = await saveAttendance(id, user.id, 'attending', {
       preferred_positions: prefPositions,
       desired_quarters: prefQuarters,
-    }, { onConflict: 'match_id,user_id' });
+    });
+    if (!ok) return;
     setMyAttendance('attending');
-    setPlayers(prev => prev.map(p => p.id === user.id
-      ? { ...p, status: 'attending' as const, preferredPositions: prefPositions, desiredQuarters: prefQuarters }
-      : p));
+    const updatedPlayer = players.find(p => p.id === user.id);
+    if (updatedPlayer) {
+      const newP = { ...updatedPlayer, status: 'attending' as const, preferredPositions: prefPositions, desiredQuarters: prefQuarters };
+      setPlayers(prev => prev.map(p => p.id === user.id ? newP : p));
+      setAllPlayers(prev => {
+        const exists = prev.find(p => p.id === user.id);
+        if (exists) return prev.map(p => p.id === user.id ? newP : p);
+        return [...prev, newP];
+      });
+    }
     setShowPrefModal(false);
     toast.success('참여 등록 완료!');
   };
@@ -299,17 +417,17 @@ export default function LineupDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5">
-          <div className="w-6 h-6 bg-white/5 rounded animate-pulse" />
-          <div className="flex items-center gap-2"><div className="w-8 h-8 bg-white/5 rounded-full animate-pulse" /><div className="space-y-1"><div className="w-24 h-4 bg-white/5 rounded animate-pulse" /><div className="w-32 h-3 bg-white/5 rounded animate-pulse" /></div></div>
+      <div className="min-h-screen bg-[#FAFAF8]">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200">
+          <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
+          <div className="flex items-center gap-2"><div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" /><div className="space-y-1"><div className="w-24 h-4 bg-gray-200 rounded animate-pulse" /><div className="w-32 h-3 bg-gray-200 rounded animate-pulse" /></div></div>
         </div>
         <div className="px-4 pt-4 space-y-2">
           {[1,2,3,4].map(i => (
-            <div key={i} className="flex items-center gap-3 bg-[#111] rounded-xl border border-white/5 p-3">
-              <div className="w-5 h-4 bg-white/5 rounded animate-pulse" />
-              <div className="w-20 h-4 bg-white/5 rounded animate-pulse" />
-              <div className="w-8 h-3 bg-white/5 rounded animate-pulse" />
+            <div key={i} className="flex items-center gap-3 bg-white shadow-sm rounded-xl border border-gray-200 p-3">
+              <div className="w-5 h-4 bg-gray-200 rounded animate-pulse" />
+              <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
+              <div className="w-8 h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
         </div>
@@ -318,18 +436,11 @@ export default function LineupDetail() {
   }
   if (!match) return null;
 
+  const isPast = new Date(`${match.date}T${match.time || '00:00'}`) < new Date();
   const opponent = match.home_team_id === team?.id ? match.away_team : match.home_team;
-  const positions_arr = formations[formation] || formations['4-3-3'];
   const currentLineup = quarterLineups[activeQuarter];
   const fieldIds = new Set(currentLineup.filter((pid): pid is string => pid !== null));
   const benchPlayers = allPlayers.filter(p => !fieldIds.has(p.id));
-  const getPlayer = (pid: string) => allPlayers.find(p => p.id === pid);
-  // 모든 플레이어 타입(팀원, 용병, 신입)에 관계없이 동일한 색상을 반환합니다.
-  const jerseyColor = (p: PlayerInfo) => jerseyPrimary;
-
-  const attendingPlayers = players.filter(p => p.status === 'attending');
-  const notAttendingPlayers = players.filter(p => p.status === 'not-attending');
-  const pendingPlayers = players.filter(p => p.status === null);
 
   const handleFieldTap = (i: number) => {
     if (!isTeamCreator) return;
@@ -382,6 +493,63 @@ export default function LineupDetail() {
     }
   };
 
+  const handleSaveResult = async () => {
+    if (!id || !user || !match || !team) return;
+    setResultSaving(true);
+
+    const hScore = parseInt(homeScore) || 0;
+    const aScore = parseInt(awayScore) || 0;
+    const wasAlreadyCompleted = match.status === 'completed';
+
+    // 1. 스코어 저장 + 상태 completed로 변경
+    await supabase.from('matches').update({
+      home_score: hScore,
+      away_score: aScore,
+      status: 'completed',
+    }).eq('id', id);
+
+    // 2. 기존 이벤트 삭제 후 새로 삽입
+    await supabase.from('match_events').delete().eq('match_id', id);
+
+    const validEntries = goalEntries.filter(e => e.scorer_id);
+    if (validEntries.length > 0) {
+      const events = validEntries.map(e => ({
+        match_id: id,
+        team_id: team.id,
+        scorer_id: e.scorer_id || null,
+        assister_id: e.assister_id || null,
+        minute: e.minute ? parseInt(e.minute) : null,
+      }));
+      await supabase.from('match_events').insert(events);
+    }
+
+    // 3. team_members 스탯 업데이트 (최초 저장 시에만 — 중복 카운트 방지)
+    if (!wasAlreadyCompleted) {
+      const attendingIds = allPlayers.filter(p => p.type === 'regular').map(p => p.id);
+      for (const uid of attendingIds) {
+        const { data: tm } = await supabase
+          .from('team_members')
+          .select('id, appearances, goals, assists')
+          .eq('team_id', team.id)
+          .eq('user_id', uid)
+          .maybeSingle();
+        if (tm) {
+          const goalCount = validEntries.filter(e => e.scorer_id === uid).length;
+          const assistCount = validEntries.filter(e => e.assister_id === uid).length;
+          await supabase.from('team_members').update({
+            appearances: (tm.appearances || 0) + 1,
+            goals: (tm.goals || 0) + goalCount,
+            assists: (tm.assists || 0) + assistCount,
+          }).eq('id', tm.id);
+        }
+      }
+    }
+
+    setMatch(prev => prev ? { ...prev, status: 'completed', home_score: hScore, away_score: aScore } : prev);
+    setResultSaving(false);
+    toast.success('경기 결과가 저장되었습니다!');
+  };
+
   const handleAIRecommend = async () => {
     if (allPlayers.length === 0) { toast.error('참여 선수가 없습니다.'); return; }
     setAiLoading(true);
@@ -419,44 +587,33 @@ export default function LineupDetail() {
         return 'FW';
       };
 
-      // AI 결과에서 선수 이름과 희망 포지션 추출
-      result.lineup.forEach((rawName) => {
+      // AI 결과 → 슬롯 순서대로 매칭 (lineup[0]=GK, [1..]=DF, MF, FW)
+      result.lineup.forEach((rawName, slotIdx) => {
+        if (slotIdx >= posArr.length) return; // 슬롯 초과 무시
         const name = rawName.replace(/\s*\(.*\)\s*$/, '').trim();
+        // 정확한 이름 매칭 → 부분 매칭 → 공백 제거 매칭
         const player = allPlayers.find(p => p.name === name && !used.has(p.id))
-          || allPlayers.find(p => rawName.includes(p.name) && !used.has(p.id));
+          || allPlayers.find(p => rawName.includes(p.name) && !used.has(p.id))
+          || allPlayers.find(p => p.name.replace(/\s/g, '') === name.replace(/\s/g, '') && !used.has(p.id));
         if (!player) return;
-
-        // 선수의 희망 포지션 또는 기본 포지션에 맞는 슬롯 찾기
-        const targetPos = player.preferredPositions?.[0] || player.position;
-        let placed = false;
-        for (let i = 0; i < posArr.length; i++) {
-          if (newLineup[i] !== null) continue;
-          if (getSlotPosition(i, posArr.length) === targetPos) {
-            newLineup[i] = player.id;
-            used.add(player.id);
-            placed = true;
-            break;
-          }
-        }
-        // 맞는 슬롯이 없으면 빈 자리에 배치
-        if (!placed) {
-          for (let i = 0; i < posArr.length; i++) {
-            if (newLineup[i] === null) {
-              newLineup[i] = player.id;
-              used.add(player.id);
-              break;
-            }
-          }
-        }
+        newLineup[slotIdx] = player.id;
+        used.add(player.id);
       });
 
-      // 매칭 안 된 선수는 남은 슬롯에 채우기
+      // 매칭 안 된 선수는 포지션에 맞는 슬롯에 채우기
       const remaining = allPlayers.filter(p => !used.has(p.id));
-      let ri = 0;
-      for (let i = 0; i < newLineup.length; i++) {
-        if (newLineup[i] === null && ri < remaining.length) {
-          newLineup[i] = remaining[ri].id;
-          ri++;
+      for (const p of remaining) {
+        // 1차: 포지션 맞는 빈 슬롯
+        let placed = false;
+        for (let i = 0; i < newLineup.length; i++) {
+          if (newLineup[i] === null && getSlotPosition(i, posArr.length) === p.position) {
+            newLineup[i] = p.id; placed = true; break;
+          }
+        }
+        // 2차: 아무 빈 슬롯
+        if (!placed) {
+          const emptyIdx = newLineup.findIndex(s => s === null);
+          if (emptyIdx !== -1) newLineup[emptyIdx] = p.id;
         }
       }
 
@@ -471,9 +628,17 @@ export default function LineupDetail() {
 
   const handleAddPlayer = () => {
     if (!newName.trim() || !newNumber.trim()) return;
-    const p: PlayerInfo = { id: `temp-${Date.now()}`, name: newName.trim(), number: parseInt(newNumber), position: newPos, status: 'attending', type: newType };
-    setAllPlayers(prev => [...prev, p]);
-    setNewName(''); setNewNumber(''); setNewPos('MF'); setNewType('mercenary'); setShowAddModal(false);
+    const p: PlayerInfo = { id: `temp-${Date.now()}`, name: newName.trim(), number: parseInt(newNumber), position: newPos, status: 'attending', type: 'regular' };
+    setAllPlayers(prev => {
+      const updated = [...prev, p];
+      // 임시 선수 localStorage 저장
+      if (id) {
+        const tempPlayers = updated.filter(pl => pl.id.startsWith('temp-'));
+        localStorage.setItem(`temp_players_${id}`, JSON.stringify(tempPlayers));
+      }
+      return updated;
+    });
+    setNewName(''); setNewNumber(''); setNewPos('MF'); setShowAddModal(false);
   };
 
   const formatDate = (dateStr: string) => {
@@ -481,30 +646,49 @@ export default function LineupDetail() {
     return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
   };
 
+  const handleRemovePlayer = (playerId: string) => {
+    setAllPlayers(prev => {
+      const updated = prev.filter(p => p.id !== playerId);
+      if (id) {
+        const tempPlayers = updated.filter(p => p.id.startsWith('temp-'));
+        localStorage.setItem(`temp_players_${id}`, JSON.stringify(tempPlayers));
+      }
+      return updated;
+    });
+    setQuarterLineups(prev => {
+      const u = { ...prev };
+      for (const q of quarters) {
+        u[q] = prev[q].map(pid => pid === playerId ? null : pid);
+      }
+      return u;
+    });
+    toast.success('선수가 제거되었습니다.');
+  };
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-8">
+    <div className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-white/5 sticky top-0 z-10 bg-[#0a0a0a]">
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 sticky top-0 z-10 bg-[#FAFAF8]">
         <button onClick={() => navigate('/lineup')} className="p-1 text-gray-400"><ArrowLeft size={22} /></button>
         <div className="flex items-center gap-2">
           <span className="text-xl">{opponent?.logo || '⚽'}</span>
           <div>
-            <p className="font-bold text-white text-sm">vs {opponent?.name || '상대 미정'}</p>
+            <p className="font-bold text-gray-900 text-sm">vs {opponent?.name || '상대 미정'}</p>
             <p className="text-[11px] text-gray-500">{formatDate(match.date)} {match.time?.slice(0, 5)}</p>
           </div>
         </div>
       </div>
 
       {/* Info */}
-      <div className="px-4 py-2 flex items-center gap-4 text-xs text-gray-500 border-b border-white/5">
+      <div className="px-4 py-2 flex items-center gap-4 text-xs text-gray-500 border-b border-gray-200">
         <span className="flex items-center gap-1"><MapPin size={11} />{match.stadium}</span>
         <span className="flex items-center gap-1"><Users size={11} />{match.format}</span>
       </div>
 
-      {/* My Attendance - 상태 표시 + 변경 토글 */}
-      {user && (
+      {/* My Attendance - 상태 표시 + 변경 토글 (과거 시합에는 숨김) */}
+      {user && !isPast && match.status !== 'completed' && (
         <div className="px-4 pt-3">
-          <div className="flex items-center justify-between bg-[#111] rounded-xl border border-white/5 px-4 py-2.5">
+          <div className="flex items-center justify-between bg-white shadow-sm rounded-xl border border-gray-200 px-4 py-2.5">
             <div className="flex items-center gap-2">
               {myAttendance === 'attending' ? (
                 <>
@@ -525,7 +709,7 @@ export default function LineupDetail() {
             </div>
             <button
               onClick={() => handleAttendance(myAttendance === 'attending' ? 'not-attending' : 'attending')}
-              className="text-xs text-gray-500 px-3 py-1.5 rounded-lg bg-white/5 active:scale-95 transition-all"
+              className="text-xs text-gray-500 px-3 py-1.5 rounded-lg bg-gray-100 active:scale-95 transition-all"
             >
               {myAttendance === 'attending' ? '불참으로 변경' : '참여로 변경'}
             </button>
@@ -534,11 +718,14 @@ export default function LineupDetail() {
       )}
 
       {/* Tabs */}
-      <div className="px-4 pt-3 flex gap-1 bg-[#111] mx-4 mt-3 p-1 rounded-xl">
+      <div className="px-4 pt-3 flex gap-1 bg-white shadow-sm mx-4 mt-3 p-1 rounded-xl">
         <button onClick={() => setActiveTab('members')}
           className={`flex-1 py-2 rounded-lg text-xs font-semibold ${activeTab === 'members' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>팀원</button>
         <button onClick={() => setActiveTab('formation')}
           className={`flex-1 py-2 rounded-lg text-xs font-semibold ${activeTab === 'formation' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>포메이션</button>
+        <button onClick={() => setActiveTab('result')}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${activeTab === 'result' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
+          <ClipboardCheck size={12} />결과</button>
         <button onClick={() => setActiveTab('chat')}
           className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${activeTab === 'chat' ? 'bg-[#7B2D3B] text-white' : 'text-gray-500'}`}>
           <MessageCircle size={12} />채팅</button>
@@ -546,237 +733,71 @@ export default function LineupDetail() {
 
       {/* Members Tab */}
       {activeTab === 'members' && (
-        <div className="px-4 py-4 space-y-4">
-          {[
-            { title: '참여', players: attendingPlayers, dot: 'bg-emerald-500', label: () => <span className="text-emerald-400 text-[11px]">참여</span> },
-            { title: '불참', players: notAttendingPlayers, dot: 'bg-[#7B2D3B]', label: () => <span className="text-red-400 text-[11px]">불참</span> },
-            { title: '미응답', players: pendingPlayers, dot: 'bg-gray-600', label: () => <span className="text-gray-600 text-[11px]">미응답</span> },
-          ].filter(g => g.players.length > 0).map(group => (
-            <div key={group.title}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${group.dot}`} />
-                <span className="text-xs font-semibold text-gray-400">{group.title} ({group.players.length})</span>
-              </div>
-              <div className="space-y-1">
-                {group.players.map(player => (
-                  <div key={player.id} className="bg-[#111] p-3 rounded-xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold text-gray-500 w-5 text-center">{player.number}</span>
-                        <span className="text-sm text-white">{player.name}</span>
-                        <span className={`text-[10px] font-bold ${posColors[player.position]}`}>{player.position}</span>
-                      </div>
-                      {group.label()}
-                    </div>
-                    {player.status === 'attending' && player.preferredPositions && player.preferredPositions.length > 0 && (
-                      <div className="flex items-center gap-1.5 mt-1.5 ml-7">
-                        {player.preferredPositions.map((pos, i) => {
-                          const labels: Record<string, string> = { FW: 'FW', MF: 'MF', DF: 'DF', GK: 'GK' };
-                          return (
-                            <span key={pos} className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-medium">
-                              {i + 1}순위 {labels[pos] || pos}
-                            </span>
-                          );
-                        })}
-                        {player.desiredQuarters && player.desiredQuarters.length < 4 && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
-                            {player.desiredQuarters.join('·')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          {players.length === 0 && (
-            <p className="text-center text-gray-600 py-8 text-sm">팀원 정보가 없습니다</p>
-          )}
-        </div>
+        <LineupMembers
+          players={players}
+          allPlayers={allPlayers}
+          isTeamCreator={isTeamCreator}
+          onRemovePlayer={handleRemovePlayer}
+          onShowAddModal={() => setShowAddModal(true)}
+        />
       )}
 
       {/* Formation Tab */}
       {activeTab === 'formation' && (
-        <div className="px-4 py-4">
-          <div className="flex gap-2 mb-3">
-            {quarters.map(q => (
-              <button key={q} onClick={() => { setActiveQuarter(q); setSelectedSlot(null); }}
-                className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#7B2D3B] text-white' : 'bg-[#111] text-gray-500 border border-white/5'}`}>{q}</button>
-            ))}
-          </div>
+        <LineupFormation
+          activeQuarter={activeQuarter} setActiveQuarter={setActiveQuarter}
+          quarterLineups={quarterLineups} setQuarterLineups={setQuarterLineups}
+          formation={formation} selectedSlot={selectedSlot} setSelectedSlot={setSelectedSlot}
+          jerseyPrimary={jerseyPrimary} setJerseyPrimary={setJerseyPrimary} jerseySecondary={jerseySecondary}
+          allPlayers={allPlayers} isTeamCreator={isTeamCreator}
+          aiLoading={aiLoading} aiReason={aiReason} fieldRef={fieldRef}
+          handleFieldTap={handleFieldTap} handleBenchTap={handleBenchTap}
+          handleFormationChange={handleFormationChange} handleSaveLineup={handleSaveLineup}
+          handleAIRecommend={handleAIRecommend} onShowAddModal={() => setShowAddModal(true)}
+        />
+      )}
 
-          {isTeamCreator && activeQuarter !== '1Q' && (
-            <div className="flex gap-2 mb-3">
-              {quarters.filter(q => q !== activeQuarter).map(q => (
-                <button key={q} onClick={() => setQuarterLineups(prev => ({ ...prev, [activeQuarter]: [...prev[q]] }))}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-white/5 rounded-lg text-[11px] text-gray-500">
-                  <Copy size={10} />{q} 복사
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* 유니폼 색상 */}
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-[10px] text-gray-500 font-bold">유니폼</span>
-            <div className="flex gap-1.5">
-              {['#DC143C', '#1E40AF', '#000000', '#FFFFFF', '#F59E0B', '#7B2D3B', '#059669', '#7C3AED', '#F97316'].map(c => (
-                <button key={c} onClick={() => setJerseyPrimary(c)}
-                  className={`w-6 h-6 rounded-full border-2 ${jerseyPrimary === c ? 'border-white scale-110' : 'border-white/20'}`}
-                  style={{ backgroundColor: c }} />
-              ))}
-            </div>
-          </div>
-
-          {isTeamCreator ? (
-            <div className="flex gap-2 mb-3">
-              {Object.keys(formations).map(f => (
-                <button key={f} onClick={() => handleFormationChange(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${formation === f ? 'bg-[#7B2D3B] text-white' : 'bg-white/5 text-gray-500'}`}>{f}</button>
-              ))}
-            </div>
-          ) : (
-            <div className="mb-3 bg-[#111] rounded-xl border border-white/5 px-3 py-2">
-              <span className="text-xs text-gray-500">포메이션: </span>
-              <span className="text-xs font-bold text-white">{formation}</span>
-            </div>
-          )}
-
-          {selectedSlot && (
-            <div className="mb-3 bg-yellow-500/10 rounded-xl px-3 py-2 flex items-center gap-2">
-              <ArrowLeftRight size={14} className="text-yellow-500" />
-              <span className="text-xs text-yellow-400">교체할 선수를 선택하세요</span>
-              <button onClick={() => setSelectedSlot(null)} className="ml-auto text-yellow-500"><X size={14} /></button>
-            </div>
-          )}
-
-          {/* Field */}
-          <div className="relative bg-gradient-to-b from-green-700 to-green-600 rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
-            <div className="absolute inset-0">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 border-2 border-white/20 rounded-full" />
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-20 border-2 border-white/20 border-b-0" />
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-20 border-2 border-white/20 border-t-0" />
-            </div>
-            <div className="absolute top-2 left-2 bg-black/30 text-white/70 px-2 py-0.5 rounded text-[10px] font-medium">{activeQuarter} · {formation}</div>
-
-            {positions_arr.map((pos, idx) => {
-              const pid = currentLineup[idx]; const player = pid != null ? getPlayer(pid) : null;
-              const isSel = selectedSlot?.type === 'field' && selectedSlot.index === idx;
-              return (
-                <div key={`${activeQuarter}-${idx}`} onClick={() => handleFieldTap(idx)}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform ${isSel ? 'scale-110 z-10' : ''}`}
-                  style={{ left: `${pos.x}%`, top: `${pos.y}%` }}>
-                  {player ? (
-                    <div className="flex flex-col items-center">
-                      <div className={`${isSel ? 'ring-2 ring-yellow-400 rounded-xl' : ''}`}>
-                        <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor={jerseySecondary} size="md" />
-                      </div>
-                      <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-gray-900'}`}>{player.name}</div>
-                      {player.type !== 'regular' && (
-                        <span className={`text-[8px] px-1 rounded-full mt-0.5 font-bold ${player.type === 'mercenary' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>
-                          {player.type === 'mercenary' ? '용병' : '신입'}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className={`w-10 h-12 border-2 border-dashed rounded flex items-center justify-center ${isSel ? 'border-yellow-400 bg-yellow-400/20' : 'border-white/30 bg-white/10'}`}>
-                      <Plus className="text-white/50" size={16} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Bench */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-white">교체 <span className="text-gray-500 font-normal">{benchPlayers.length}명</span></span>
-              {isTeamCreator && (
-                <button onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-1 bg-[#7B2D3B] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold">
-                  <UserPlus size={12} /> 추가
-                </button>
-              )}
-            </div>
-            {benchPlayers.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {benchPlayers.map((p, i) => {
-                  const isSel = selectedSlot?.type === 'bench' && selectedSlot.index === i;
-                  return (
-                    <div key={p.id} onClick={() => handleBenchTap(i)}
-                      className={`flex-shrink-0 w-[68px] flex flex-col items-center p-2 rounded-xl border cursor-pointer ${isSel ? 'border-yellow-400 bg-yellow-500/10' : 'border-white/5 bg-[#111]'}`}>
-                      <JerseyIcon number={p.number} primaryColor={jerseyColor(p)} secondaryColor={jerseySecondary} size="sm" />
-                      <span className="text-[10px] font-medium mt-1 text-gray-300 truncate w-full text-center">{p.name}</span>
-                      <span className={`text-[9px] font-bold ${posColors[p.position]}`}>{p.position}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-600 text-center py-4">모든 선수 배치 완료</p>
-            )}
-          </div>
-
-          <div className="mt-3 bg-[#111] rounded-xl border border-white/5 p-3 flex items-center justify-between">
-            <span className="text-xs text-gray-500">{activeQuarter} 배치</span>
-            <span className="text-xs font-bold text-white">{currentLineup.filter(p => p !== null).length}/{positions_arr.length}명</span>
-          </div>
-
-          {isTeamCreator && (
-            <div className="mt-3 space-y-2">
-              <button onClick={handleAIRecommend} disabled={aiLoading}
-                className="w-full bg-gradient-to-r from-violet-600 to-blue-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
-                <Sparkles size={16} className={aiLoading ? 'animate-spin' : ''} />
-                {aiLoading ? 'AI 분석 중...' : 'AI 포메이션 추천'}
-              </button>
-              {aiReason && (
-                <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Sparkles size={12} className="text-violet-400" />
-                    <span className="text-[11px] font-bold text-violet-400">AI 추천 이유</span>
-                  </div>
-                  <p className="text-xs text-gray-300">{aiReason}</p>
-                </div>
-              )}
-              <button onClick={handleSaveLineup}
-                className="w-full bg-[#7B2D3B] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                <Save size={16} /> 라인업 저장
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Result Tab */}
+      {activeTab === 'result' && (
+        <LineupResult
+          homeLabel={match.home_team_id === team?.id ? (team?.name || '') : (match.home_team?.name || '')}
+          awayLabel={match.home_team_id === team?.id ? (match.away_team?.name || '상대') : (team?.name || '')}
+          homeScore={homeScore} awayScore={awayScore}
+          setHomeScore={setHomeScore} setAwayScore={setAwayScore}
+          goalEntries={goalEntries} setGoalEntries={setGoalEntries}
+          allPlayers={allPlayers} isTeamCreator={isTeamCreator}
+          resultSaving={resultSaving} handleSaveResult={handleSaveResult}
+          matchCompleted={match.status === 'completed' && match.home_score !== null}
+        />
       )}
 
       {/* Chat Tab */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0" style={{ height: 'calc(100vh - 280px)' }}>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
           <div className="flex-1 overflow-auto px-4 pt-3 space-y-3 pb-2">
             {chatMsgs.length === 0 && (
-              <p className="text-center text-gray-600 py-8 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
+              <p className="text-center text-gray-400 py-8 text-sm">메시지가 없습니다. 첫 메시지를 보내보세요!</p>
             )}
             {chatMsgs.map(msg => (
               <div key={msg.id} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className="max-w-[75%]">
                   {!msg.isMe && <p className="text-[10px] text-gray-500 mb-0.5 ml-1">{msg.sender}</p>}
-                  <div className={`px-3 py-2 rounded-2xl ${msg.isMe ? 'bg-[#7B2D3B] text-white rounded-br-md' : 'bg-[#1a1a1a] text-gray-200 rounded-bl-md'}`}>
+                  <div className={`px-3 py-2 rounded-2xl ${msg.isMe ? 'bg-[#7B2D3B] text-white rounded-br-md' : 'bg-[#F5F3F0] text-gray-700 rounded-bl-md'}`}>
                     <p className="text-sm">{msg.text}</p>
                   </div>
-                  <p className={`text-[9px] text-gray-600 mt-0.5 ${msg.isMe ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
+                  <p className={`text-[9px] text-gray-400 mt-0.5 ${msg.isMe ? 'text-right mr-1' : 'ml-1'}`}>{msg.time}</p>
                 </div>
               </div>
             ))}
             <div ref={chatEndRef} />
           </div>
 
-          <div className="p-3 border-t border-white/5">
+          <div className="p-3 border-t border-gray-200 bg-[#FAFAF8]">
             <div className="flex gap-2">
               <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChat()}
                 placeholder="메시지 입력..."
-                className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none" />
+                className="flex-1 bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none" />
               <button onClick={sendChat}
                 className="bg-[#7B2D3B] text-white p-2.5 rounded-xl active:scale-95 transition-transform">
                 <Send size={18} />
@@ -788,10 +809,10 @@ export default function LineupDetail() {
 
       {/* Preference Modal */}
       {showPrefModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setShowPrefModal(false)}>
-          <div className="bg-[#111] rounded-t-2xl p-5 w-full max-w-[430px] border-t border-white/10" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setShowPrefModal(false)}>
+          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-gray-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-white">참여 선호도 설정</h3>
+              <h3 className="text-base font-bold text-gray-900">참여 선호도 설정</h3>
               <button onClick={() => setShowPrefModal(false)} className="text-gray-500"><X size={18} /></button>
             </div>
 
@@ -805,7 +826,7 @@ export default function LineupDetail() {
                   return (
                     <button key={pos} onClick={() => togglePrefPosition(pos)}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-bold relative ${
-                        selected ? 'bg-violet-500 text-white' : 'bg-white/5 text-gray-500'
+                        selected ? 'bg-violet-500 text-white' : 'bg-gray-100 text-gray-500'
                       }`}>
                       {labels[pos]}
                       {selected && (
@@ -837,7 +858,7 @@ export default function LineupDetail() {
                       selected ? prev.filter(p => p !== q) : [...prev, q]
                     )}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${
-                        selected ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-500'
+                        selected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
                       }`}>
                       {q}
                     </button>
@@ -856,26 +877,20 @@ export default function LineupDetail() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setShowAddModal(false)}>
-          <div className="bg-[#111] rounded-t-2xl p-5 w-full max-w-[430px] border-t border-white/10" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-t-2xl p-5 w-full max-w-[430px] border-t border-gray-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-white">선수 추가</h3>
+              <h3 className="text-base font-bold text-gray-900">선수 추가</h3>
               <button onClick={() => setShowAddModal(false)} className="text-gray-500"><X size={18} /></button>
             </div>
-            <div className="flex gap-2 mb-3">
-              <button onClick={() => setNewType('mercenary')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold ${newType === 'mercenary' ? 'bg-amber-500 text-white' : 'bg-white/5 text-gray-500'}`}>용병</button>
-              <button onClick={() => setNewType('rookie')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold ${newType === 'rookie' ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-500'}`}>신입</button>
-            </div>
             <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="이름"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 mb-3 focus:outline-none" />
+              className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 mb-3 focus:outline-none" />
             <input value={newNumber} onChange={e => setNewNumber(e.target.value)} placeholder="등번호" type="number"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 mb-3 focus:outline-none" />
+              className="w-full bg-[#F5F3F0] border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 mb-3 focus:outline-none" />
             <div className="flex gap-2 mb-4">
               {['GK', 'DF', 'MF', 'FW'].map(p => (
                 <button key={p} onClick={() => setNewPos(p)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${newPos === p ? 'bg-[#7B2D3B] text-white' : 'bg-white/5 text-gray-500'}`}>{p}</button>
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${newPos === p ? 'bg-[#7B2D3B] text-white' : 'bg-gray-100 text-gray-500'}`}>{p}</button>
               ))}
             </div>
             <button onClick={handleAddPlayer} disabled={!newName.trim() || !newNumber.trim()}
