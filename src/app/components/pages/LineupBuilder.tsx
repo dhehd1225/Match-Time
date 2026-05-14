@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy, Save, Camera } from 'lucide-react';
+import { MapPin, ChevronRight, Plus, UserPlus, ArrowLeftRight, X, Copy, Save, Camera, Zap } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 import JerseyIcon from '../JerseyIcon';
@@ -32,9 +32,17 @@ const formations: Record<string, { x: number; y: number }[]> = {
     { x: 50, y: 90 }, { x: 30, y: 70 }, { x: 50, y: 70 }, { x: 70, y: 70 },
     { x: 20, y: 45 }, { x: 40, y: 45 }, { x: 60, y: 45 }, { x: 80, y: 45 }, { x: 30, y: 20 }, { x: 50, y: 20 }, { x: 70, y: 20 },
   ],
-  '3-3-1': [
-    { x: 50, y: 90 }, { x: 25, y: 70 }, { x: 50, y: 70 }, { x: 75, y: 70 },
-    { x: 30, y: 45 }, { x: 50, y: 45 }, { x: 70, y: 45 }, { x: 50, y: 20 },
+  '4-2-3-1': [
+    { x: 50, y: 90 }, { x: 20, y: 72 }, { x: 40, y: 72 }, { x: 60, y: 72 }, { x: 80, y: 72 },
+    { x: 35, y: 55 }, { x: 65, y: 55 }, { x: 20, y: 35 }, { x: 50, y: 35 }, { x: 80, y: 35 }, { x: 50, y: 15 },
+  ],
+  '3-5-2': [
+    { x: 50, y: 90 }, { x: 30, y: 72 }, { x: 50, y: 72 }, { x: 70, y: 72 },
+    { x: 15, y: 45 }, { x: 35, y: 45 }, { x: 50, y: 45 }, { x: 65, y: 45 }, { x: 85, y: 45 }, { x: 40, y: 20 }, { x: 60, y: 20 },
+  ],
+  '5-3-2': [
+    { x: 50, y: 90 }, { x: 15, y: 70 }, { x: 30, y: 72 }, { x: 50, y: 72 }, { x: 70, y: 72 }, { x: 85, y: 70 },
+    { x: 30, y: 45 }, { x: 50, y: 45 }, { x: 70, y: 45 }, { x: 40, y: 20 }, { x: 60, y: 20 },
   ],
 };
 
@@ -66,6 +74,42 @@ export default function LineupBuilder() {
   const [newPos, setNewPos] = useState('MF');
   const [newType, setNewType] = useState<'mercenary' | 'rookie'>('mercenary');
   const storageKey = user ? `scrimmage_data_${user.id}` : 'scrimmage_data';
+
+  const handleAutoLineup = () => {
+    if (allPlayers.length === 0) { toast.error('선수가 없습니다.'); return; }
+    const posArr = formations[formation] || formations['4-3-3'];
+    const pool = [...allPlayers];
+    const getSlotPos = (idx: number): string => {
+      if (idx === 0) return 'GK';
+      const parts = formation.split('-').map(Number);
+      let count = 1;
+      if (idx < count + parts[0]) return 'DF';
+      count += parts[0];
+      const mfParts = parts.length <= 3 ? parts[1] : parts.slice(1, -1).reduce((a: number, b: number) => a + b, 0);
+      if (idx < count + mfParts) return 'MF';
+      return 'FW';
+    };
+    const newLineup: (string | null)[] = posArr.map(() => null);
+    const used = new Set<string>();
+    // 1차: 포지션 매칭
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      for (let i = 0; i < posArr.length; i++) {
+        if (newLineup[i] === null && getSlotPos(i) === p.position) {
+          newLineup[i] = p.id; used.add(p.id); break;
+        }
+      }
+    }
+    // 2차: 남은 선수 빈 슬롯
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      const emptyIdx = newLineup.findIndex(s => s === null);
+      if (emptyIdx !== -1) { newLineup[emptyIdx] = p.id; used.add(p.id); }
+    }
+    setQuarterLineups(prev => ({ ...prev, [activeQuarter]: newLineup }));
+    toast.success('자동 배치 완료!');
+  };
+
   const handleSave = () => {
     localStorage.setItem(storageKey, JSON.stringify({
       formation, quarterLineups, allPlayers, jerseyPrimary,
@@ -183,6 +227,16 @@ export default function LineupBuilder() {
   // 모든 플레이어 타입(팀원, 용병, 신입)에 관계없이 동일한 색상을 반환합니다.
   const jerseyColor = (p: PlayerInfo) => jerseyPrimary;
   const canEdit = mainTab === 'scrimmage' || isTeamCreator;
+  const getSlotPos = (idx: number): string => {
+    if (idx === 0) return 'GK';
+    const parts = formation.split('-').map(Number);
+    let count = 1;
+    if (idx < count + parts[0]) return 'DF';
+    count += parts[0];
+    const mfParts = parts.length <= 3 ? parts[1] : parts.slice(1, -1).reduce((a: number, b: number) => a + b, 0);
+    if (idx < count + mfParts) return 'MF';
+    return 'FW';
+  };
 
   const handleFieldTap = (i: number) => {
     if (!canEdit) return;
@@ -390,9 +444,20 @@ export default function LineupBuilder() {
                       <div className={`${isSel ? 'ring-2 ring-yellow-400 rounded-xl' : ''}`}>
                         <JerseyIcon number={player.number} primaryColor={jerseyColor(player)} secondaryColor={jerseySecondary} size="md" />
                       </div>
-                      <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-[#111]'}`}>
-                        {player.name}
+                      <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 ${isSel ? 'bg-yellow-400 text-black' : 'bg-white text-[#111]'}`}>
+                        <span className={`text-[9px] font-black ${
+                          getSlotPos(idx) === 'GK' ? 'text-yellow-500' :
+                          getSlotPos(idx) === 'DF' ? 'text-blue-500' :
+                          getSlotPos(idx) === 'MF' ? 'text-emerald-500' : 'text-red-500'
+                        }`}>{getSlotPos(idx)}</span>{player.name}
                       </div>
+                      {isSel && (
+                        <button onClick={(e) => { e.stopPropagation();
+                          setQuarterLineups(prev => { const nl = [...prev[activeQuarter]]; nl[idx] = null; return { ...prev, [activeQuarter]: nl }; });
+                          setSelectedSlot(null);
+                        }}
+                          className="mt-1 px-2 py-0.5 bg-[#111]/90 text-white rounded text-[9px] font-bold">벤치로</button>
+                      )}
                       {player.type !== 'regular' && (
                         <span className={`text-[8px] px-1 rounded-full mt-0.5 font-bold ${player.type === 'mercenary' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>
                           {player.type === 'mercenary' ? '용병' : '신입'}
@@ -446,7 +511,12 @@ export default function LineupBuilder() {
             <span className="text-xs font-bold text-[#111]">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
           </div>
 
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 space-y-2">
+            <button onClick={handleAutoLineup}
+              className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+              <Zap size={16} /> 자동 배치
+            </button>
+            <div className="flex gap-2">
             <button onClick={handleSave}
               className="flex-1 bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
               <Save size={16} /> 라인업 저장
@@ -468,6 +538,7 @@ export default function LineupBuilder() {
               className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC]">
               <Camera size={16} />
             </button>
+            </div>
           </div>
         </div>
       )}

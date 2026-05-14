@@ -32,7 +32,9 @@ const formations: Record<string, { x: number; y: number }[]> = {
   '4-3-3': [{ x: 50, y: 90 },{ x: 20, y: 70 },{ x: 40, y: 70 },{ x: 60, y: 70 },{ x: 80, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 30, y: 20 },{ x: 50, y: 20 },{ x: 70, y: 20 }],
   '4-4-2': [{ x: 50, y: 90 },{ x: 20, y: 70 },{ x: 40, y: 70 },{ x: 60, y: 70 },{ x: 80, y: 70 },{ x: 20, y: 45 },{ x: 40, y: 45 },{ x: 60, y: 45 },{ x: 80, y: 45 },{ x: 40, y: 20 },{ x: 60, y: 20 }],
   '3-4-3': [{ x: 50, y: 90 },{ x: 30, y: 70 },{ x: 50, y: 70 },{ x: 70, y: 70 },{ x: 20, y: 45 },{ x: 40, y: 45 },{ x: 60, y: 45 },{ x: 80, y: 45 },{ x: 30, y: 20 },{ x: 50, y: 20 },{ x: 70, y: 20 }],
-  '3-3-1': [{ x: 50, y: 90 },{ x: 25, y: 70 },{ x: 50, y: 70 },{ x: 75, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 50, y: 20 }],
+  '4-2-3-1': [{ x: 50, y: 90 },{ x: 20, y: 72 },{ x: 40, y: 72 },{ x: 60, y: 72 },{ x: 80, y: 72 },{ x: 35, y: 55 },{ x: 65, y: 55 },{ x: 20, y: 35 },{ x: 50, y: 35 },{ x: 80, y: 35 },{ x: 50, y: 15 }],
+  '3-5-2': [{ x: 50, y: 90 },{ x: 30, y: 72 },{ x: 50, y: 72 },{ x: 70, y: 72 },{ x: 15, y: 45 },{ x: 35, y: 45 },{ x: 50, y: 45 },{ x: 65, y: 45 },{ x: 85, y: 45 },{ x: 40, y: 20 },{ x: 60, y: 20 }],
+  '5-3-2': [{ x: 50, y: 90 },{ x: 15, y: 70 },{ x: 30, y: 72 },{ x: 50, y: 72 },{ x: 70, y: 72 },{ x: 85, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 40, y: 20 },{ x: 60, y: 20 }],
 };
 
 export default function LineupDetail() {
@@ -212,7 +214,7 @@ export default function LineupDetail() {
           setQuarterLineups(newQuarterLineups);
         } else {
           // 저장된 라인업 없으면 기본 초기화
-          const f = matchData?.format?.includes('8') ? '3-3-1' : '4-3-3';
+          const f = '4-3-3';
           setFormation(f);
           const pos = formations[f];
           if (isTeamCreator) {
@@ -625,7 +627,8 @@ export default function LineupDetail() {
       let count = 1;
       if (idx < count + parts[0]) return 'DF';
       count += parts[0];
-      if (idx < count + parts[1]) return 'MF';
+      const mfParts = parts.length <= 3 ? parts[1] : parts.slice(1, -1).reduce((a, b) => a + b, 0);
+      if (idx < count + mfParts) return 'MF';
       return 'FW';
     };
 
@@ -805,6 +808,13 @@ export default function LineupDetail() {
           handleFieldTap={handleFieldTap} handleBenchTap={handleBenchTap}
           handleFormationChange={handleFormationChange} handleSaveLineup={handleSaveLineup}
           handleAutoLineup={handleAutoLineup} onShowAddModal={() => setShowAddModal(true)}
+          onRemoveFromField={(idx: number) => {
+            setQuarterLineups(prev => {
+              const nl = [...prev[activeQuarter]];
+              nl[idx] = null;
+              return { ...prev, [activeQuarter]: nl };
+            });
+          }}
         />
       )}
 

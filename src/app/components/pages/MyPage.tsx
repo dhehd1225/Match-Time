@@ -619,24 +619,27 @@ export function MyPage() {
                         <>
                           <button onClick={async () => {
                             if (!user || !notif.related_id) return;
-                            // 참여 상태 먼저 설정
+                            const matchId = notif.related_id;
+                            // UI 즉시 업데이트
+                            setNotifications(prev => prev.filter(n => n.id !== notif.id));
+                            // 참여 상태 설정 + 알림 삭제 (백그라운드)
                             const { data: existing } = await supabase
                               .from('match_attendance')
                               .select('id')
-                              .eq('match_id', notif.related_id)
+                              .eq('match_id', matchId)
                               .eq('user_id', user.id)
                               .maybeSingle();
                             if (existing) {
-                              await supabase.from('match_attendance')
+                              supabase.from('match_attendance')
                                 .update({ status: 'attending' })
-                                .eq('id', existing.id);
+                                .eq('id', existing.id).then(() => {});
                             } else {
-                              await supabase.from('match_attendance')
-                                .insert({ match_id: notif.related_id, user_id: user.id, status: 'attending' });
+                              supabase.from('match_attendance')
+                                .insert({ match_id: matchId, user_id: user.id, status: 'attending' }).then(() => {});
                             }
-                            setNotifications(prev => prev.filter(n => n.id !== notif.id));
-                            await supabase.from('notifications').delete().eq('id', notif.id);
-                            navigate(`/lineup/${notif.related_id}`);
+                            supabase.from('notifications').delete().eq('id', notif.id).then(() => {});
+                            // 즉시 이동
+                            navigate(`/lineup/${matchId}`);
                           }}
                             className="flex-1 flex items-center justify-center gap-1 bg-[#ECFDF4] text-[#166534] py-2 rounded-lg text-xs font-bold">
                             <Check size={13} /> 참여 등록

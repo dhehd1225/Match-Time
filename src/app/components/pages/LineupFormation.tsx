@@ -18,7 +18,9 @@ const formations: Record<string, { x: number; y: number }[]> = {
   '4-3-3': [{ x: 50, y: 90 },{ x: 20, y: 70 },{ x: 40, y: 70 },{ x: 60, y: 70 },{ x: 80, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 30, y: 20 },{ x: 50, y: 20 },{ x: 70, y: 20 }],
   '4-4-2': [{ x: 50, y: 90 },{ x: 20, y: 70 },{ x: 40, y: 70 },{ x: 60, y: 70 },{ x: 80, y: 70 },{ x: 20, y: 45 },{ x: 40, y: 45 },{ x: 60, y: 45 },{ x: 80, y: 45 },{ x: 40, y: 20 },{ x: 60, y: 20 }],
   '3-4-3': [{ x: 50, y: 90 },{ x: 30, y: 70 },{ x: 50, y: 70 },{ x: 70, y: 70 },{ x: 20, y: 45 },{ x: 40, y: 45 },{ x: 60, y: 45 },{ x: 80, y: 45 },{ x: 30, y: 20 },{ x: 50, y: 20 },{ x: 70, y: 20 }],
-  '3-3-1': [{ x: 50, y: 90 },{ x: 25, y: 70 },{ x: 50, y: 70 },{ x: 75, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 50, y: 20 }],
+  '4-2-3-1': [{ x: 50, y: 90 },{ x: 20, y: 72 },{ x: 40, y: 72 },{ x: 60, y: 72 },{ x: 80, y: 72 },{ x: 35, y: 55 },{ x: 65, y: 55 },{ x: 20, y: 35 },{ x: 50, y: 35 },{ x: 80, y: 35 },{ x: 50, y: 15 }],
+  '3-5-2': [{ x: 50, y: 90 },{ x: 30, y: 72 },{ x: 50, y: 72 },{ x: 70, y: 72 },{ x: 15, y: 45 },{ x: 35, y: 45 },{ x: 50, y: 45 },{ x: 65, y: 45 },{ x: 85, y: 45 },{ x: 40, y: 20 },{ x: 60, y: 20 }],
+  '5-3-2': [{ x: 50, y: 90 },{ x: 15, y: 70 },{ x: 30, y: 72 },{ x: 50, y: 72 },{ x: 70, y: 72 },{ x: 85, y: 70 },{ x: 30, y: 45 },{ x: 50, y: 45 },{ x: 70, y: 45 },{ x: 40, y: 20 },{ x: 60, y: 20 }],
 };
 
 const posColors: Record<string, string> = { GK: 'text-yellow-500', DF: 'text-blue-400', MF: 'text-emerald-400', FW: 'text-red-400' };
@@ -44,6 +46,7 @@ interface Props {
   handleSaveLineup: () => void;
   handleAutoLineup: () => void;
   onShowAddModal: () => void;
+  onRemoveFromField: (idx: number) => void;
 }
 
 export default function LineupFormation({
@@ -52,7 +55,7 @@ export default function LineupFormation({
   jerseyPrimary, setJerseyPrimary, jerseySecondary,
   allPlayers, isTeamCreator, autoLoading,
   fieldRef, handleFieldTap, handleBenchTap, handleFormationChange,
-  handleSaveLineup, handleAutoLineup, onShowAddModal,
+  handleSaveLineup, handleAutoLineup, onShowAddModal, onRemoveFromField,
 }: Props) {
   const positions_arr = formations[formation] || formations['4-3-3'];
   const currentLineup = quarterLineups[activeQuarter];
@@ -64,9 +67,12 @@ export default function LineupFormation({
     if (idx === 0) return 'GK';
     const parts = formation.split('-').map(Number);
     let count = 1;
+    // DF
     if (idx < count + parts[0]) return 'DF';
     count += parts[0];
-    if (idx < count + parts[1]) return 'MF';
+    // MF (중간 파트 모두 합산)
+    const mfParts = parts.length <= 3 ? parts[1] : parts.slice(1, -1).reduce((a, b) => a + b, 0);
+    if (idx < count + mfParts) return 'MF';
     return 'FW';
   };
 
@@ -165,6 +171,10 @@ export default function LineupFormation({
                       getSlotPos(idx) === 'MF' ? 'text-emerald-500' : 'text-red-500'
                     }`}>{getSlotPos(idx)}</span>{player.name}
                   </div>
+                  {isSel && (
+                    <button onClick={(e) => { e.stopPropagation(); onRemoveFromField(idx); setSelectedSlot(null); }}
+                      className="mt-1 px-2 py-0.5 bg-[#111]/90 text-white rounded text-[9px] font-bold">벤치로</button>
+                  )}
                 </div>
               ) : (
                 <div className={`w-10 h-12 border-2 border-dashed rounded flex items-center justify-center ${isSel ? 'border-yellow-400 bg-yellow-400/20' : 'border-white/40 bg-white/10'}`}>

@@ -218,15 +218,15 @@ export default function TeamManagement() {
       {/* Team Record */}
       <div className="grid grid-cols-3 gap-3 px-4 pb-3">
         <div className="bg-[#F0EEE9] p-3 rounded-lg text-center">
-          <p className="text-[10px] text-[#CCC] mb-1">승</p>
+          <p className="text-[10px] text-[#888] mb-1">승</p>
           <p className="text-xl font-black text-[#111]">{teamRecord.win}</p>
         </div>
         <div className="bg-[#F0EEE9] p-3 rounded-lg text-center">
-          <p className="text-[10px] text-[#CCC] mb-1">무</p>
+          <p className="text-[10px] text-[#888] mb-1">무</p>
           <p className="text-xl font-black text-[#888]">{teamRecord.draw}</p>
         </div>
         <div className="bg-[#F0EEE9] p-3 rounded-lg text-center">
-          <p className="text-[10px] text-[#CCC] mb-1">패</p>
+          <p className="text-[10px] text-[#888] mb-1">패</p>
           <p className="text-xl font-black text-blue-500">{teamRecord.lose}</p>
         </div>
       </div>
@@ -272,12 +272,12 @@ export default function TeamManagement() {
       {/* Top Stats */}
       <div className="grid grid-cols-2 gap-3 px-4 pb-4">
         <div className="bg-[#F0EEE9] p-3 rounded-lg text-center">
-          <p className="text-[10px] text-[#CCC] mb-1">득점왕</p>
+          <p className="text-[10px] text-[#888] mb-1">득점왕</p>
           <p className="font-bold text-sm text-[#111]">{topScorer?.profile?.name || '-'}</p>
           <p className="text-xs text-red-400">{topScorer ? `${topScorer.goals}골` : '-'}</p>
         </div>
         <div className="bg-[#F0EEE9] p-3 rounded-lg text-center">
-          <p className="text-[10px] text-[#CCC] mb-1">도움왕</p>
+          <p className="text-[10px] text-[#888] mb-1">도움왕</p>
           <p className="font-bold text-sm text-[#111]">{topAssist?.profile?.name || '-'}</p>
           <p className="text-xs text-emerald-400">{topAssist ? `${topAssist.assists}개` : '-'}</p>
         </div>
