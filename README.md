@@ -1,11 +1,22 @@
+# Match Time
 
-  # Soccer Team Management App
+풋살/축구 팀 관리 앱
 
-  This is a code bundle for Soccer Team Management App. The original project is available at https://www.figma.com/design/7BMc1RqeEEoVSLt1xUVQ13/Soccer-Team-Management-App.
+## 주요 기능
 
-  ## Running the code.
+- **매치 관리** — 매치 생성, 상대 모집, 참여 투표
+- **캘린더** — 월별 매치 일정 확인
+- **팀 관리** — 팀 생성/가입, 팀원 관리, 전적 기록
+- **라인업** — 포메이션 편집, 선발 명단
+- **매치 카드** — 인스타용 매치 카드 이미지 생성
 
-  Run `npm i` to install the dependencies.
+## 실행
 
-  Run `npm run dev` to start the development server.
-  
+```bash
+npm install
+npm run dev
+```
+
+## 기술 스택
+
+React + TypeScript + Vite + Tailwind CSS + Supabase
