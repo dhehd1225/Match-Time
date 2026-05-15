@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Download, ChevronRight, MapPin, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
 import { supabase } from '../../../lib/supabase';
 import { trackEvent } from '../../../hooks/useAnalytics';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -11,12 +10,232 @@ interface GoalEntry { scorer_name: string; assister_name: string; minute: string
 interface CardPlayer { id: string; name: string; position: string; number: number; }
 
 const posOrder = ['FW', 'MF', 'DF', 'GK'];
-const posLabel: Record<string, string> = { FW: 'FW', MF: 'MF', DF: 'DF', GK: 'GK' };
-const posColor: Record<string, string> = { FW: '#F87171', MF: '#34D399', DF: '#60A5FA', GK: '#FBBF24' };
+const posBg: Record<string, string> = { FW: 'rgba(200,16,46,0.15)', MF: 'rgba(34,197,94,0.12)', DF: 'rgba(59,130,246,0.12)', GK: 'rgba(234,179,8,0.15)' };
+const posClr: Record<string, string> = { FW: '#C8102E', MF: '#4ade80', DF: '#60a5fa', GK: '#EAB308' };
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+// ── 헬퍼 ──
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function line(ctx: CanvasRenderingContext2D, y: number, s: number, color = '#1e1e1e') {
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(s, y); ctx.stroke();
+}
+
+// ── Canvas 드로잉 (1080×1080) ──
+async function drawCard(
+  canvas: HTMLCanvasElement,
+  opts: {
+    cardType: 'pre' | 'post';
+    myTeamName: string; myTeamLogo: string;
+    oppTeamName: string; oppTeamLogo: string;
+    date: string; time: string; stadium: string; format: string;
+    homeScore: string; awayScore: string;
+    goals: GoalEntry[];
+    players: { name: string; number: number; position: string }[];
+  }
+) {
+  // 웹폰트 로드 대기
+  await document.fonts.ready;
+
+  const S = 1080;
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d')!;
+  const P = 52; // padding
+
+  // ── 배경 ──
+  ctx.fillStyle = '#0c0c0c';
+  ctx.fillRect(0, 0, S, S);
+  // 미세 대각선 패턴
+  ctx.strokeStyle = 'rgba(255,255,255,0.018)';
+  ctx.lineWidth = 1;
+  for (let i = -S; i < S * 2; i += 48) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + S * 0.6, S); ctx.stroke();
+  }
+
+  // 상단 레드 악센트 라인
+  ctx.fillStyle = '#C8102E';
+  ctx.fillRect(0, 0, S, 4);
+
+  ctx.textBaseline = 'middle';
+  let y = 0;
+
+  // ── 상단: 팀 배너 ──
+  // 배경 그라디언트 영역
+  const headerH = 140;
+  const grad = ctx.createLinearGradient(0, 0, S, 0);
+  grad.addColorStop(0, '#141414'); grad.addColorStop(1, '#1a1a1a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 4, S, headerH);
+
+  // 팀 로고 (큰 원)
+  const drawCircle = (cx: number, cy: number, emoji: string, size: number) => {
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.arc(cx, cy, size, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, size, 0, Math.PI * 2); ctx.stroke();
+    ctx.font = `${size}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+    ctx.fillText(emoji, cx, cy + 3); ctx.textAlign = 'left';
+  };
+  drawCircle(P + 40, 4 + headerH / 2, opts.myTeamLogo || '⚽', 40);
+
+  // 팀 이름 (크고 굵게)
+  ctx.font = '800 42px sans-serif'; ctx.fillStyle = '#fff';
+  ctx.fillText(opts.myTeamName.toUpperCase(), P + 100, 4 + headerH / 2 - 12);
+
+  // 날짜/장소 (팀명 아래)
+  ctx.font = '400 22px sans-serif'; ctx.fillStyle = '#777';
+  ctx.fillText(`${formatDate(opts.date)}  ·  ${opts.time?.slice(0, 5) || ''}  ·  ${opts.stadium}`, P + 100, 4 + headerH / 2 + 22);
+
+  // 포맷 뱃지 (우측)
+  ctx.font = '700 20px sans-serif';
+  const fmtText = opts.format || '11v11';
+  const fmtW = ctx.measureText(fmtText).width + 24;
+  roundRect(ctx, S - P - fmtW, 4 + headerH / 2 - 15, fmtW, 30, 6);
+  ctx.fillStyle = 'rgba(200,16,46,0.15)'; ctx.fill();
+  ctx.fillStyle = '#C8102E'; ctx.textAlign = 'center';
+  ctx.fillText(fmtText, S - P - fmtW / 2, 4 + headerH / 2);
+  ctx.textAlign = 'left';
+
+  y = 4 + headerH;
+  line(ctx, y, S, '#C8102E');
+
+  // ── 타이틀 ──
+  y += 40;
+  ctx.font = '700 20px sans-serif'; ctx.fillStyle = '#C8102E';
+  const label = opts.cardType === 'pre' ? 'MATCHDAY' : 'FULL TIME';
+  let lx = P;
+  for (const ch of label) { ctx.fillText(ch, lx, y); lx += ctx.measureText(ch).width + 5; }
+
+  y += 28;
+  if (opts.cardType === 'post') {
+    // 스코어
+    ctx.font = '800 96px sans-serif'; ctx.fillStyle = '#fff';
+    ctx.fillText(opts.homeScore, P, y + 60);
+    const sw = ctx.measureText(opts.homeScore).width;
+    ctx.fillStyle = '#C8102E';
+    ctx.fillText(':', P + sw + 20, y + 56);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(opts.awayScore, P + sw + 20 + ctx.measureText(':').width + 20, y + 60);
+    y += 110;
+    // vs 팀명
+    y += 6;
+    ctx.font = '400 24px sans-serif'; ctx.fillStyle = '#666';
+    ctx.fillText(`${opts.myTeamName}  vs  ${opts.oppTeamName || '상대'}`, P, y);
+    y += 36;
+  } else {
+    ctx.font = '800 96px sans-serif'; ctx.fillStyle = '#fff';
+    ctx.fillText('STARTING', P, y + 60);
+    const lw = ctx.measureText('STARTING').width;
+    ctx.fillStyle = '#C8102E';
+    ctx.fillText(' XI', P + lw, y + 60);
+    y += 110;
+    // vs 상대
+    y += 6;
+    ctx.font = '400 24px sans-serif'; ctx.fillStyle = '#666';
+    const vsText = opts.oppTeamName ? `vs ${opts.oppTeamName}` : '선발 명단';
+    drawCircle(P + 14, y, opts.oppTeamLogo || '⚽', 14);
+    ctx.font = '400 24px sans-serif'; ctx.fillStyle = '#666';
+    ctx.fillText(vsText, P + 36, y);
+    y += 36;
+  }
+
+  line(ctx, y, S);
+  y += 2;
+
+  // ── 골 기록 ──
+  const activeGoals = opts.cardType === 'post' ? opts.goals.filter(g => g.scorer_name) : [];
+  if (activeGoals.length > 0) {
+    y += 20;
+    for (const g of activeGoals) {
+      ctx.font = '24px sans-serif'; ctx.fillStyle = '#EAB308';
+      ctx.fillText('⚽', P, y + 16);
+      let gx = P + 38;
+      ctx.font = '700 32px sans-serif'; ctx.fillStyle = '#fff';
+      ctx.fillText(g.scorer_name, gx, y + 16); gx += ctx.measureText(g.scorer_name).width;
+      if (g.assister_name) {
+        ctx.font = '400 26px sans-serif'; ctx.fillStyle = '#555';
+        ctx.fillText(`  (${g.assister_name})`, gx, y + 16); gx += ctx.measureText(`  (${g.assister_name})`).width;
+      }
+      if (g.minute) {
+        ctx.font = '400 26px sans-serif'; ctx.fillStyle = '#444';
+        ctx.fillText(`  ${g.minute}'`, gx, y + 16);
+      }
+      y += 38;
+    }
+    y += 12;
+    line(ctx, y, S); y += 2;
+  }
+
+  // ── 선수 리스트 ──
+  const footerH = 76;
+  const avail = S - y - footerH;
+  const sorted: typeof opts.players = [];
+  for (const pos of posOrder) sorted.push(...opts.players.filter(p => p.position === pos));
+  const pc = sorted.length;
+  const rowH = pc > 0 ? Math.min(62, Math.floor(avail / pc) - 2) : 50;
+  const blockH = pc * (rowH + 2);
+  const padTop = Math.max(6, Math.floor((avail - blockH) / 2));
+  y += padTop;
+
+  if (pc === 0) {
+    ctx.font = '400 28px sans-serif'; ctx.fillStyle = '#555'; ctx.textAlign = 'center';
+    ctx.fillText('라인업 미정', S / 2, y + avail / 2); ctx.textAlign = 'left';
+  } else {
+    for (const p of sorted) {
+      line(ctx, y + rowH, S);
+      const cy = y + rowH / 2;
+
+      // 등번호
+      const numFs = Math.min(28, rowH - 8);
+      ctx.font = `600 ${numFs}px sans-serif`; ctx.fillStyle = '#555'; ctx.textAlign = 'right';
+      ctx.fillText(String(p.number), P + 52, cy + 1); ctx.textAlign = 'left';
+
+      // 이름
+      const nameFs = Math.min(32, rowH - 4);
+      ctx.font = `700 ${nameFs}px sans-serif`; ctx.fillStyle = '#eee';
+      ctx.fillText(p.name, P + 72, cy + 1);
+
+      // 포지션 뱃지
+      const bFs = Math.min(18, rowH * 0.35);
+      ctx.font = `700 ${bFs}px sans-serif`;
+      const tw = ctx.measureText(p.position).width;
+      const bw = tw + 20, bh = bFs + 10;
+      const bx = S - P - bw, by = cy - bh / 2;
+      ctx.fillStyle = posBg[p.position] || posBg.FW;
+      roundRect(ctx, bx, by, bw, bh, 5); ctx.fill();
+      ctx.fillStyle = posClr[p.position] || posClr.FW;
+      ctx.textAlign = 'center'; ctx.fillText(p.position, bx + bw / 2, cy + 1); ctx.textAlign = 'left';
+
+      y += rowH + 2;
+    }
+  }
+
+  // ── 푸터 ──
+  const fy = S - footerH;
+  ctx.fillStyle = '#0c0c0c';
+  ctx.fillRect(0, fy, S, footerH);
+  line(ctx, fy, S, '#1a1a1a');
+  const fcy = fy + footerH / 2;
+  ctx.fillStyle = '#C8102E';
+  ctx.beginPath(); ctx.arc(S / 2 - 76, fcy, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.font = '700 24px sans-serif'; ctx.fillStyle = '#444'; ctx.textAlign = 'center';
+  ctx.fillText('MATCH TIME', S / 2, fcy + 1);
+  ctx.fillStyle = '#C8102E';
+  ctx.beginPath(); ctx.arc(S / 2 + 76, fcy, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.textAlign = 'left';
 }
 
 export default function MatchCard() {
@@ -30,7 +249,7 @@ export default function MatchCard() {
   const [players, setPlayers] = useState<CardPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!team) { setLoading(false); return; }
@@ -78,7 +297,6 @@ export default function MatchCard() {
       const matchDate = new Date(selectedMatch.date + 'T' + (selectedMatch.time || '00:00'));
       setCardType(matchDate < new Date() ? 'post' : 'pre');
 
-      // 저장된 스코어 로드
       if (selectedMatch.home_score !== null) {
         const isHome = selectedMatch.home_team_id === team.id;
         setHomeScore(String(isHome ? selectedMatch.home_score : selectedMatch.away_score ?? 0));
@@ -88,7 +306,6 @@ export default function MatchCard() {
         setAwayScore('0');
       }
 
-      // 저장된 골/어시 이벤트 로드
       const { data: events } = await supabase
         .from('match_events')
         .select('*, scorer:profiles!match_events_scorer_id_fkey(id, name), assister:profiles!match_events_assister_id_fkey(id, name)')
@@ -108,20 +325,42 @@ export default function MatchCard() {
     fetchPlayers();
   }, [selectedMatch, team]);
 
+  const getCardOpts = useCallback(() => {
+    if (!selectedMatch || !team) return null;
+    const isHome = selectedMatch.home_team_id === team.id;
+    const myTeam = isHome ? selectedMatch.home_team : selectedMatch.away_team;
+    const oppTeam = isHome ? selectedMatch.away_team : selectedMatch.home_team;
+    return {
+      cardType,
+      myTeamName: myTeam?.name || '팀',
+      myTeamLogo: myTeam?.logo?.startsWith('http') ? '⚽' : (myTeam?.logo || '⚽'),
+      oppTeamName: oppTeam?.name || '상대',
+      oppTeamLogo: oppTeam?.logo?.startsWith('http') ? '⚽' : (oppTeam?.logo || '?'),
+      date: selectedMatch.date,
+      time: selectedMatch.time || '',
+      stadium: selectedMatch.stadium || '',
+      format: selectedMatch.format || '',
+      homeScore, awayScore, goals,
+      players: players.map(p => ({ name: p.name, number: p.number, position: p.position })),
+    };
+  }, [selectedMatch, team, cardType, homeScore, awayScore, goals, players]);
+
+  // 프리뷰 캔버스 업데이트
+  useEffect(() => {
+    const opts = getCardOpts();
+    if (!opts || !canvasRef.current) return;
+    drawCard(canvasRef.current, opts).catch(() => {});
+  }, [getCardOpts]);
+
   const handleDownload = async () => {
-    if (!cardRef.current) return;
+    const opts = getCardOpts();
+    if (!opts) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 3,
-        backgroundColor: '#0f0f0f',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-      });
-      const dataUrl = canvas.toDataURL('image/png');
+      const offscreen = document.createElement('canvas');
+      await drawCard(offscreen, opts);
       const link = document.createElement('a');
-      link.href = dataUrl;
+      link.href = offscreen.toDataURL('image/png');
       link.download = `match-card-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
@@ -133,10 +372,6 @@ export default function MatchCard() {
     }
     setDownloading(false);
   };
-
-  const groupedPlayers = posOrder
-    .map(pos => ({ position: pos, players: players.filter(p => p.position === pos) }))
-    .filter(g => g.players.length > 0);
 
   if (loading) {
     return (
@@ -154,24 +389,7 @@ export default function MatchCard() {
     );
   }
 
-  // 카드 생성 뷰
   if (selectedMatch) {
-    const isHome = selectedMatch.home_team_id === team?.id;
-    const myTeam = isHome ? selectedMatch.home_team : selectedMatch.away_team;
-    const opponentTeam = isHome ? selectedMatch.away_team : selectedMatch.home_team;
-
-    // 360×360 카드 → scale 3 = 1080×1080 출력
-    const activeGoals = cardType === 'post' ? goals.filter(g => g.scorer_name) : [];
-    const totalPlayers = groupedPlayers.reduce((sum, g) => sum + g.players.length, 0);
-    const topH = 40; // 상단바
-    const titleH = 56; // 타이틀
-    const goalH = activeGoals.length > 0 ? 10 + activeGoals.length * 13 : 0;
-    const footH = 24; // 푸터
-    const availH = 360 - topH - titleH - goalH - footH;
-    const rowH = totalPlayers > 0 ? Math.min(24, Math.floor(availH / totalPlayers) - 1) : 22;
-    const playerBlockH = totalPlayers * (rowH + 1);
-    const listPadTop = Math.max(2, Math.floor((availH - playerBlockH) / 2));
-
     return (
       <div className="min-h-screen bg-[#F7F6F3] pb-20">
         <div className="px-4 py-3 flex items-center gap-3 border-b border-[#E5E2DC] sticky top-0 z-10 bg-white">
@@ -179,7 +397,6 @@ export default function MatchCard() {
           <h1 className="text-lg font-bold text-[#111]">매치 카드</h1>
         </div>
 
-        {/* 카드 타입 토글 */}
         <div className="px-4 pt-4">
           <div className="flex gap-1 bg-[#F0EEE9] p-1 rounded-xl mb-4">
             <button onClick={() => setCardType('pre')}
@@ -193,102 +410,12 @@ export default function MatchCard() {
           </div>
         </div>
 
-        {/* 카드 프리뷰 (360×360 → scale 3 = 1080×1080) */}
-        <div style={{ padding: '0 16px', marginBottom: 16 }}>
-          <div ref={cardRef} style={{ width: 360, height: 360, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
-            {/* 배경 패턴 */}
-            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(-55deg, transparent, transparent 18px, rgba(255,255,255,0.015) 18px, rgba(255,255,255,0.015) 19px)', pointerEvents: 'none', zIndex: 0 }} />
-
-            <div style={{ position: 'relative', zIndex: 2 }}>
-              {/* 상단 바 */}
-              <div style={{ padding: '8px 14px 7px', borderBottom: '1px solid #222', overflow: 'hidden' }}>
-                <div style={{ float: 'left' }}>
-                  {myTeam?.logo?.startsWith('http') ? (
-                    <img src={myTeam.logo} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333', display: 'inline-block', verticalAlign: 'middle' }} />
-                  ) : (
-                    <span style={{ display: 'inline-block', width: 24, height: 24, borderRadius: '50%', background: '#222', fontSize: 11, lineHeight: '24px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle' }}>{myTeam?.logo || '⚽'}</span>
-                  )}
-                  <span style={{ fontSize: 9, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1.5, lineHeight: '24px', verticalAlign: 'middle', margin: '0 5px' }}>VS</span>
-                  {opponentTeam?.logo?.startsWith('http') ? (
-                    <img src={opponentTeam.logo} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333', display: 'inline-block', verticalAlign: 'middle' }} />
-                  ) : (
-                    <span style={{ display: 'inline-block', width: 24, height: 24, borderRadius: '50%', background: '#222', fontSize: 11, lineHeight: '24px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle' }}>{opponentTeam?.logo || '?'}</span>
-                  )}
-                </div>
-                <div style={{ float: 'right', textAlign: 'right', paddingTop: 1 }}>
-                  <div style={{ fontSize: 9, lineHeight: '12px', color: '#aaa' }}>{formatDate(selectedMatch.date)} · {selectedMatch.time?.slice(0, 5)}</div>
-                  <div style={{ fontSize: 8, lineHeight: '10px', color: '#777', marginTop: 1 }}>📍 {selectedMatch.stadium} · {selectedMatch.format}</div>
-                </div>
-              </div>
-
-              {/* 타이틀 */}
-              <div style={{ padding: '9px 14px 7px', borderBottom: '1px solid #1e1e1e' }}>
-                <div style={{ fontSize: 7, lineHeight: '8px', letterSpacing: 2.5, color: '#C8102E', fontWeight: 700, marginBottom: 3 }}>
-                  {cardType === 'pre' ? 'MATCHDAY' : 'FULL TIME'}
-                </div>
-                {cardType === 'post' ? (
-                  <>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
-                      {homeScore} <span style={{ color: '#C8102E' }}>:</span> {awayScore}
-                    </div>
-                    <div style={{ fontSize: 7, lineHeight: '8px', color: '#888', letterSpacing: 1.5, marginTop: 4 }}>{myTeam?.name} vs {opponentTeam?.name || '상대'}</div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
-                      LINE<span style={{ color: '#C8102E' }}>UP</span>
-                    </div>
-                    <div style={{ fontSize: 7, lineHeight: '8px', color: '#888', letterSpacing: 1.5, marginTop: 4 }}>{myTeam?.name} · 선발 명단</div>
-                  </>
-                )}
-              </div>
-
-              {/* 골 기록 (시합 후) */}
-              {cardType === 'post' && activeGoals.length > 0 && (
-                <div style={{ padding: '4px 14px', borderBottom: '1px solid #1e1e1e' }}>
-                  {activeGoals.map((g, i) => (
-                    <div key={i} style={{ padding: '1px 0', lineHeight: '11px' }}>
-                      <span style={{ fontSize: 8, color: '#EAB308', marginRight: 4 }}>⚽</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, color: '#fff' }}>{g.scorer_name}</span>
-                      {g.assister_name && <span style={{ fontSize: 8, color: '#555', marginLeft: 4 }}>({g.assister_name})</span>}
-                      {g.minute && <span style={{ fontSize: 8, color: '#444', marginLeft: 4 }}>{g.minute}'</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 선수 리스트 */}
-              <div style={{ paddingTop: listPadTop }}>
-                {groupedPlayers.map(group =>
-                  group.players.map((p, i) => (
-                    <div key={`${group.position}-${i}`} style={{ padding: '0 14px', borderBottom: '1px solid #1e1e1e', height: rowH, lineHeight: `${rowH}px`, overflow: 'hidden' }}>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: Math.min(10, rowH - 3), fontWeight: 600, color: '#777', display: 'inline-block', width: 18, textAlign: 'right', marginRight: 8, verticalAlign: 'middle' }}>{p.number}</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: Math.min(12, rowH - 1), fontWeight: 700, color: '#fff', letterSpacing: 0.2, textTransform: 'uppercase', verticalAlign: 'middle' }}>{p.name}</span>
-                      <span style={{
-                        fontSize: Math.min(7, rowH * 0.35), fontWeight: 700, letterSpacing: 0.5, lineHeight: 1, padding: '1px 4px', borderRadius: 2,
-                        float: 'right', marginTop: Math.max(1, Math.floor((rowH - Math.min(7, rowH * 0.35) - 2) / 2)),
-                        background: group.position === 'GK' ? 'rgba(234,179,8,0.15)' : group.position === 'DF' ? 'rgba(59,130,246,0.12)' : group.position === 'MF' ? 'rgba(34,197,94,0.12)' : 'rgba(200,16,46,0.15)',
-                        color: group.position === 'GK' ? '#EAB308' : group.position === 'DF' ? '#60a5fa' : group.position === 'MF' ? '#4ade80' : '#C8102E',
-                      }}>{posLabel[group.position]}</span>
-                    </div>
-                  ))
-                )}
-                {players.length === 0 && (
-                  <p style={{ textAlign: 'center', color: '#666', fontSize: 9, padding: '20px 0' }}>라인업 미정</p>
-                )}
-              </div>
-            </div>
-
-            {/* 푸터 — 카드 하단 고정 */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2, borderTop: '1px solid #1a1a1a', padding: '6px 14px', textAlign: 'center', lineHeight: '10px', background: '#0f0f0f' }}>
-              <span style={{ display: 'inline-block', width: 3, height: 3, borderRadius: '50%', background: '#C8102E', verticalAlign: 'middle', marginRight: 3 }}></span>
-              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 9, letterSpacing: 2, color: '#555', verticalAlign: 'middle' }}>MATCH TIME</span>
-              <span style={{ display: 'inline-block', width: 3, height: 3, borderRadius: '50%', background: '#C8102E', verticalAlign: 'middle', marginLeft: 3 }}></span>
-            </div>
-          </div>
+        {/* 캔버스 프리뷰 */}
+        <div className="px-4 mb-4">
+          <canvas ref={canvasRef} width={1080} height={1080}
+            className="w-full max-w-[360px] mx-auto rounded-xl" />
         </div>
 
-        {/* 다운로드 버튼 */}
         <div className="px-4">
           <button onClick={handleDownload} disabled={downloading}
             className="w-full bg-[#111] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
@@ -306,7 +433,6 @@ export default function MatchCard() {
       <div className="px-4 pt-4 pb-3 bg-white border-b border-[#E5E2DC]">
         <h1 className="font-title text-[30px] text-[#111] leading-none">MATCH CARD</h1>
       </div>
-
       <div className="px-4 pt-4 pb-28 space-y-2">
         {matches.length === 0 && (
           <p className="text-center text-[#CCC] py-12 text-sm">매치가 없습니다</p>
