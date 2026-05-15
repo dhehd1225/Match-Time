@@ -118,10 +118,6 @@ export default function MatchCard() {
         backgroundColor: '#0f0f0f',
         useCORS: true,
         logging: false,
-        allowTaint: true,
-        onclone: (clonedDoc) => {
-          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => s.remove());
-        },
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -187,36 +183,34 @@ export default function MatchCard() {
 
         {/* 카드 프리뷰 */}
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
-          <div ref={cardRef} style={{ width: 360, height: 360, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
+          <div ref={cardRef} style={{ width: 340, minHeight: 340, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
             {/* 배경 패턴 */}
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(-55deg, transparent, transparent 18px, rgba(255,255,255,0.012) 18px, rgba(255,255,255,0.012) 19px)', pointerEvents: 'none', zIndex: 0 }} />
-            {/* 왼쪽 빨간 라인 */}
-            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: '#C8102E', zIndex: 1 }} />
 
-            <div style={{ position: 'relative', zIndex: 2, paddingLeft: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'relative', zIndex: 2 }}>
               {/* 상단 바 */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 10px', borderBottom: '1px solid #222' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid #222', overflow: 'hidden' }}>
+                <div style={{ float: 'left' }}>
                   {myTeam?.logo?.startsWith('http') ? (
-                    <img src={myTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
+                    <img src={myTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333', display: 'inline-block', verticalAlign: 'middle' }} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 14, lineHeight: '28px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center' }}>{myTeam?.logo || '⚽'}</div>
+                    <span style={{ display: 'inline-block', width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 13, lineHeight: '28px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle' }}>{myTeam?.logo || '⚽'}</span>
                   )}
-                  <span style={{ fontSize: 11, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2, lineHeight: '28px' }}>VS</span>
+                  <span style={{ fontSize: 11, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2, lineHeight: '28px', verticalAlign: 'middle', margin: '0 6px' }}>VS</span>
                   {opponentTeam?.logo?.startsWith('http') ? (
-                    <img src={opponentTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
+                    <img src={opponentTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333', display: 'inline-block', verticalAlign: 'middle' }} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 14, lineHeight: '28px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center' }}>{opponentTeam?.logo || '?'}</div>
+                    <span style={{ display: 'inline-block', width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 13, lineHeight: '28px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle' }}>{opponentTeam?.logo || '?'}</span>
                   )}
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ float: 'right', textAlign: 'right', lineHeight: '14px', paddingTop: 2 }}>
                   <div style={{ fontSize: 10, color: '#aaa' }}>{formatDate(selectedMatch.date)} · {selectedMatch.time?.slice(0, 5)}</div>
-                  <div style={{ fontSize: 9, color: '#777', marginTop: 1 }}>📍 {selectedMatch.stadium} · {selectedMatch.format}</div>
+                  <div style={{ fontSize: 9, color: '#777', marginTop: 2 }}>📍 {selectedMatch.stadium} · {selectedMatch.format}</div>
                 </div>
               </div>
 
               {/* 타이틀 */}
-              <div style={{ padding: '16px 18px 10px', borderBottom: '1px solid #1e1e1e' }}>
+              <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #1e1e1e' }}>
                 <div style={{ fontSize: 9, letterSpacing: 3, color: '#C8102E', fontWeight: 700, marginBottom: 4 }}>
                   {cardType === 'pre' ? 'MATCHDAY' : 'FULL TIME'}
                 </div>
@@ -239,28 +233,28 @@ export default function MatchCard() {
 
               {/* 골 기록 (시합 후) */}
               {cardType === 'post' && goals.filter(g => g.scorer_name).length > 0 && (
-                <div style={{ padding: '10px 18px', borderBottom: '1px solid #1e1e1e' }}>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid #1e1e1e' }}>
                   {goals.filter(g => g.scorer_name).map((g, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
-                      <span style={{ fontSize: 11, color: '#EAB308' }}>⚽</span>
+                    <div key={i} style={{ padding: '3px 0', lineHeight: '18px' }}>
+                      <span style={{ fontSize: 11, color: '#EAB308', marginRight: 6 }}>⚽</span>
                       <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>{g.scorer_name}</span>
-                      {g.assister_name && <span style={{ fontSize: 11, color: '#555' }}>({g.assister_name})</span>}
-                      {g.minute && <span style={{ fontSize: 11, color: '#444' }}>{g.minute}'</span>}
+                      {g.assister_name && <span style={{ fontSize: 11, color: '#555', marginLeft: 6 }}>({g.assister_name})</span>}
+                      {g.minute && <span style={{ fontSize: 11, color: '#444', marginLeft: 6 }}>{g.minute}'</span>}
                     </div>
                   ))}
                 </div>
               )}
 
               {/* 선수 리스트 */}
-              <div style={{ padding: '6px 0 4px', flex: 1 }}>
+              <div style={{ padding: '6px 0 4px' }}>
                 {groupedPlayers.map(group =>
                   group.players.map((p, i) => (
-                    <div key={`${group.position}-${i}`} style={{ padding: '0 18px', borderBottom: '1px solid #1e1e1e', height: 34, lineHeight: '34px', overflow: 'hidden' }}>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: '#777', display: 'inline-block', width: 24, textAlign: 'right', marginRight: 12 }}>{p.number}</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: 0.2, textTransform: 'uppercase' }}>{p.name}</span>
+                    <div key={`${group.position}-${i}`} style={{ padding: '0 14px', borderBottom: '1px solid #1e1e1e', height: 32, lineHeight: '32px', overflow: 'hidden' }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: '#777', display: 'inline-block', width: 22, textAlign: 'right', marginRight: 10, verticalAlign: 'middle' }}>{p.number}</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: 0.2, textTransform: 'uppercase', verticalAlign: 'middle' }}>{p.name}</span>
                       <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, lineHeight: '14px',
-                        float: 'right', marginTop: 10,
+                        fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 5px', borderRadius: 3, lineHeight: '14px',
+                        float: 'right', marginTop: 9,
                         background: group.position === 'GK' ? 'rgba(234,179,8,0.15)' : group.position === 'DF' ? 'rgba(59,130,246,0.12)' : group.position === 'MF' ? 'rgba(34,197,94,0.12)' : 'rgba(200,16,46,0.15)',
                         color: group.position === 'GK' ? '#EAB308' : group.position === 'DF' ? '#60a5fa' : group.position === 'MF' ? '#4ade80' : '#C8102E',
                       }}>{posLabel[group.position]}</span>
@@ -273,10 +267,10 @@ export default function MatchCard() {
               </div>
 
               {/* 푸터 */}
-              <div style={{ borderTop: '1px solid #1a1a1a', padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#C8102E' }} />
-                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 2.5, color: '#555' }}>MATCH TIME</span>
-                <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#C8102E' }} />
+              <div style={{ borderTop: '1px solid #1a1a1a', padding: '10px 14px', textAlign: 'center', lineHeight: '14px' }}>
+                <span style={{ display: 'inline-block', width: 3, height: 3, borderRadius: '50%', background: '#C8102E', verticalAlign: 'middle', marginRight: 4 }}></span>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 2.5, color: '#555', verticalAlign: 'middle' }}>MATCH TIME</span>
+                <span style={{ display: 'inline-block', width: 3, height: 3, borderRadius: '50%', background: '#C8102E', verticalAlign: 'middle', marginLeft: 4 }}></span>
               </div>
             </div>
           </div>
