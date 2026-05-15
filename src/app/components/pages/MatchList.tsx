@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { Search, MapPin, Plus, X, Trash2, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, Plus, X, Trash2, SlidersHorizontal, List, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -132,6 +132,9 @@ export default function MatchList() {
   const [regionFilter, setRegionFilter] = useState('전체');
   const [levelFilter, setLevelFilter] = useState('전체');
   const [submitting, setSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const fetchMatches = async () => {
     const { data, error } = await supabase
@@ -147,10 +150,10 @@ export default function MatchList() {
     setLoading(false);
   };
 
-  // 페이지 진입할 때마다 새로고침
+  // 페이지 진입 또는 팀 변경 시 새로고침
   useEffect(() => {
     fetchMatches();
-  }, [location.pathname]);
+  }, [location.pathname, team?.id]);
 
   useEffect(() => {
     const channel = supabase
@@ -268,8 +271,14 @@ export default function MatchList() {
     <div className="min-h-screen bg-[#F7F6F3]">
       {/* TopBar */}
       <div className="sticky top-0 z-10 bg-white border-b border-[#E5E2DC]">
-        <div className="px-4 pt-4 pb-3">
+        <div className="px-4 pt-4 pb-3 flex items-end justify-between">
           <h1 className="font-title text-[30px] text-[#111] leading-none">MATCH</h1>
+          <div className="flex bg-[#F0EEE9] rounded-lg p-0.5">
+            <button onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-[#111] text-white' : 'text-[#888]'}`}><List size={16} /></button>
+            <button onClick={() => setViewMode('calendar')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-[#111] text-white' : 'text-[#888]'}`}><CalendarDays size={16} /></button>
+          </div>
         </div>
         <div className="px-4 pb-3 flex gap-2">
           <div className="relative flex-1">
@@ -356,8 +365,100 @@ export default function MatchList() {
         )}
       </div>
 
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <div className="px-4 pt-4 pb-28">
+          {/* 월 네비게이션 */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })}
+              className="p-2 text-[#888] hover:text-[#111]"><ChevronLeft size={18} /></button>
+            <h2 className="text-sm font-bold text-[#111]">{calMonth.year}년 {calMonth.month + 1}월</h2>
+            <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })}
+              className="p-2 text-[#888] hover:text-[#111]"><ChevronRight size={18} /></button>
+          </div>
+          {/* 요일 헤더 */}
+          <div className="grid grid-cols-7 mb-1">
+            {['일','월','화','수','목','금','토'].map(d => (
+              <div key={d} className={`text-center text-[11px] font-bold py-1 ${d === '일' ? 'text-red-400' : d === '토' ? 'text-blue-400' : 'text-[#888]'}`}>{d}</div>
+            ))}
+          </div>
+          {/* 날짜 그리드 */}
+          {(() => {
+            const firstDay = new Date(calMonth.year, calMonth.month, 1).getDay();
+            const daysInMonth = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
+            const today = new Date(); const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            const matchDates = new Map<string, { count: number; hasMyTeam: boolean }>();
+            matches.forEach(m => {
+              const prev = matchDates.get(m.date) || { count: 0, hasMyTeam: false };
+              prev.count++;
+              if (m.home_team_id === team?.id || m.away_team_id === team?.id) prev.hasMyTeam = true;
+              matchDates.set(m.date, prev);
+            });
+            const cells = [];
+            for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} />);
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+              const info = matchDates.get(dateStr);
+              const isToday = dateStr === todayStr;
+              const isSelected = dateStr === selectedDate;
+              const dayOfWeek = new Date(calMonth.year, calMonth.month, d).getDay();
+              cells.push(
+                <button key={d} onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                  className={`relative py-2 rounded-xl text-sm font-medium transition-colors ${
+                    isSelected ? 'bg-[#111] text-white' : isToday ? 'bg-[#F0EEE9] text-[#111] font-bold' : dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-[#111]'
+                  }`}>
+                  {d}
+                  {info && (
+                    <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+                      isSelected ? 'bg-white' : info.hasMyTeam ? 'bg-[#C8102E]' : 'bg-[#CCC]'
+                    }`} />
+                  )}
+                </button>
+              );
+            }
+            return <div className="grid grid-cols-7 gap-1">{cells}</div>;
+          })()}
+          {/* 선택된 날짜의 매치 */}
+          {selectedDate && (
+            <div className="mt-4">
+              <h3 className="text-xs font-bold text-[#888] mb-2">{formatDate(selectedDate)}</h3>
+              {matches.filter(m => m.date === selectedDate).length > 0 ? (
+                <div className="space-y-2">
+                  {matches.filter(m => m.date === selectedDate).map(match => (
+                    <div key={match.id} onClick={() => navigate(`/matches/${match.id}`)}
+                      className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 flex items-center gap-3 active:scale-[0.98] transition-transform cursor-pointer">
+                      <div className="w-12 text-center shrink-0">
+                        <p className="text-sm font-bold text-[#111]">{formatTime(match.time)}</p>
+                        <p className="text-[10px] text-[#CCC]">{match.format}</p>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{match.home_team?.logo || '⚽'}</span>
+                          <span className="text-sm font-bold text-[#111] truncate">{match.home_team?.name || '팀'}</span>
+                          {match.away_team ? (
+                            <>
+                              <span className="text-[10px] text-[#CCC]">vs</span>
+                              <span className="text-sm">{match.away_team?.logo || '⚽'}</span>
+                              <span className="text-sm font-bold text-[#111] truncate">{match.away_team.name}</span>
+                            </>
+                          ) : <span className="text-[10px] text-[#9A3412] font-medium">모집중</span>}
+                        </div>
+                        <p className="text-[11px] text-[#CCC] flex items-center gap-1 mt-0.5"><MapPin size={10} />{match.stadium}</p>
+                      </div>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        match.status === 'completed' ? 'text-[#888] bg-[#F0EEE9]' : match.status === 'confirmed' ? 'text-[#166534] bg-[#ECFDF4]' : 'text-[#9A3412] bg-[#FFF7ED]'
+                      }`}>{match.status === 'completed' ? '완료' : match.status === 'confirmed' ? '확정' : '모집중'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-sm text-[#CCC] text-center py-4">이 날짜에 매치가 없습니다</p>}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Match List */}
-      <div className="px-4 pt-4 pb-28">
+      {viewMode === 'list' && <div className="px-4 pt-4 pb-28">
         {loading ? (
           <ListSkeleton count={4}><MatchCardSkeleton /></ListSkeleton>
         ) : displayMatches.map((match) => (
@@ -426,7 +527,7 @@ export default function MatchList() {
         {!loading && displayMatches.length === 0 && (
           <p className="text-center text-gray-400 py-12 text-sm">매치가 없습니다</p>
         )}
-      </div>
+      </div>}
 
       {/* FAB - 팀장만 시합 생성 가능 */}
       {isTeamCreator && (

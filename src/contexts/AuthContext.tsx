@@ -111,6 +111,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // team_members / teams 변경 감지 → 자동 새로고침 (팀 삭제/탈퇴 시 반영)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('auth-team-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `user_id=eq.${user.id}` }, () => {
+        loadProfile(user.id);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'teams' }, () => {
+        loadProfile(user.id);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);

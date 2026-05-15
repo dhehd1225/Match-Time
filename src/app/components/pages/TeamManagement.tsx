@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, UserMinus, X, Camera, Save, Trash2, PlusCircle, Hash, Copy } from 'lucide-react';
+import { Search, UserMinus, X, Camera, Save, Trash2, PlusCircle, Hash, Copy, Check, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import type { Match } from '../../../lib/types';
 import { toast } from 'sonner';
@@ -25,7 +25,6 @@ export default function TeamManagement() {
   const positions = ['전체', 'GK', 'DF', 'MF', 'FW'];
 
   const navigate = useNavigate();
-  const [removingId, setRemovingId] = useState<string | null>(null);
   const [teamRecord, setTeamRecord] = useState({ win: 0, draw: 0, lose: 0 });
   const [matchHistory, setMatchHistory] = useState<Match[]>([]);
   const [showRecord, setShowRecord] = useState(false);
@@ -39,6 +38,7 @@ export default function TeamManagement() {
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
+  const [joinRequests, setJoinRequests] = useState<{ id: string; name: string; userId: string }[]>([]);
 
   // 팀 편집
   const [showEditModal, setShowEditModal] = useState(false);
@@ -108,6 +108,47 @@ export default function TeamManagement() {
     setEditSaving(false);
   };
 
+  // 가입 요청 조회
+  const fetchJoinRequests = async () => {
+    if (!team || !user || !isTeamCreator) return;
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('type', 'team_join')
+      .eq('title', '팀 가입 요청')
+      .eq('related_id', team.id)
+      .eq('status', 'pending');
+    if (data) {
+      setJoinRequests(data.map(n => {
+        const parts = n.description?.split('::') || [];
+        const name = parts[1]?.split('님이')[0] || '유저';
+        return { id: n.id, userId: parts[0] || '', name };
+      }));
+    }
+  };
+
+  const handleJoinAction = async (reqId: string, reqUserId: string, action: 'accept' | 'reject') => {
+    if (!team) return;
+    if (action === 'accept') {
+      await supabase.from('team_members').insert({ team_id: team.id, user_id: reqUserId, role: 'member' });
+      await supabase.from('notifications').insert({
+        user_id: reqUserId, type: 'team_join', title: '팀 가입 승인',
+        description: `${team.name} 가입이 승인되었습니다!`, related_id: team.id,
+      });
+      toast.success('가입을 승인했습니다.');
+      fetchMembers();
+    } else {
+      await supabase.from('notifications').insert({
+        user_id: reqUserId, type: 'team_join', title: '팀 가입 거절',
+        description: `${team.name} 가입이 거절되었습니다.`, related_id: team.id,
+      });
+      toast.success('가입을 거절했습니다.');
+    }
+    await supabase.from('notifications').delete().eq('id', reqId);
+    setJoinRequests(prev => prev.filter(r => r.id !== reqId));
+  };
+
   const getTeamCode = (id: string) => id.replace(/-/g, '').substring(0, 6).toUpperCase();
 
   const handleCreateTeam = async () => {
@@ -168,24 +209,35 @@ export default function TeamManagement() {
       const { error } = await supabase.from('teams').delete().eq('id', team.id);
       if (error) throw error;
       await refreshProfile();
-      navigate('/');
+      toast.success('팀이 삭제되었습니다.');
     } catch {
       toast.error('팀 삭제에 실패했습니다.');
     }
   };
 
-  const handleRemoveMember = async (memberId: string, memberUserId: string) => {
+  const handleLeaveTeam = async () => {
+    if (!team || !user) return;
+    if (!confirm(`${team.name} 팀에서 탈퇴하시겠습니까?`)) return;
+    await supabase.from('team_members').delete().eq('team_id', team.id).eq('user_id', user.id);
+    await refreshProfile();
+    toast.success(`${team.name} 팀에서 탈퇴했습니다.`);
+  };
+
+  const handleRemoveMember = async (memberUserId: string, memberName: string) => {
     if (memberUserId === user?.id) return;
-    if (removingId === memberId) {
-      // 두 번째 클릭 → 실제 삭제
-      await supabase.from('team_members').delete().eq('id', memberId);
-      setRemovingId(null);
-      toast.success('팀원을 제거했습니다.');
-    } else {
-      // 첫 번째 클릭 → 확인 상태
-      setRemovingId(memberId);
-      setTimeout(() => setRemovingId(null), 3000);
+    if (!confirm(`${memberName}님을 팀에서 제거하시겠습니까?`)) return;
+    const { error, count } = await supabase.from('team_members').delete({ count: 'exact' }).eq('team_id', team!.id).eq('user_id', memberUserId);
+    if (error) {
+      console.error('팀원 제거 에러:', error);
+      toast.error(`제거 실패: ${error.message}`);
+      return;
     }
+    if (count === 0) {
+      toast.error('제거할 팀원을 찾을 수 없습니다. RLS 정책을 확인해주세요.');
+      return;
+    }
+    fetchMembers();
+    toast.success(`${memberName}님을 제거했습니다.`);
   };
 
   const fetchMembers = async () => {
@@ -202,6 +254,7 @@ export default function TeamManagement() {
 
   useEffect(() => {
     fetchMembers();
+    fetchJoinRequests();
 
     if (!team) return;
 
@@ -295,12 +348,25 @@ export default function TeamManagement() {
           )}
           <div className="flex-1">
             <h2 className="text-base font-bold text-[#111]">{team?.name || '팀'}</h2>
-            <p className="text-xs text-[#888]">선수 {members.length}명{isTeamCreator ? ' · 탭하여 수정' : ''}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-[#888]">선수 {members.length}명{isTeamCreator ? ' · 탭하여 수정' : ''}</p>
+              {team && (
+                <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(getTeamCode(team.id)); toast.success('팀 코드가 복사되었습니다'); }}
+                  className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded text-[#888] hover:text-[#555] bg-[#E5E2DC]">
+                  <Copy size={10} />{getTeamCode(team.id)}
+                </button>
+              )}
+            </div>
           </div>
-          {isTeamCreator && (
+          {isTeamCreator ? (
             <button onClick={(e) => { e.stopPropagation(); handleDeleteTeam(); }}
               className="p-2 text-[#CCC] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
               <Trash2 size={16} />
+            </button>
+          ) : (
+            <button onClick={(e) => { e.stopPropagation(); handleLeaveTeam(); }}
+              className="p-2 text-[#CCC] hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
+              <LogOut size={16} />
             </button>
           )}
         </div>
@@ -309,6 +375,31 @@ export default function TeamManagement() {
           {teamRecord.win}승 {teamRecord.draw}무 {teamRecord.lose}패
         </button>
       </div>
+
+      {/* 가입 요청 (팀장만) */}
+      {isTeamCreator && joinRequests.length > 0 && (
+        <div className="px-4 pb-3">
+          <h3 className="text-sm font-bold text-[#111] mb-2">가입 요청 <span className="text-[#C8102E]">{joinRequests.length}</span></h3>
+          <div className="space-y-2">
+            {joinRequests.map(req => (
+              <div key={req.id} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#F0EEE9] rounded-full flex items-center justify-center text-sm font-bold text-[#888]">
+                  {req.name.charAt(0)}
+                </div>
+                <span className="flex-1 text-sm font-bold text-[#111]">{req.name}</span>
+                <button onClick={() => handleJoinAction(req.id, req.userId, 'reject')}
+                  className="p-1.5 rounded-lg text-[#CCC] hover:text-red-500 hover:bg-red-50">
+                  <X size={16} />
+                </button>
+                <button onClick={() => handleJoinAction(req.id, req.userId, 'accept')}
+                  className="p-1.5 rounded-lg text-[#CCC] hover:text-emerald-500 hover:bg-emerald-50">
+                  <Check size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Top Stats */}
       <div className="grid grid-cols-2 gap-3 px-4 pb-4">
@@ -381,11 +472,11 @@ export default function TeamManagement() {
                 <span className="text-sm font-bold text-[#CCC]">#{profile?.back_number || '-'}</span>
                 {isTeamCreator && member.user_id !== user?.id && (
                   <button
-                    onClick={() => handleRemoveMember(member.id, member.user_id)}
-                    className={`p-1.5 transition-colors text-xs font-bold ${removingId === member.id ? 'text-red-400' : 'text-[#CCC] hover:text-red-400'}`}
+                    onClick={() => handleRemoveMember(member.user_id, profile?.name || '팀원')}
+                    className="p-1.5 text-[#CCC] hover:text-red-400 transition-colors"
                     title="팀원 제거"
                   >
-                    {removingId === member.id ? '제거?' : <UserMinus size={14} />}
+                    <UserMinus size={14} />
                   </button>
                 )}
               </div>

@@ -548,12 +548,6 @@ export function MyPage() {
                     {t.id === team?.id && (
                       <span className="text-xs bg-white/20 text-white px-2.5 py-1 rounded-full font-medium">현재 팀</span>
                     )}
-                    {!isPresidentOf(t.id) && (
-                      <button onClick={(e) => { e.stopPropagation(); handleLeaveTeam(t.id, t.name); }}
-                        className={`p-1.5 rounded-lg ${t.id === team?.id ? 'text-white/50 hover:text-orange-400 hover:bg-white/10' : 'text-[#CCC] hover:text-orange-500 hover:bg-orange-50'}`}>
-                        <LogOut size={15} />
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}
