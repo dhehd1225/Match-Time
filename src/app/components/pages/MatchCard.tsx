@@ -113,13 +113,14 @@ export default function MatchCard() {
     setDownloading(true);
     try {
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3,
-        backgroundColor: '#0a0a0a',
+        scale: 2,
+        width: cardRef.current.offsetWidth,
+        height: cardRef.current.offsetHeight,
+        backgroundColor: '#0f0f0f',
         useCORS: true,
         logging: false,
         allowTaint: true,
         onclone: (clonedDoc) => {
-          // Tailwind의 oklch 색상이 html2canvas에서 에러나므로 스타일시트 제거
           clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
         },
       });
@@ -187,7 +188,7 @@ export default function MatchCard() {
 
         {/* 카드 프리뷰 */}
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
-          <div ref={cardRef} style={{ width: '100%', maxWidth: 390, aspectRatio: '1/1', margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
+          <div ref={cardRef} style={{ width: 360, height: 360, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
             {/* 배경 패턴 */}
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(-55deg, transparent, transparent 18px, rgba(255,255,255,0.012) 18px, rgba(255,255,255,0.012) 19px)', pointerEvents: 'none', zIndex: 0 }} />
             {/* 왼쪽 빨간 라인 */}
