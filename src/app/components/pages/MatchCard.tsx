@@ -112,17 +112,16 @@ export default function MatchCard() {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(cardRef.current, {
+      const el = cardRef.current;
+      const canvas = await html2canvas(el, {
         scale: 2,
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
         backgroundColor: '#0f0f0f',
         useCORS: true,
         logging: false,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
-        },
+        ignoreElements: (element) => element.tagName === 'LINK' && (element as HTMLLinkElement).rel === 'stylesheet',
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
