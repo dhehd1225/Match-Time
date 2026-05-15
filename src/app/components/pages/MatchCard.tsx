@@ -200,16 +200,16 @@ export default function MatchCard() {
                   {myTeam?.logo?.startsWith('http') ? (
                     <img src={myTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#222', fontSize: 13, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
-                      {myTeam?.logo || '⚽'}
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 13, lineHeight: '30px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', padding: 0 }}>
+                      <span style={{ display: 'block', marginTop: -1 }}>{myTeam?.logo || '⚽'}</span>
                     </div>
                   )}
                   <span style={{ fontSize: 11, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2 }}>VS</span>
                   {opponentTeam?.logo?.startsWith('http') ? (
                     <img src={opponentTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#222', fontSize: 13, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
-                      {opponentTeam?.logo || '?'}
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 13, lineHeight: '30px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', padding: 0 }}>
+                      <span style={{ display: 'block', marginTop: -1 }}>{opponentTeam?.logo || '?'}</span>
                     </div>
                   )}
                 </div>
@@ -256,14 +256,14 @@ export default function MatchCard() {
               )}
 
               {/* 선수 리스트 */}
-              <div style={{ padding: '10px 0 4px' }}>
+              <div style={{ padding: '6px 0 4px' }}>
                 {groupedPlayers.map(group =>
                   group.players.map((p, i) => (
-                    <div key={`${group.position}-${i}`} style={{ display: 'flex', alignItems: 'center', padding: '5px 18px', borderBottom: '1px solid #171717' }}>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: '#777', width: 24, flexShrink: 0, textAlign: 'right', marginRight: 12 }}>{p.number}</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: 0.2, flex: 1, textTransform: 'uppercase' }}>{p.name}</span>
+                    <div key={`${group.position}-${i}`} style={{ display: 'flex', alignItems: 'center', height: 36, padding: '0 18px', borderBottom: '1px solid #1e1e1e' }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: '#777', width: 24, flexShrink: 0, textAlign: 'right', marginRight: 12, lineHeight: '36px' }}>{p.number}</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: 0.2, flex: 1, textTransform: 'uppercase', lineHeight: '36px' }}>{p.name}</span>
                       <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 5px', borderRadius: 3,
+                        fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, lineHeight: '14px', flexShrink: 0,
                         background: group.position === 'GK' ? 'rgba(234,179,8,0.15)' : group.position === 'DF' ? 'rgba(59,130,246,0.12)' : group.position === 'MF' ? 'rgba(34,197,94,0.12)' : 'rgba(200,16,46,0.15)',
                         color: group.position === 'GK' ? '#EAB308' : group.position === 'DF' ? '#60a5fa' : group.position === 'MF' ? '#4ade80' : '#C8102E',
                       }}>{posLabel[group.position]}</span>
