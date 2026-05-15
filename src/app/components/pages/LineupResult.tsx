@@ -33,27 +33,27 @@ export default function LineupResult({
   return (
     <div className="px-4 py-4 space-y-4">
       {/* 스코어 입력 */}
-      <div className="bg-white rounded-xl border border-[#E5E2DC] p-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
         <p className="text-xs font-bold text-[#CCC] mb-3">스코어</p>
         <div className="flex items-center gap-4 justify-center">
           <div className="text-center">
             <p className="text-[10px] text-[#888] mb-1">{homeLabel}</p>
             <input type="number" min="0" value={homeScore} onChange={e => setHomeScore(e.target.value)}
               disabled={!isTeamCreator}
-              className="w-16 text-center text-3xl font-black bg-[#F0EEE9] border border-[#E5E2DC] rounded-lg py-2 text-[#111] outline-none disabled:opacity-50" />
+              className="w-16 text-center text-3xl font-black bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-lg py-2 text-[#111] outline-none disabled:opacity-50" />
           </div>
           <span className="text-[#CCC] font-bold text-2xl mt-5">:</span>
           <div className="text-center">
             <p className="text-[10px] text-[#888] mb-1">{awayLabel}</p>
             <input type="number" min="0" value={awayScore} onChange={e => setAwayScore(e.target.value)}
               disabled={!isTeamCreator}
-              className="w-16 text-center text-3xl font-black bg-[#F0EEE9] border border-[#E5E2DC] rounded-lg py-2 text-[#111] outline-none disabled:opacity-50" />
+              className="w-16 text-center text-3xl font-black bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-lg py-2 text-[#111] outline-none disabled:opacity-50" />
           </div>
         </div>
       </div>
 
       {/* 골 / 어시스트 기록 */}
-      <div className="bg-white rounded-xl border border-[#E5E2DC] p-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
         <p className="text-xs font-bold text-[#CCC] mb-3">골 · 어시스트 기록</p>
         {goalEntries.map((entry, idx) => (
           <div key={idx} className="mb-3 bg-[#F0EEE9] rounded-lg p-3 relative">
@@ -68,7 +68,7 @@ export default function LineupResult({
                   const v = e.target.value;
                   setGoalEntries(prev => prev.map((g, i) => i === idx ? { ...g, scorer_id: v } : g));
                 }} disabled={!isTeamCreator}
-                  className="w-full bg-[#F0EEE9] border border-[#E5E2DC] rounded-lg px-3 py-2 text-sm text-[#111] outline-none appearance-none disabled:opacity-50">
+                  className="w-full bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-lg px-3 py-2 text-sm text-[#111] outline-none appearance-none disabled:opacity-50">
                   <option value="" className="bg-white text-[#111]">선택</option>
                   {allPlayers.map(p => (
                     <option key={p.id} value={p.id} className="bg-white text-[#111]">{p.name} ({p.number})</option>
@@ -81,7 +81,7 @@ export default function LineupResult({
                   const v = e.target.value;
                   setGoalEntries(prev => prev.map((g, i) => i === idx ? { ...g, assister_id: v } : g));
                 }} disabled={!isTeamCreator}
-                  className="w-full bg-[#F0EEE9] border border-[#E5E2DC] rounded-lg px-3 py-2 text-sm text-[#111] outline-none appearance-none disabled:opacity-50">
+                  className="w-full bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-lg px-3 py-2 text-sm text-[#111] outline-none appearance-none disabled:opacity-50">
                   <option value="" className="bg-white text-[#111]">없음</option>
                   {allPlayers.filter(p => p.id !== entry.scorer_id).map(p => (
                     <option key={p.id} value={p.id} className="bg-white text-[#111]">{p.name} ({p.number})</option>
@@ -94,7 +94,7 @@ export default function LineupResult({
                   const v = e.target.value;
                   setGoalEntries(prev => prev.map((g, i) => i === idx ? { ...g, minute: v } : g));
                 }} disabled={!isTeamCreator} placeholder="예: 32"
-                  className="w-20 bg-[#F0EEE9] border border-[#E5E2DC] rounded-lg px-3 py-2 text-sm text-[#111] outline-none text-center disabled:opacity-50" />
+                  className="w-20 bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-lg px-3 py-2 text-sm text-[#111] outline-none text-center disabled:opacity-50" />
               </div>
             </div>
           </div>

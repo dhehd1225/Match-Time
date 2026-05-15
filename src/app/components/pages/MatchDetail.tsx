@@ -291,7 +291,7 @@ export default function MatchDetail() {
 
       {/* VS */}
       <div className="px-4 py-6">
-        <div className="bg-white rounded-2xl border border-[#E5E2DC] p-6">
+        <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-6">
           <div className="flex items-center justify-between">
             {/* Home */}
             <div className="flex-1 text-center">
@@ -368,7 +368,7 @@ export default function MatchDetail() {
         {/* 완료된 매치 - 결과 표시 */}
         {match.status === 'completed' && match.home_score !== null && (
           <div className="mt-3 space-y-2">
-            <div className="bg-white rounded-xl border border-[#E5E2DC] p-4 text-center">
+            <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 text-center">
               <p className="text-[10px] text-[#888] font-bold mb-2">최종 결과</p>
               <p className="text-3xl font-black text-[#111]">{match.home_score} : {match.away_score}</p>
             </div>
@@ -409,7 +409,7 @@ export default function MatchDetail() {
       {/* 신청 팀 목록 - 매치 생성자만 */}
       {isMyTeamHome && isTeamCreator && match.status === 'open' && (
         <div className="px-4 mb-4">
-          <div className="bg-white rounded-2xl border border-[#E5E2DC] p-4">
+          <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
             <h3 className="font-bold text-[#111] text-sm mb-3">
               신청 팀 <span className="text-[#888] font-normal">({pendingApps.length})</span>
             </h3>
@@ -447,7 +447,7 @@ export default function MatchDetail() {
 
       {/* Match Info */}
       <div className="px-4 mb-4">
-        <div className="bg-white rounded-2xl border border-[#E5E2DC] p-4">
+        <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
           <h3 className="font-bold text-[#111] text-sm mb-3">매치 정보</h3>
           <div className="space-y-2">
             <div className="flex justify-between">

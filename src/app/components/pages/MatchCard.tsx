@@ -148,7 +148,7 @@ export default function MatchCard() {
         <div className="px-4 pt-5 pb-3"><div className="w-24 h-6 bg-[#E5E2DC] rounded animate-pulse" /></div>
         <div className="px-4 space-y-2">
           {[1,2].map(i => (
-            <div key={i} className="bg-white rounded-2xl border border-[#E5E2DC] p-4 space-y-3">
+            <div key={i} className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 space-y-3">
               <div className="flex justify-between"><div className="w-28 h-4 bg-[#E5E2DC] rounded animate-pulse" /><div className="w-12 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
               <div className="flex items-center gap-3"><div className="w-8 h-8 bg-[#E5E2DC] rounded-full animate-pulse" /><div className="w-32 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
             </div>
@@ -304,7 +304,7 @@ export default function MatchCard() {
         <h1 className="font-title text-[30px] text-[#111] leading-none">MATCH CARD</h1>
       </div>
 
-      <div className="px-4 pb-28 space-y-2">
+      <div className="px-4 pt-4 pb-28 space-y-2">
         {matches.length === 0 && (
           <p className="text-center text-[#CCC] py-12 text-sm">매치가 없습니다</p>
         )}
@@ -314,7 +314,7 @@ export default function MatchCard() {
           const isPast = new Date(match.date + 'T00:00:00') < new Date();
           return (
             <div key={match.id} onClick={() => setSelectedMatch(match)}
-              className="bg-white rounded-xl border border-[#E5E2DC] p-4 active:scale-[0.98] transition-transform cursor-pointer">
+              className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 active:scale-[0.98] transition-transform cursor-pointer">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-[#111]">{formatDate(match.date)}</span>

@@ -82,7 +82,7 @@ export default function LineupFormation({
       <div className="flex gap-2 mb-3">
         {quarters.map(q => (
           <button key={q} onClick={() => { setActiveQuarter(q); setSelectedSlot(null); }}
-            className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#111] text-white' : 'bg-white text-[#888] border border-[#E5E2DC]'}`}>{q}</button>
+            className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#111] text-white' : 'bg-white text-[#888] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'}`}>{q}</button>
         ))}
       </div>
 
@@ -119,7 +119,7 @@ export default function LineupFormation({
           ))}
         </div>
       ) : (
-        <div className="mb-3 bg-white rounded-xl border border-[#E5E2DC] px-3 py-2">
+        <div className="mb-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 py-2">
           <span className="text-xs text-[#888]">포메이션: </span>
           <span className="text-xs font-bold text-[#111]">{formation}</span>
         </div>
@@ -219,7 +219,7 @@ export default function LineupFormation({
         )}
       </div>
 
-      <div className="mt-3 bg-white rounded-xl border border-[#E5E2DC] p-3 flex items-center justify-between">
+      <div className="mt-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 flex items-center justify-between">
         <span className="text-xs text-[#888]">{activeQuarter} 배치</span>
         <span className="text-xs font-bold text-[#111]">{currentLineup.filter(p => p !== null).length}/{positions_arr.length}명</span>
       </div>
@@ -248,7 +248,7 @@ export default function LineupFormation({
                 toast.success('이미지 저장 완료!');
               } catch { toast.error('이미지 저장에 실패했습니다.'); }
             }}
-              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC]">
+              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               <Camera size={16} />
             </button>
           </div>

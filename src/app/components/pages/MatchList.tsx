@@ -364,7 +364,7 @@ export default function MatchList() {
           <div
             key={match.id}
             onClick={() => navigate(`/matches/${match.id}`)}
-            className="flex items-center gap-4 p-[14px_16px] mb-2 bg-white rounded-xl border border-[#E5E2DC] active:scale-[0.98] transition-transform cursor-pointer"
+            className="flex items-center gap-4 p-[14px_16px] mb-2 bg-white rounded-xl shadow-\[0_1px_3px_rgba(0,0,0,0.06)\] active:scale-[0.98] transition-transform cursor-pointer"
           >
             {/* 시간 */}
             <div className="w-14 text-center shrink-0">

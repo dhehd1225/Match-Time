@@ -441,7 +441,7 @@ export function MyPage() {
 
       {/* Profile Card */}
       <div className="px-4 pt-3">
-        <div className="bg-white rounded-xl border border-[#E5E2DC] p-4 flex items-center gap-4">
+        <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex items-center gap-4">
           <div className="relative cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
@@ -528,7 +528,7 @@ export function MyPage() {
                   className={`relative overflow-hidden rounded-2xl p-4 ${
                     t.id === team?.id
                       ? 'bg-[#111] text-white'
-                      : 'bg-white border border-[#E5E2DC]'
+                      : 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -581,7 +581,7 @@ export function MyPage() {
         ) : (
           <div className="space-y-2">
             {notifications.map(notif => (
-              <div key={notif.id} className="bg-white rounded-xl border border-[#E5E2DC] p-4 transition-all relative">
+              <div key={notif.id} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 transition-all relative">
                 <button onClick={async () => {
                   setNotifications(prev => prev.filter(n => n.id !== notif.id));
                   await supabase.from('notifications').delete().eq('id', notif.id);

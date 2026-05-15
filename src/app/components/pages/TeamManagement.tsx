@@ -184,7 +184,7 @@ export default function TeamManagement() {
         <div className="px-4 py-3 border-b border-[#E5E2DC]"><div className="bg-[#E5E2DC] rounded w-24 h-5 animate-pulse" /></div>
         <div className="p-4 space-y-3">
           {[1,2,3,4,5].map(i => (
-            <div key={i} className="flex items-center gap-3 bg-white rounded-xl border border-[#E5E2DC] p-3">
+            <div key={i} className="flex items-center gap-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3">
               <div className="w-5 h-4 bg-[#E5E2DC] rounded animate-pulse" />
               <div className="w-20 h-4 bg-[#E5E2DC] rounded animate-pulse" />
               <div className="w-8 h-3 bg-[#E5E2DC] rounded animate-pulse" />
@@ -203,7 +203,7 @@ export default function TeamManagement() {
       </div>
       <div className="px-4 pt-3 pb-2">
         <div onClick={isTeamCreator ? openEditModal : undefined}
-          className={`flex items-center gap-3 bg-white rounded-xl border border-[#E5E2DC] p-3 ${isTeamCreator ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}>
+          className={`flex items-center gap-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 ${isTeamCreator ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}>
           {team?.logo?.startsWith('http') ? (
             <img src={team.logo} alt="" className="w-11 h-11 rounded-full object-cover" />
           ) : (
@@ -238,7 +238,7 @@ export default function TeamManagement() {
       {matchHistory.length > 0 && (
         <div className="px-4 pb-3">
           <button onClick={() => setShowHistory(!showHistory)}
-            className="w-full flex items-center justify-between bg-white rounded-xl border border-[#E5E2DC] px-4 py-2.5">
+            className="w-full flex items-center justify-between bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-4 py-2.5">
             <span className="text-sm font-bold text-[#111]">경기 기록 ({matchHistory.length})</span>
             {showHistory ? <ChevronUp size={16} className="text-[#CCC]" /> : <ChevronDown size={16} className="text-[#CCC]" />}
           </button>
@@ -254,7 +254,7 @@ export default function TeamManagement() {
                 const formatDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
                 return (
                   <div key={m.id} onClick={() => navigate(`/matches/${m.id}`)}
-                    className="bg-white rounded-xl border border-[#E5E2DC] p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+                    className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
                     <span className={`text-sm font-black w-6 text-center ${resultColor}`}>{result}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export default function TeamManagement() {
         {filteredMembers.map(member => {
           const profile = member.profile;
           return (
-            <div key={member.id} className="bg-white rounded-xl border border-[#E5E2DC] p-3 flex items-center gap-3">
+            <div key={member.id} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 flex items-center gap-3">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
               ) : (
@@ -394,7 +394,7 @@ export default function TeamManagement() {
                 <div className="flex justify-center gap-2 mb-3 flex-wrap">
                   {emojis.map(e => (
                     <button key={e} onClick={() => { setEditLogo(e); setEditLogoFile(null); setEditLogoPreview(null); }}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-lg ${editLogo === e ? 'bg-[#111] ring-2 ring-[#333]' : 'bg-[#F0EEE9] border border-[#E5E2DC]'}`}>
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-lg ${editLogo === e ? 'bg-[#111] ring-2 ring-[#333]' : 'bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'}`}>
                       {e}
                     </button>
                   ))}

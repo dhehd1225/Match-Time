@@ -40,7 +40,7 @@ export default function LineupMembers({ players, allPlayers, isTeamCreator, onRe
           </div>
           <div className="space-y-1">
             {group.players.map(player => (
-              <div key={player.id} className="bg-white p-3 rounded-xl border border-[#E5E2DC]">
+              <div key={player.id} className="bg-white p-3 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <span className="text-xs font-bold text-[#888] w-5 text-center">{player.number}</span>
@@ -80,7 +80,7 @@ export default function LineupMembers({ players, allPlayers, isTeamCreator, onRe
           </div>
           <div className="space-y-1">
             {tempPlayers.map(player => (
-              <div key={player.id} className="bg-white p-3 rounded-xl border border-[#E5E2DC]">
+              <div key={player.id} className="bg-white p-3 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <span className="text-xs font-bold text-[#888] w-5 text-center">{player.number}</span>

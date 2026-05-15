@@ -292,7 +292,7 @@ export default function LineupBuilder() {
         <div className="px-4 pt-5 pb-3"><div className="w-20 h-7 bg-[#E5E2DC] rounded animate-pulse mb-3" /><div className="h-10 bg-[#E5E2DC] rounded-xl animate-pulse" /></div>
         <div className="px-4 pt-3 space-y-2">
           {[1,2,3].map(i => (
-            <div key={i} className="bg-white rounded-xl border border-[#E5E2DC] p-4 space-y-2">
+            <div key={i} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 space-y-2">
               <div className="flex justify-between"><div className="w-28 h-4 bg-[#E5E2DC] rounded animate-pulse" /><div className="w-12 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
               <div className="flex items-center gap-3"><div className="w-8 h-8 bg-[#E5E2DC] rounded-full animate-pulse" /><div className="w-32 h-4 bg-[#E5E2DC] rounded animate-pulse" /></div>
             </div>
@@ -333,7 +333,7 @@ export default function LineupBuilder() {
             const full = counts.attending >= counts.total;
             return (
               <div key={match.id} onClick={() => navigate(`/lineup/${match.id}`)}
-                className="bg-white rounded-xl border border-[#E5E2DC] p-4 active:scale-[0.98] transition-transform cursor-pointer">
+                className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 active:scale-[0.98] transition-transform cursor-pointer">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-[#111]">{formatDate(match.date)}</span>
@@ -366,7 +366,7 @@ export default function LineupBuilder() {
           <div className="flex gap-2 mb-3">
             {quartersArr.map(q => (
               <button key={q} onClick={() => { setActiveQuarter(q); setSelectedSlot(null); }}
-                className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555] border border-[#E5E2DC]'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-bold ${activeQuarter === q ? 'bg-[#111] text-white' : 'bg-[#F0EEE9] text-[#555] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'}`}>
                 {q}
               </button>
             ))}
@@ -405,7 +405,7 @@ export default function LineupBuilder() {
               ))}
             </div>
           ) : (
-            <div className="mb-3 bg-white rounded-xl border border-[#E5E2DC] px-3 py-2">
+            <div className="mb-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 py-2">
               <span className="text-xs text-[#888]">포메이션: </span>
               <span className="text-xs font-bold text-[#111]">{formation}</span>
             </div>
@@ -516,7 +516,7 @@ export default function LineupBuilder() {
             )}
           </div>
 
-          <div className="mt-3 bg-white rounded-xl border border-[#E5E2DC] p-3 flex items-center justify-between">
+          <div className="mt-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3 flex items-center justify-between">
             <span className="text-xs text-[#888]">{activeQuarter} 배치</span>
             <span className="text-xs font-bold text-[#111]">{currentLineup.filter(p => p !== null).length}/{positions.length}명</span>
           </div>
@@ -545,7 +545,7 @@ export default function LineupBuilder() {
                 toast.error('이미지 저장에 실패했습니다.');
               }
             }}
-              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC]">
+              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               <Camera size={16} />
             </button>
             </div>

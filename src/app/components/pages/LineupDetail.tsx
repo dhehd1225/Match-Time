@@ -473,7 +473,7 @@ export default function LineupDetail() {
         </div>
         <div className="px-4 pt-4 space-y-2">
           {[1,2,3,4].map(i => (
-            <div key={i} className="flex items-center gap-3 bg-white rounded-xl border border-[#E5E2DC] p-3">
+            <div key={i} className="flex items-center gap-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-3">
               <div className="w-5 h-4 bg-gray-200 rounded animate-pulse" />
               <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
               <div className="w-8 h-3 bg-gray-200 rounded animate-pulse" />
@@ -742,7 +742,7 @@ export default function LineupDetail() {
       {/* My Attendance - 상태 표시 + 변경 토글 (과거 시합에는 숨김) */}
       {user && !isPast && match.status !== 'completed' && (
         <div className="px-4 pt-3">
-          <div className="flex items-center justify-between bg-white rounded-xl border border-[#E5E2DC] px-4 py-2.5">
+          <div className="flex items-center justify-between bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-4 py-2.5">
             <div className="flex items-center gap-2">
               {myAttendance === 'attending' ? (
                 <>
@@ -858,7 +858,7 @@ export default function LineupDetail() {
               <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChat()}
                 placeholder="메시지 입력..."
-                className="flex-1 bg-[#F0EEE9] border border-[#E5E2DC] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] focus:outline-none" />
+                className="flex-1 bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] focus:outline-none" />
               <button onClick={sendChat}
                 className="bg-[#111] text-white p-2.5 rounded-xl active:scale-95 transition-transform">
                 <Send size={18} />
@@ -945,9 +945,9 @@ export default function LineupDetail() {
               <button onClick={() => setShowAddModal(false)} className="text-[#888]"><X size={18} /></button>
             </div>
             <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="이름"
-              className="w-full bg-[#F0EEE9] border border-[#E5E2DC] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
+              className="w-full bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
             <input value={newNumber} onChange={e => setNewNumber(e.target.value)} placeholder="등번호" type="number"
-              className="w-full bg-[#F0EEE9] border border-[#E5E2DC] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
+              className="w-full bg-[#F0EEE9] shadow-[0_1px_3px_rgba(0,0,0,0.06)] rounded-xl px-4 py-2.5 text-sm text-[#111] placeholder:text-[#CCC] mb-3 focus:outline-none" />
             <div className="flex gap-2 mb-4">
               {['GK', 'DF', 'MF', 'FW'].map(p => (
                 <button key={p} onClick={() => setNewPos(p)}
