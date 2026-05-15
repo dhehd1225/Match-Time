@@ -114,7 +114,7 @@ export default function MatchCard() {
     try {
       const el = cardRef.current;
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale: 3,
         backgroundColor: '#0f0f0f',
         useCORS: true,
         logging: false,
@@ -193,7 +193,7 @@ export default function MatchCard() {
             {/* 왼쪽 빨간 라인 */}
             <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: '#C8102E', zIndex: 1 }} />
 
-            <div style={{ position: 'relative', zIndex: 2, paddingLeft: 3 }}>
+            <div style={{ position: 'relative', zIndex: 2, paddingLeft: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
               {/* 상단 바 */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 10px', borderBottom: '1px solid #222' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -256,7 +256,7 @@ export default function MatchCard() {
               )}
 
               {/* 선수 리스트 */}
-              <div style={{ padding: '6px 0 4px' }}>
+              <div style={{ padding: '6px 0 4px', flex: 1 }}>
                 {groupedPlayers.map(group =>
                   group.players.map((p, i) => (
                     <div key={`${group.position}-${i}`} style={{ display: 'flex', alignItems: 'center', height: 36, padding: '0 18px', borderBottom: '1px solid #1e1e1e' }}>
