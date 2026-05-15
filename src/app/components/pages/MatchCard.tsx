@@ -190,7 +190,7 @@ export default function MatchCard() {
 
         {/* 카드 프리뷰 */}
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
-          <div ref={cardRef} style={{ width: 340, minHeight: 340, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
+          <div ref={cardRef} style={{ width: 340, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
             {/* 배경 패턴 */}
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(-55deg, transparent, transparent 18px, rgba(255,255,255,0.012) 18px, rgba(255,255,255,0.012) 19px)', pointerEvents: 'none', zIndex: 0 }} />
 
@@ -201,13 +201,13 @@ export default function MatchCard() {
                   {myTeam?.logo?.startsWith('http') ? (
                     <img src={myTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333', display: 'inline-block', verticalAlign: 'middle' }} />
                   ) : (
-                    <span style={{ display: 'inline-block', width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 13, lineHeight: '28px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle' }}>{myTeam?.logo || '⚽'}</span>
+                    <span style={{ display: 'inline-block', width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 12, lineHeight: '26px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle', paddingTop: 1 }}>{myTeam?.logo || '⚽'}</span>
                   )}
                   <span style={{ fontSize: 11, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2, lineHeight: '28px', verticalAlign: 'middle', margin: '0 6px' }}>VS</span>
                   {opponentTeam?.logo?.startsWith('http') ? (
                     <img src={opponentTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333', display: 'inline-block', verticalAlign: 'middle' }} />
                   ) : (
-                    <span style={{ display: 'inline-block', width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 13, lineHeight: '28px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle' }}>{opponentTeam?.logo || '?'}</span>
+                    <span style={{ display: 'inline-block', width: 28, height: 28, borderRadius: '50%', background: '#222', fontSize: 12, lineHeight: '26px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center', verticalAlign: 'middle', paddingTop: 1 }}>{opponentTeam?.logo || '?'}</span>
                   )}
                 </div>
                 <div style={{ float: 'right', textAlign: 'right', lineHeight: '14px', paddingTop: 2 }}>
@@ -261,7 +261,7 @@ export default function MatchCard() {
                       <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: 0.2, textTransform: 'uppercase', verticalAlign: 'middle' }}>{p.name}</span>
                       <span style={{
                         fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 5px', borderRadius: 3, lineHeight: '14px',
-                        float: 'right', marginTop: 9,
+                        float: 'right', marginTop: 8,
                         background: group.position === 'GK' ? 'rgba(234,179,8,0.15)' : group.position === 'DF' ? 'rgba(59,130,246,0.12)' : group.position === 'MF' ? 'rgba(34,197,94,0.12)' : 'rgba(200,16,46,0.15)',
                         color: group.position === 'GK' ? '#EAB308' : group.position === 'DF' ? '#60a5fa' : group.position === 'MF' ? '#4ade80' : '#C8102E',
                       }}>{posLabel[group.position]}</span>
