@@ -113,11 +113,18 @@ export default function MatchCard() {
     setDownloading(true);
     try {
       const el = cardRef.current;
+      await new Promise(r => setTimeout(r, 500));
       const canvas = await html2canvas(el, {
         scale: 3,
         backgroundColor: '#0f0f0f',
         useCORS: true,
+        allowTaint: true,
         logging: false,
+        height: el.scrollHeight,
+        width: el.scrollWidth,
+        windowHeight: el.scrollHeight,
+        windowWidth: el.scrollWidth,
+        onclone: () => new Promise(r => setTimeout(r, 300)),
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
