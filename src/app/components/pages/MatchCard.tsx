@@ -8,6 +8,7 @@ import type { Match } from '../../../lib/types';
 
 interface GoalEntry { scorer_name: string; assister_name: string; minute: string; }
 interface CardPlayer { id: string; name: string; position: string; number: number; }
+interface CardData { starters: CardPlayer[]; bench: CardPlayer[]; }
 
 const posOrder = ['FW', 'MF', 'DF', 'GK'];
 const posBg: Record<string, string> = { FW: 'rgba(200,16,46,0.15)', MF: 'rgba(34,197,94,0.12)', DF: 'rgba(59,130,246,0.12)', GK: 'rgba(234,179,8,0.15)' };
@@ -44,6 +45,7 @@ async function drawCard(
     homeScore: string; awayScore: string;
     goals: GoalEntry[];
     players: { name: string; number: number; position: string }[];
+    bench: { name: string; number: number; position: string }[];
   }
 ) {
   // 웹폰트 로드 대기
@@ -179,9 +181,13 @@ async function drawCard(
     line(ctx, y, S); y += 2;
   }
 
-  // ── 선수 리스트 ──
+  // ── STARTING XI (1Q) ──
   const footerH = 76;
-  const avail = S - y - footerH;
+  const hasBench = opts.bench.length > 0;
+  const benchLabelH = hasBench ? 32 : 0;
+  const benchRowH = 28;
+  const benchBlockH = hasBench ? benchLabelH + opts.bench.length * benchRowH : 0;
+  const avail = S - y - footerH - benchBlockH;
   const sorted: typeof opts.players = [];
   for (const pos of posOrder) sorted.push(...opts.players.filter(p => p.position === pos));
   const pc = sorted.length;
@@ -198,17 +204,14 @@ async function drawCard(
       line(ctx, y + rowH, S);
       const cy = y + rowH / 2;
 
-      // 등번호
       const numFs = Math.min(28, rowH - 8);
       ctx.font = `600 ${numFs}px sans-serif`; ctx.fillStyle = '#555'; ctx.textAlign = 'right';
       ctx.fillText(String(p.number), P + 52, cy + 1); ctx.textAlign = 'left';
 
-      // 이름
       const nameFs = Math.min(32, rowH - 4);
       ctx.font = `700 ${nameFs}px sans-serif`; ctx.fillStyle = '#eee';
       ctx.fillText(p.name, P + 72, cy + 1);
 
-      // 포지션 뱃지
       const bFs = Math.min(18, rowH * 0.35);
       ctx.font = `700 ${bFs}px sans-serif`;
       const tw = ctx.measureText(p.position).width;
@@ -220,6 +223,28 @@ async function drawCard(
       ctx.textAlign = 'center'; ctx.fillText(p.position, bx + bw / 2, cy + 1); ctx.textAlign = 'left';
 
       y += rowH + 2;
+    }
+  }
+
+  // ── BENCH (2Q~4Q 선수) ──
+  if (hasBench) {
+    y = S - footerH - benchBlockH;
+    line(ctx, y, S, '#1a1a1a');
+    y += 8;
+    ctx.font = '700 18px sans-serif'; ctx.fillStyle = '#555';
+    let bLx = P;
+    for (const ch of 'BENCH') { ctx.fillText(ch, bLx, y + 10); bLx += ctx.measureText(ch).width + 3; }
+    y += benchLabelH;
+
+    for (const p of opts.bench) {
+      const cy = y + benchRowH / 2;
+      ctx.font = '500 20px sans-serif'; ctx.fillStyle = '#444'; ctx.textAlign = 'right';
+      ctx.fillText(String(p.number), P + 44, cy); ctx.textAlign = 'left';
+      ctx.font = '500 22px sans-serif'; ctx.fillStyle = '#777';
+      ctx.fillText(p.name, P + 60, cy);
+      ctx.font = '600 14px sans-serif'; ctx.fillStyle = posClr[p.position] || '#555';
+      ctx.textAlign = 'right'; ctx.fillText(p.position, S - P, cy); ctx.textAlign = 'left';
+      y += benchRowH;
     }
   }
 
@@ -247,6 +272,7 @@ export default function MatchCard() {
   const [awayScore, setAwayScore] = useState('0');
   const [goals, setGoals] = useState<GoalEntry[]>([]);
   const [players, setPlayers] = useState<CardPlayer[]>([]);
+  const [benchPlayers, setBenchPlayers] = useState<CardPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -269,29 +295,60 @@ export default function MatchCard() {
   useEffect(() => {
     if (!selectedMatch || !team) return;
     const fetchPlayers = async () => {
-      const { data: attendance } = await supabase
-        .from('match_attendance')
-        .select('user_id')
-        .eq('match_id', selectedMatch.id)
-        .eq('status', 'attending');
+      // 1Q 라인업에서 STARTING XI 가져오기
+      const { data: lineups } = await supabase
+        .from('lineups')
+        .select('quarter, positions')
+        .eq('match_id', selectedMatch.id);
 
-      if (attendance && attendance.length > 0) {
-        const userIds = attendance.map(a => a.user_id);
+      const allLineupUserIds = new Set<string>();
+      const q1UserIds = new Set<string>();
+      const otherQUserIds = new Set<string>();
+
+      if (lineups && lineups.length > 0) {
+        for (const lu of lineups) {
+          const positions = (lu.positions as any[]) || [];
+          const uids = positions.map((p: any) => p.user_id).filter(Boolean) as string[];
+          uids.forEach(id => allLineupUserIds.add(id));
+          if (lu.quarter === '1Q') uids.forEach(id => q1UserIds.add(id));
+          else uids.forEach(id => otherQUserIds.add(id));
+        }
+      }
+
+      // 벤치 = 2Q~4Q에 있지만 1Q에는 없는 선수
+      const benchIds = new Set([...otherQUserIds].filter(id => !q1UserIds.has(id)));
+
+      if (allLineupUserIds.size > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, name, position, back_number')
-          .in('id', userIds);
+          .in('id', [...allLineupUserIds]);
         if (profiles) {
-          setPlayers(profiles.map(p => ({ id: p.id, name: p.name || '이름 없음', position: p.position || 'MF', number: p.back_number || 0 })));
+          const toPlayer = (p: any): CardPlayer => ({ id: p.id, name: p.name || '이름 없음', position: p.position || 'MF', number: p.back_number || 0 });
+          setPlayers(profiles.filter(p => q1UserIds.has(p.id)).map(toPlayer));
+          setBenchPlayers(profiles.filter(p => benchIds.has(p.id)).map(toPlayer));
         }
       } else {
-        const { data: members } = await supabase
-          .from('team_members')
-          .select('*, profile:profiles(*)')
-          .eq('team_id', team.id);
-        if (members) {
-          setPlayers(members.map(m => ({ id: m.user_id, name: m.profile?.name || '이름 없음', position: m.profile?.position || 'MF', number: m.profile?.back_number || 0 })));
+        // 라인업 없으면 참석자 전원 표시
+        const { data: attendance } = await supabase
+          .from('match_attendance')
+          .select('user_id')
+          .eq('match_id', selectedMatch.id)
+          .eq('status', 'attending');
+        if (attendance && attendance.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name, position, back_number')
+            .in('id', attendance.map(a => a.user_id));
+          if (profiles) setPlayers(profiles.map(p => ({ id: p.id, name: p.name || '이름 없음', position: p.position || 'MF', number: p.back_number || 0 })));
+        } else {
+          const { data: members } = await supabase
+            .from('team_members')
+            .select('*, profile:profiles(*)')
+            .eq('team_id', team.id);
+          if (members) setPlayers(members.map(m => ({ id: m.user_id, name: m.profile?.name || '이름 없음', position: m.profile?.position || 'MF', number: m.profile?.back_number || 0 })));
         }
+        setBenchPlayers([]);
       }
 
       const matchDate = new Date(selectedMatch.date + 'T' + (selectedMatch.time || '00:00'));
@@ -342,8 +399,9 @@ export default function MatchCard() {
       format: selectedMatch.format || '',
       homeScore, awayScore, goals,
       players: players.map(p => ({ name: p.name, number: p.number, position: p.position })),
+      bench: benchPlayers.map(p => ({ name: p.name, number: p.number, position: p.position })),
     };
-  }, [selectedMatch, team, cardType, homeScore, awayScore, goals, players]);
+  }, [selectedMatch, team, cardType, homeScore, awayScore, goals, players, benchPlayers]);
 
   // 프리뷰 캔버스 업데이트
   useEffect(() => {

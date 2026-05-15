@@ -604,23 +604,8 @@ export default function LineupDetail() {
     setAutoLoading(true);
 
     const posArr = formations[formation] || formations['4-3-3'];
-    const isFirstQuarter = activeQuarter === '1Q';
+    const allQuarters: ('1Q' | '2Q' | '3Q' | '4Q')[] = ['1Q', '2Q', '3Q', '4Q'];
 
-    // 해당 쿼터를 희망하는 선수 우선 필터
-    const wantsThisQ = allPlayers.filter(p =>
-      !p.desiredQuarters || p.desiredQuarters.length === 0 || p.desiredQuarters.includes(activeQuarter)
-    );
-    const others = allPlayers.filter(p =>
-      p.desiredQuarters && p.desiredQuarters.length > 0 && !p.desiredQuarters.includes(activeQuarter)
-    );
-
-    // 1Q는 스탯(골+도움) 높은 순, 나머지는 그냥 순서대로
-    const sorted = isFirstQuarter
-      ? [...wantsThisQ].sort((a, b) => ((b.goals || 0) + (b.assists || 0)) - ((a.goals || 0) + (a.assists || 0)))
-      : [...wantsThisQ];
-    const pool = [...sorted, ...others];
-
-    // 슬롯별 포지션 매핑
     const getSlotPos = (idx: number): string => {
       if (idx === 0) return 'GK';
       const parts = formation.split('-').map(Number);
@@ -632,51 +617,61 @@ export default function LineupDetail() {
       return 'FW';
     };
 
-    const newLineup: (string | null)[] = posArr.map(() => null);
-    const used = new Set<string>();
+    const newQuarterLineups: Record<string, (string | null)[]> = {};
 
-    // 1차: 1순위 희망 포지션으로 배치
-    for (const p of pool) {
-      if (used.has(p.id)) continue;
-      const pref1 = p.preferredPositions?.[0] || p.position;
-      for (let i = 0; i < posArr.length; i++) {
-        if (newLineup[i] === null && getSlotPos(i) === pref1) {
-          newLineup[i] = p.id; used.add(p.id); break;
+    for (const q of allQuarters) {
+      const isFirst = q === '1Q';
+      // 해당 쿼터를 희망하는 선수 우선
+      const wantsQ = allPlayers.filter(p =>
+        !p.desiredQuarters || p.desiredQuarters.length === 0 || p.desiredQuarters.includes(q)
+      );
+      const others = allPlayers.filter(p =>
+        p.desiredQuarters && p.desiredQuarters.length > 0 && !p.desiredQuarters.includes(q)
+      );
+      // 1Q는 스탯 높은 순
+      const sorted = isFirst
+        ? [...wantsQ].sort((a, b) => ((b.goals || 0) + (b.assists || 0)) - ((a.goals || 0) + (a.assists || 0)))
+        : [...wantsQ];
+      const pool = [...sorted, ...others];
+
+      const lineup: (string | null)[] = posArr.map(() => null);
+      const used = new Set<string>();
+
+      // 1차: 1순위 희망 포지션
+      for (const p of pool) {
+        if (used.has(p.id)) continue;
+        const pref1 = p.preferredPositions?.[0] || p.position;
+        for (let i = 0; i < posArr.length; i++) {
+          if (lineup[i] === null && getSlotPos(i) === pref1) { lineup[i] = p.id; used.add(p.id); break; }
         }
       }
-    }
-
-    // 2차: 2순위 희망 포지션
-    for (const p of pool) {
-      if (used.has(p.id)) continue;
-      const pref2 = p.preferredPositions?.[1];
-      if (!pref2) continue;
-      for (let i = 0; i < posArr.length; i++) {
-        if (newLineup[i] === null && getSlotPos(i) === pref2) {
-          newLineup[i] = p.id; used.add(p.id); break;
+      // 2차: 2순위 희망 포지션
+      for (const p of pool) {
+        if (used.has(p.id)) continue;
+        const pref2 = p.preferredPositions?.[1];
+        if (!pref2) continue;
+        for (let i = 0; i < posArr.length; i++) {
+          if (lineup[i] === null && getSlotPos(i) === pref2) { lineup[i] = p.id; used.add(p.id); break; }
         }
       }
-    }
-
-    // 3차: 기본 포지션으로 배치
-    for (const p of pool) {
-      if (used.has(p.id)) continue;
-      for (let i = 0; i < posArr.length; i++) {
-        if (newLineup[i] === null && getSlotPos(i) === p.position) {
-          newLineup[i] = p.id; used.add(p.id); break;
+      // 3차: 기본 포지션
+      for (const p of pool) {
+        if (used.has(p.id)) continue;
+        for (let i = 0; i < posArr.length; i++) {
+          if (lineup[i] === null && getSlotPos(i) === p.position) { lineup[i] = p.id; used.add(p.id); break; }
         }
       }
+      // 4차: 남은 선수 빈 슬롯
+      for (const p of pool) {
+        if (used.has(p.id)) continue;
+        const emptyIdx = lineup.findIndex(s => s === null);
+        if (emptyIdx !== -1) { lineup[emptyIdx] = p.id; used.add(p.id); }
+      }
+      newQuarterLineups[q] = lineup;
     }
 
-    // 4차: 남은 선수 아무 빈 슬롯
-    for (const p of pool) {
-      if (used.has(p.id)) continue;
-      const emptyIdx = newLineup.findIndex(s => s === null);
-      if (emptyIdx !== -1) { newLineup[emptyIdx] = p.id; used.add(p.id); }
-    }
-
-    setQuarterLineups(prev => ({ ...prev, [activeQuarter]: newLineup }));
-    toast.success('자동 배치 완료!');
+    setQuarterLineups(newQuarterLineups as any);
+    toast.success('전 쿼터 자동 배치 완료!');
     setAutoLoading(false);
   };
 
