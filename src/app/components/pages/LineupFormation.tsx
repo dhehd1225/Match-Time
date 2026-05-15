@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { RefObject, Dispatch, SetStateAction } from 'react';
 import { X, Plus, UserPlus, ArrowLeftRight, Copy, Save, Zap, Camera } from 'lucide-react';
 import { toast } from 'sonner';
@@ -133,24 +134,26 @@ export default function LineupFormation({
       )}
 
       {/* Field */}
-      <div ref={fieldRef} className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4', background: 'linear-gradient(180deg, #1e5631 0%, #2d7a3a 20%, #308040 40%, #2d7a3a 60%, #308040 80%, #1e5631 100%)' }}>
+      <div ref={fieldRef} className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: 'linear-gradient(180deg, #1a5c2a 0%, #228b3b 20%, #26913f 40%, #228b3b 60%, #26913f 80%, #1a5c2a 100%)' }}>
+        {/* 잔디 줄무늬 */}
         <div className="absolute inset-0" style={{ backgroundImage: 'repeating-linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.04) 8.33%, transparent 8.33%, transparent 16.66%)', backgroundSize: '100% 100%' }} />
+        {/* 필드 라인 */}
         <div className="absolute inset-0">
-          <div className="absolute inset-3 border-2 border-white/40 rounded-sm" />
-          <div className="absolute top-1/2 left-3 right-3 h-0 border-t-2 border-white/40" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/40 rounded-full" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/40 rounded-full" />
-          <div className="absolute top-1 left-1/2 -translate-x-1/2 w-16 h-3 border-2 border-white/50 border-t-0 rounded-b-sm" />
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[55%] h-16 border-2 border-white/40 border-t-0" />
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[30%] h-8 border-2 border-white/40 border-t-0" />
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[55%] h-16 border-2 border-white/40 border-b-0" />
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[30%] h-8 border-2 border-white/40 border-b-0" />
-          <div className="absolute top-1.5 left-1.5 w-4 h-4 border-r-2 border-b-2 border-white/40 rounded-br-full" />
-          <div className="absolute top-1.5 right-1.5 w-4 h-4 border-l-2 border-b-2 border-white/40 rounded-bl-full" />
-          <div className="absolute bottom-1.5 left-1.5 w-4 h-4 border-r-2 border-t-2 border-white/40 rounded-tr-full" />
-          <div className="absolute bottom-1.5 right-1.5 w-4 h-4 border-l-2 border-t-2 border-white/40 rounded-tl-full" />
+          <div className="absolute inset-3 border-2 border-white/30 rounded-sm" />
+          <div className="absolute top-1/2 left-3 right-3 h-0 border-t-2 border-white/30" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/30 rounded-full" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/30 rounded-full" />
+          <div className="absolute top-1 left-1/2 -translate-x-1/2 w-16 h-3 border-2 border-white/30 border-t-0 rounded-b-sm" />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[55%] h-16 border-2 border-white/30 border-t-0" />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[30%] h-8 border-2 border-white/30 border-t-0" />
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[55%] h-16 border-2 border-white/30 border-b-0" />
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[30%] h-8 border-2 border-white/30 border-b-0" />
+          <div className="absolute top-1.5 left-1.5 w-4 h-4 border-r-2 border-b-2 border-white/30 rounded-br-full" />
+          <div className="absolute top-1.5 right-1.5 w-4 h-4 border-l-2 border-b-2 border-white/30 rounded-bl-full" />
+          <div className="absolute bottom-1.5 left-1.5 w-4 h-4 border-r-2 border-t-2 border-white/30 rounded-tr-full" />
+          <div className="absolute bottom-1.5 right-1.5 w-4 h-4 border-l-2 border-t-2 border-white/30 rounded-tl-full" />
         </div>
-        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[11px] font-bold">{activeQuarter} · {formation}</div>
+        <div className="absolute top-3 left-3 bg-black/30 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-semibold" style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1 }}>{activeQuarter} · {formation}</div>
 
         {positions_arr.map((pos, idx) => {
           const pid = currentLineup[idx]; const player = pid != null ? getPlayer(pid) : null;
@@ -245,12 +248,13 @@ export default function LineupFormation({
                 toast.success('이미지 저장 완료!');
               } catch { toast.error('이미지 저장에 실패했습니다.'); }
             }}
-              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC] shadow-sm">
+              className="bg-white text-[#111] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[#E5E2DC]">
               <Camera size={16} />
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

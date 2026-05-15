@@ -159,6 +159,9 @@ export default function TeamManagement() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `team_id=eq.${team.id}` }, () => {
         fetchMembers();
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
+        fetchMembers();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

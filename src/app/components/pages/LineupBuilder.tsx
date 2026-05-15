@@ -420,14 +420,24 @@ export default function LineupBuilder() {
           )}
 
           {/* Field */}
-          <div ref={fieldRef} className="relative bg-gradient-to-b from-green-700 to-green-600 rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
+          <div ref={fieldRef} className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: 'linear-gradient(180deg, #1a5c2a 0%, #228b3b 20%, #26913f 40%, #228b3b 60%, #26913f 80%, #1a5c2a 100%)' }}>
+            <div className="absolute inset-0" style={{ backgroundImage: 'repeating-linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.04) 8.33%, transparent 8.33%, transparent 16.66%)', backgroundSize: '100% 100%' }} />
             <div className="absolute inset-0">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 border-2 border-white/20 rounded-full" />
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-20 border-2 border-white/20 border-b-0" />
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-20 border-2 border-white/20 border-t-0" />
+              <div className="absolute inset-3 border-2 border-white/30 rounded-sm" />
+              <div className="absolute top-1/2 left-3 right-3 h-0 border-t-2 border-white/30" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/30 rounded-full" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/30 rounded-full" />
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 w-16 h-3 border-2 border-white/30 border-t-0 rounded-b-sm" />
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[55%] h-16 border-2 border-white/30 border-t-0" />
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[30%] h-8 border-2 border-white/30 border-t-0" />
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[55%] h-16 border-2 border-white/30 border-b-0" />
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[30%] h-8 border-2 border-white/30 border-b-0" />
+              <div className="absolute top-1.5 left-1.5 w-4 h-4 border-r-2 border-b-2 border-white/30 rounded-br-full" />
+              <div className="absolute top-1.5 right-1.5 w-4 h-4 border-l-2 border-b-2 border-white/30 rounded-bl-full" />
+              <div className="absolute bottom-1.5 left-1.5 w-4 h-4 border-r-2 border-t-2 border-white/30 rounded-tr-full" />
+              <div className="absolute bottom-1.5 right-1.5 w-4 h-4 border-l-2 border-t-2 border-white/30 rounded-tl-full" />
             </div>
-            <div className="absolute top-2 left-2 bg-black/30 text-white/70 px-2 py-0.5 rounded text-[10px] font-medium">
+            <div className="absolute top-3 left-3 bg-black/30 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-semibold" style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1 }}>
               {activeQuarter} · {formation}
             </div>
 

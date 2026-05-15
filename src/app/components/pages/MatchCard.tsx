@@ -187,7 +187,7 @@ export default function MatchCard() {
 
         {/* 카드 프리뷰 */}
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
-          <div ref={cardRef} style={{ width: '100%', maxWidth: 390, margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
+          <div ref={cardRef} style={{ width: '100%', maxWidth: 390, aspectRatio: '1/1', margin: '0 auto', borderRadius: 12, overflow: 'hidden', position: 'relative', background: '#0f0f0f', fontFamily: "'Noto Sans KR', sans-serif" }}>
             {/* 배경 패턴 */}
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(-55deg, transparent, transparent 18px, rgba(255,255,255,0.012) 18px, rgba(255,255,255,0.012) 19px)', pointerEvents: 'none', zIndex: 0 }} />
             {/* 왼쪽 빨간 라인 */}
@@ -198,18 +198,18 @@ export default function MatchCard() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 10px', borderBottom: '1px solid #222' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {myTeam?.logo?.startsWith('http') ? (
-                    <img src={myTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
+                    <img src={myTeam.logo} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 16, border: '1px solid #333' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 14, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
                       {myTeam?.logo || '⚽'}
                     </div>
                   )}
-                  <span style={{ fontSize: 10, color: '#444', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1 }}>VS</span>
+                  <span style={{ fontSize: 11, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2 }}>VS</span>
                   {opponentTeam?.logo?.startsWith('http') ? (
-                    <img src={opponentTeam.logo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
+                    <img src={opponentTeam.logo} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 16, border: '1px solid #333' }}>
-                      {opponentTeam?.logo || '❓'}
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 14, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
+                      {opponentTeam?.logo || '?'}
                     </div>
                   )}
                 </div>
