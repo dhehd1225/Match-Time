@@ -115,13 +115,13 @@ export default function MatchCard() {
       const el = cardRef.current;
       const canvas = await html2canvas(el, {
         scale: 2,
-        width: el.offsetWidth,
-        height: el.offsetHeight,
         backgroundColor: '#0f0f0f',
         useCORS: true,
         logging: false,
         allowTaint: true,
-        ignoreElements: (element) => element.tagName === 'LINK' && (element as HTMLLinkElement).rel === 'stylesheet',
+        onclone: (clonedDoc) => {
+          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => s.remove());
+        },
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
