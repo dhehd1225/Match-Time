@@ -193,14 +193,14 @@ export default function MatchCard() {
             {/* 왼쪽 빨간 라인 */}
             <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: '#C8102E', zIndex: 1 }} />
 
-            <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{ position: 'relative', zIndex: 2, paddingLeft: 3 }}>
               {/* 상단 바 */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 10px', borderBottom: '1px solid #222' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {myTeam?.logo?.startsWith('http') ? (
                     <img src={myTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 12, lineHeight: '30px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#222', fontSize: 13, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
                       {myTeam?.logo || '⚽'}
                     </div>
                   )}
@@ -208,7 +208,7 @@ export default function MatchCard() {
                   {opponentTeam?.logo?.startsWith('http') ? (
                     <img src={opponentTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 12, lineHeight: '30px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#222', fontSize: 13, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
                       {opponentTeam?.logo || '?'}
                     </div>
                   )}
