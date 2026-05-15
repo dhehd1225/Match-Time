@@ -198,17 +198,17 @@ export default function MatchCard() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 10px', borderBottom: '1px solid #222' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {myTeam?.logo?.startsWith('http') ? (
-                    <img src={myTeam.logo} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
+                    <img src={myTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 14, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 12, lineHeight: '30px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center' }}>
                       {myTeam?.logo || '⚽'}
                     </div>
                   )}
                   <span style={{ fontSize: 11, color: '#555', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2 }}>VS</span>
                   {opponentTeam?.logo?.startsWith('http') ? (
-                    <img src={opponentTeam.logo} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
+                    <img src={opponentTeam.logo} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid #333' }} />
                   ) : (
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 14, lineHeight: 1, border: '1px solid #333', overflow: 'hidden' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', fontSize: 12, lineHeight: '30px', border: '1px solid #333', overflow: 'hidden', textAlign: 'center' }}>
                       {opponentTeam?.logo || '?'}
                     </div>
                   )}
@@ -226,17 +226,17 @@ export default function MatchCard() {
                 </div>
                 {cardType === 'post' ? (
                   <>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 38, fontWeight: 800, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
                       {homeScore} <span style={{ color: '#C8102E' }}>:</span> {awayScore}
                     </div>
-                    <div style={{ fontSize: 9, color: '#888', letterSpacing: 2, marginTop: 2 }}>{myTeam?.name} vs {opponentTeam?.name || '상대'}</div>
+                    <div style={{ fontSize: 9, color: '#888', letterSpacing: 2, marginTop: 6 }}>{myTeam?.name} vs {opponentTeam?.name || '상대'}</div>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 38, fontWeight: 800, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 30, fontWeight: 800, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>
                       LINE<span style={{ color: '#C8102E' }}>UP</span>
                     </div>
-                    <div style={{ fontSize: 9, color: '#888', letterSpacing: 2, marginTop: 2 }}>{myTeam?.name} · 선발 명단</div>
+                    <div style={{ fontSize: 9, color: '#888', letterSpacing: 2, marginTop: 6 }}>{myTeam?.name} · 선발 명단</div>
                   </>
                 )}
               </div>
